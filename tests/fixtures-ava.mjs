@@ -69,8 +69,10 @@ export const DISCIPLINAS = [
     pastas: [pasta(7001, 102, PRIMEIRO)],
     envios: { 7001: [{ Status: 1, Submissions: [{ Id: 1 }] }] },
     listaQ: [
-      [SEC1, [[8001, 1], [8005, 0]]],
-      [SEC2, [[8003, 1, true], [8004, 0]]],
+      /* 8001 corrigido, com o link de feedback enganoso */
+      [SEC1, [[8001, 1, "feedback"], [8005, 0]]],
+      /* 8003: "1 / 1" igual a um enviado — só o ícone diz que está aberto */
+      [SEC2, [[8003, 1, "aberta"], [8004, 0]]],
       ["Avaliação 2 (Av2)", [[8099, 0]]],
     ],
   },
@@ -91,7 +93,8 @@ export const DISCIPLINAS = [
     toc: { Modules: [{ Topics: [{ TopicId: 9203, GradeItemId: 203 }], Modules: [{ Topics: [{ TopicId: 9202, GradeItemId: 202 }], Modules: [] }] }] },
     meusItens: [{ ItemId: 9203, DateCompleted: iso(-1) }, { ItemId: 9202, DateCompleted: null }],
     /* 205: só a Lista de questionários sabe (caso real da DMEM) */
-    listaQ: [[SEC1, [[8201, 1], [8202, 0], [8205, 1]]]],
+    /* 8205 enviado e sem nota, com o link de feedback enganoso: continua "aguardando" */
+    listaQ: [[SEC1, [[8201, 1], [8202, 0], [8205, 1, "feedback"]]]],
   },
   {
     ou: 50003,
@@ -143,23 +146,31 @@ export const SO_EM_TODOS = {
   quizzes: [quiz(8991, 991, -100)],
 };
 
-/* Mesma estrutura da página real (ver CLAUDE.md, "Lista de questionários"). */
+/* Mesma estrutura da página real (ver CLAUDE.md, "Lista de questionários").
+ * [quizId, usadas, estado] — estado "aberta" põe o ícone de tentativa em
+ * andamento na linha; "feedback" põe o link de feedback cujo TEXTO é
+ * "Tentativa em andamento" (armadilha real: aparece em questionário já
+ * corrigido e não quer dizer tentativa aberta). A última linha é a legenda
+ * do ícone, como na página real. */
 function paginaListaQ(secoes) {
+  const icone = '<img src="/d2l/img/attempt.svg" alt="Há uma tentativa em andamento" title="Há uma tentativa em andamento">';
   const linhas = secoes
     .map(
       ([titulo, qs]) =>
-        `<tr class="d_gh"><th scope="col" class="d_hch">${titulo}</th><th scope="col" class="d_hch">Status da avaliação</th><th scope="col" class="d_hch">Tentativas</th></tr>` +
+        `<tr class="d_gh"><th scope="col" class="d_hch d_gl">${titulo}</th><th scope="col" class="d_hch d_gc">Status da avaliação</th><th scope="col" class="d_hch d_gc">Tentativas</th></tr>` +
         qs
           .map(
-            ([id, usadas, andamento]) =>
-              `<tr><td><a href="#" onclick="GoToQuiz(${id}, true);;return false;">📝 Questionário ${id}</a><br>Disponível até 28 de setembro</td>` +
-              `<td class="d_gn">${andamento ? `<a href="quiz_submissions.d2l?qi=${id}">Feedback: Tentativa em andamento</a>` : ""}</td>` +
-              `<td class="d_gn">${usadas} / 1</td></tr>`
+            ([id, usadas, estado]) =>
+              `<tr><td><a href="#" onclick="GoToQuiz(${id}, true);;return false;">📄 Questionário ${id}</a>` +
+              `<a href="#" title="Resumo do questionário"></a>${estado === "aberta" ? icone : ""}<br>Disponível até 28 de setembro</td>` +
+              `<td class="d_gn">${estado === "feedback" ? `<label>Feedback: </label><a class="d2l-link d2l-link-inline" href="#" title="Exibir Feedback">Tentativa em andamento</a>` : "&nbsp;"}</td>` +
+              `<td class="d_gn d_gc">${usadas} / 1</td></tr>`
           )
           .join("")
     )
     .join("");
-  return `<!doctype html><html><head><title>Lista de questionários</title></head><body><table class="d2l-table d2l-grid d_gl" id="z_b">${linhas}</table></body></html>`;
+  const legenda = `<tr><td class="d_gr" colspan="5">${icone}<label> Há uma tentativa em andamento</label></td></tr>`;
+  return `<!doctype html><html><head><title>Lista de questionários</title></head><body><table class="d2l-table d2l-grid d_gl" id="z_b">${linhas}${legenda}</table></body></html>`;
 }
 
 function rotas() {

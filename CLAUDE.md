@@ -148,9 +148,12 @@ API (`le` 1.99; o servidor aceita 1.0–1.99), tudo GET com a sessão:
   de prazo e o resumo acima dos cards mostra o fechamento mais próximo.
 - Na maioria das disciplinas o questionário **não** é tópico de conteúdo (fica
   como link dentro do HTML do módulo), então `toc`/`myItems` não servem para ele.
-- "Feedback: Tentativa em andamento" apareceu só em questionários **já
-  corrigidos** na checagem de 2026-09-23 — o estado "iniciada, não enviada"
-  só vale quando não há nota. Confirmar com um caso real antes de confiar.
+- **Armadilha:** "Feedback: Tentativa em andamento" na coluna de status é só
+  o nome do link de feedback de questionário **já corrigido**. A tentativa
+  aberta de verdade é marcada por `<img alt="Há uma tentativa em andamento">`
+  na linha do questionário (e aparece "1 / 1", igual a um enviado). A última
+  linha da tabela (`td.d_gr`) é a legenda desse ícone. Confirmado com um caso
+  real do aluno (Técnica Vocal, 2026-09-23).
 - Nome da disciplina: atributo `text` do `d2l-card`
   ("Técnica Vocal I, Mus_EAD_85284_2026_2_275, 2026.2"); o texto visível
   mora em outro shadow root.

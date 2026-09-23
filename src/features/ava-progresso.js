@@ -20,8 +20,8 @@
  *
  * A API não conta se o aluno fez um questionário (tentativas dão 403), e na
  * maioria das disciplinas o questionário não é tópico de conteúdo. A única
- * fonte é a página "Lista de questionários", que mostra "1 / 1" e
- * "Tentativa em andamento". Ela é lida com DOMParser, que não executa nada.
+ * fonte é a página "Lista de questionários", que mostra "1 / 1" e um ícone
+ * na linha da tentativa aberta. Ela é lida com DOMParser, que não executa nada.
  *
  * Os cards ficam dentro de 4 camadas de shadow DOM e são recriados quando o
  * aluno troca de aba. Por isso a melhoria procura cards novos a cada segundo
@@ -273,7 +273,10 @@ EAAPlus.add({
         mapa[id] = {
           secao: secao,
           usadas: usadas ? parseInt(usadas, 10) : 0,
-          andamento: /em andamento/i.test(celulas.length > 2 ? texto(celulas[1]) : "")
+          /* A tentativa aberta é marcada por um ícone na própria linha. O
+             texto "Tentativa em andamento" da coluna de status NÃO serve: é só
+             o nome do link de feedback em questionários já corrigidos. */
+          andamento: !!tr.querySelector("img[alt*='em andamento' i]")
         };
       }
       return mapa;
