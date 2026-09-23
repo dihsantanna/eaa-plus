@@ -16,7 +16,8 @@ coleta, não armazena, não vende e não compartilha nada.
 Somente em duas páginas:
 
 1. `https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/`
-2. `https://batistas.brightspace.com/d2l/home` (página inicial do AVA)
+2. `https://batistas.brightspace.com/d2l/…` (página inicial do AVA e páginas
+   das suas disciplinas)
 
 Em qualquer outro site ela não é carregada.
 
@@ -36,7 +37,8 @@ sessão em que você já está logado, **somente para leitura**:
   (página "Lista de questionários" de cada disciplina).
 
 Esses dados são usados **apenas** para desenhar a barra de progresso, a
-contagem de atividades, o próximo prazo e a situação da disciplina na tela.
+contagem de atividades, o próximo prazo, a lista de atividades de cada
+disciplina e a situação da disciplina na tela.
 
 ## O que a extensão não faz
 

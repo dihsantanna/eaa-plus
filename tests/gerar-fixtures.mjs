@@ -32,7 +32,7 @@ export default function gerar() {
      o AVA só na réplica da página inicial. */
   for (const cs of m.content_scripts) {
     if (cs.matches.some((p) => p.includes("brightspace.com"))) {
-      cs.matches = ["http://localhost/d2l/home*", "http://127.0.0.1/d2l/home*"];
+      cs.matches = ["http://localhost/d2l/*", "http://127.0.0.1/d2l/*"];
     } else {
       cs.matches = ["http://localhost/*", "http://127.0.0.1/*"];
       cs.exclude_matches = ["http://localhost/d2l/*", "http://127.0.0.1/d2l/*"];

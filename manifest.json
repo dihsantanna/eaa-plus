@@ -26,16 +26,18 @@
     },
     {
       "matches": [
-        "https://batistas.brightspace.com/d2l/home",
-        "https://batistas.brightspace.com/d2l/home?*"
+        "https://batistas.brightspace.com/d2l/*"
       ],
       "js": [
         "src/core.js",
-        "src/features/ava-progresso.js"
+        "src/ava-dados.js",
+        "src/features/ava-progresso.js",
+        "src/features/ava-disciplina.js"
       ],
       "run_at": "document_idle",
       "css": [
-        "src/features/ava-progresso.css"
+        "src/features/ava-progresso.css",
+        "src/features/ava-disciplina.css"
       ]
     }
   ]

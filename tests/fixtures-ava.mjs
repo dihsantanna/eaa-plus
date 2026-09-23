@@ -152,7 +152,8 @@ export const SO_EM_TODOS = {
  * "Tentativa em andamento" (armadilha real: aparece em questionário já
  * corrigido e não quer dizer tentativa aberta). A última linha é a legenda
  * do ícone, como na página real. */
-function paginaListaQ(secoes) {
+function paginaListaQ(d) {
+  const secoes = d.listaQ;
   const icone = '<img src="/d2l/img/attempt.svg" alt="Há uma tentativa em andamento" title="Há uma tentativa em andamento">';
   const linhas = secoes
     .map(
@@ -170,7 +171,68 @@ function paginaListaQ(secoes) {
     )
     .join("");
   const legenda = `<tr><td class="d_gr" colspan="5">${icone}<label> Há uma tentativa em andamento</label></td></tr>`;
-  return `<!doctype html><html><head><title>Lista de questionários</title></head><body><table class="d2l-table d2l-grid d_gl" id="z_b">${linhas}${legenda}</table></body></html>`;
+  /* A página real vem com a faixa da disciplina: a barra também aparece aqui. */
+  return paginaDisciplina(d, "Lista de questionários", `<table class="d2l-table d2l-grid d_gl" id="z_b">${linhas}${legenda}</table>`);
+}
+
+/* ---------------------------------------------------------------
+ * Páginas de disciplina (qualquer rota): mesma faixa de navegação.
+ *
+ * Copiado da página real em 2026-09-23:
+ *   nav.d2l-navigation-s (position:relative)
+ *     d2l-labs-navigation
+ *       … topo branco com o nome da disciplina (94px)
+ *       d2l-labs-navigation-main-footer  ← faixa azul, 62px
+ *         #shadow .d2l-labs-navigation-centerer (max 1230px, padding 0 30px)
+ *         links no DOM normal, entre eles "Início do Curso" → /d2l/home/{ou}
+ *
+ * O CSS hostil imita o que o AVA aplica fora da faixa em algumas rotas
+ * (botões, títulos e listas com margens próprias): o painel precisa resistir.
+ * ------------------------------------------------------------- */
+const HOSTIL = `button{padding:11px 25px;background:#e3e9f1;border:2px solid #999;font-size:19px}
+h3{margin:20px 0;font-size:24px}ul{margin:16px 0;padding-left:40px}li{margin:6px 0}`;
+
+function paginaDisciplina(d, titulo, corpo, opcoes = {}) {
+  const ou = d.ou;
+  const links = [
+    [`/d2l/home/${ou}`, "Início do Curso"],
+    [`/d2l/le/lessons/${ou}/units/1`, "Conteúdo"],
+    [null, "Avaliações"],
+    [`/d2l/lms/grades/my_grades/main.d2l?ou=${ou}`, "Notas"],
+    [`/d2l/lms/news/main.d2l?ou=${ou}`, "Comunicados"],
+    [`/d2l/lms/classlist/classlist.d2l?ou=${ou}`, "Lista de classe"],
+  ]
+    .map(([href, t]) => (href ? `<a href="${href}">${t}</a>` : `<button type="button" class="d2l-nav-dropdown">${t}</button>`))
+    .join("");
+  return `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>${titulo} - ${d.nome} - Batistas</title>
+<style>
+body{margin:0;background:#f9fbff;font-family:Lato,sans-serif}
+nav.d2l-navigation-s{position:relative;display:block}
+.topo{height:94px;background:#fff;display:flex;align-items:center;padding:0 146px;font-size:26px}
+d2l-labs-navigation-main-footer a,d2l-labs-navigation-main-footer .d2l-nav-dropdown{color:#fff;font:19px Lato,sans-serif;text-decoration:none;white-space:nowrap;background:none;border:0;padding:0}
+.d2l-page-main{max-width:1230px;margin:0 auto;${opcoes.app ? "height:calc(100vh - 156px);overflow:hidden;display:flex" : "padding:24px 0"}}
+${HOSTIL}
+</style></head>
+<body><div class="d2l-body-main-wrapper">
+<header><nav class="d2l-navigation-s"><d2l-labs-navigation>
+<div class="topo">${d.nome}</div>
+<d2l-labs-navigation-main-footer>${links}</d2l-labs-navigation-main-footer>
+</d2l-labs-navigation></nav></header>
+<div class="d2l-page-main">${corpo}</div>
+</div>
+<script>
+customElements.define("d2l-labs-navigation-main-footer", class extends HTMLElement {
+  connectedCallback() {
+    if (this.shadowRoot) return;
+    this.attachShadow({ mode: "open" }).innerHTML =
+      '<style>:host{display:block;height:62px;background:rgb(0,48,84)}' +
+      '.d2l-labs-navigation-centerer{box-sizing:border-box;max-width:1230px;height:100%;margin:0 auto;padding:0 30px;display:flex;align-items:center;gap:20px}</style>' +
+      '<div class="d2l-labs-navigation-centerer"><slot></slot></div>';
+  }
+});
+</script>
+</body></html>`;
 }
 
 function rotas() {
@@ -191,7 +253,7 @@ function rotas() {
     for (const [id, envios] of Object.entries(d.envios || {}))
       api[`${b}dropbox/folders/${id}/submissions/mysubmissions/`] = ok(envios);
     if (d.listaQ)
-      api[`/d2l/lms/quizzing/user/quizzes_list.d2l?ou=${d.ou}`] = { status: 200, html: paginaListaQ(d.listaQ) };
+      api[`/d2l/lms/quizzing/user/quizzes_list.d2l?ou=${d.ou}`] = { status: 200, html: paginaListaQ(d) };
   }
   return api;
 }
@@ -304,8 +366,29 @@ setTimeout(() => {
 </body></html>`;
 }
 
+/* Rotas de disciplina com página própria na réplica (a Lista de questionários
+   vem do mapa da API, com a mesma faixa). */
+function paginasDeDisciplina(raiz) {
+  const escrever = (caminho, html) => {
+    mkdirSync(caminho.replace(/[\/][^\/]*$/, ""), { recursive: true });
+    writeFileSync(caminho, html);
+  };
+  const tv = DISCIPLINAS.find((d) => d.ou === 50001);
+  const coral = DISCIPLINAS.find((d) => d.ou === 50009);
+  const site = `${raiz}/site/d2l`;
+  escrever(`${site}/home/50001.html`, paginaDisciplina(tv, "Página Inicial", "<h2>Conteúdo</h2><p>Bem-vindo à disciplina.</p>"));
+  /* Conteúdo: app com a altura presa à janela, como o real */
+  escrever(
+    `${site}/le/lessons/50001/units/1.html`,
+    paginaDisciplina(tv, "Apresentação da Disciplina", '<aside style="width:280px;border-right:1px solid #ccc">Módulos</aside><article style="flex:1;padding:24px">Aula</article>', { app: true })
+  );
+  escrever(`${site}/lms/grades/my_grades/main.d2l`, paginaDisciplina(tv, "Notas", "<table><tr><td>Boletim</td></tr></table>"));
+  escrever(`${site}/home/50009.html`, paginaDisciplina(coral, "Página Inicial", "<p>Canto Coral</p>"));
+}
+
 export function gerarAva(raiz) {
   mkdirSync(`${raiz}/site/d2l`, { recursive: true });
   writeFileSync(`${raiz}/site/d2l/home.html`, pagina());
+  paginasDeDisciplina(raiz);
   writeFileSync(`${raiz}/site/api.json`, JSON.stringify(rotas()));
 }

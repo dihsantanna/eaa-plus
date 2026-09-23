@@ -1,6 +1,6 @@
-/* EAA+ · melhoria: progresso nas disciplinas
+/* EAA+ · melhoria: progresso nas disciplinas (página inicial do AVA)
  *
- * Página: AVA Brightspace (batistas.brightspace.com/d2l/home)
+ * Página: batistas.brightspace.com/d2l/home
  *
  * 1. Em cada card de "Minhas Disciplinas": a nota da Av1 e, para cada prazo
  *    (no curso de Música a Av1 fecha em duas datas: "Primeiro Fechamento" e
@@ -9,19 +9,7 @@
  * 2. Acima dos cards: o próximo prazo comum às disciplinas visíveis, quantas
  *    atividades já foram entregues e em quais disciplinas ainda falta algo.
  *
- * Regra de aprovação (Manual do Aluno EaD 2026, p. 29):
- *   Av1 (atividades dos módulos, 5,0) + Av2 (presencial, 5,0) >= 6,0 aprova.
- *   Entre 4,0 e 6,0 vai para Av3 (recuperação). Abaixo de 4,0 reprova.
- * Os valores máximos vêm do boletim de cada disciplina, não são fixos aqui.
- *
- * De onde vêm os dados: rotas do próprio Brightspace, no mesmo domínio, com a
- * sessão do aluno. Só GET. Nada é gravado nem enviado para fora — os dados
- * ficam na memória da aba enquanto ela está aberta.
- *
- * A API não conta se o aluno fez um questionário (tentativas dão 403), e na
- * maioria das disciplinas o questionário não é tópico de conteúdo. A única
- * fonte é a página "Lista de questionários", que mostra "1 / 1" e um ícone
- * na linha da tentativa aberta. Ela é lida com DOMParser, que não executa nada.
+ * Os dados e as regras vêm de src/ava-dados.js (EAAPlus.ava).
  *
  * Os cards ficam dentro de 4 camadas de shadow DOM e são recriados quando o
  * aluno troca de aba. Por isso a melhoria procura cards novos a cada segundo
@@ -33,19 +21,16 @@ EAAPlus.add({
   id: "ava-progresso",
 
   init: function () {
+    /* O bloco do AVA roda em todas as páginas /d2l/; esta é só a inicial. */
+    if (!/^\/d2l\/home\/?$/.test(location.pathname)) return true;
     var raiz = document.querySelector("d2l-my-courses-v2");
     if (!raiz) return false;
 
-    var API = "/d2l/api/le/1.99/";
-    var LISTA_QUESTIONARIOS = "/d2l/lms/quizzing/user/quizzes_list.d2l?ou=";
+    var A = EAAPlus.ava;
+    var esc = A.esc;
     var MARCA = "eaa-prog";
     var RESUMO_ID = "eaa-resumo";
-    var APROVA = 6;
-    var RECUPERA = 4;
-    var PARALELO = 4;
     var VARREDURA_MS = 1000;
-    var MAX_PRAZOS = 4;
-    var TZ = "America/Sao_Paulo";
 
     /* Grade de 4px. Toda linha é "rótulo | valor" com as mesmas margens. */
     var CSS =
@@ -84,437 +69,24 @@ EAAPlus.add({
       ".eaa-prog.real{position:absolute;left:16px;right:16px;bottom:24px;margin:0}";
 
     /* ---------------------------------------------------------------
-     * Rede: só GET, só caminhos do próprio AVA
-     * ------------------------------------------------------------- */
-    var fila = [];
-    var ativos = 0;
-
-    function mesmaOrigem(caminho) {
-      /* "/x" resolve no domínio da página; "//x" ou "https:" sairiam dele. */
-      if (!/^\/(?!\/)/.test(caminho)) throw new Error("caminho fora do AVA: " + caminho);
-      return caminho;
-    }
-
-    function pegar(caminho, comoTexto) {
-      return new Promise(function (ok, falha) {
-        fila.push(function () {
-          ativos++;
-          fetch(mesmaOrigem(caminho), { credentials: "same-origin" })
-            .then(function (r) {
-              if (!r.ok) throw new Error(caminho + " respondeu " + r.status);
-              return comoTexto ? r.text() : r.json();
-            })
-            .then(ok, falha)
-            .then(function () {
-              ativos--;
-              proximo();
-            });
-        });
-        proximo();
-      });
-    }
-
-    function proximo() {
-      while (ativos < PARALELO && fila.length) fila.shift()();
-    }
-
-    function lista(o) {
-      if (Array.isArray(o)) return o;
-      return (o && o.Objects) || [];
-    }
-
-    function vazio() {
-      return [];
-    }
-
-    function nada() {
-      return null;
-    }
-
-    /* ---------------------------------------------------------------
-     * Datas e números
-     * ------------------------------------------------------------- */
-    var fmtDia = null;
-    var fmtData = null;
-    var fmtHora = null;
-    try {
-      fmtDia = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
-      fmtData = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit" });
-      fmtHora = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
-    } catch (e) {
-      fmtDia = null;
-    }
-
-    function ts(texto) {
-      var t = texto ? Date.parse(texto) : NaN;
-      return isNaN(t) ? null : t;
-    }
-
-    /* Dia de calendário em Brasília, "2026-09-28". */
-    function diaDe(t) {
-      if (!fmtDia) return new Date(t).toISOString().slice(0, 10);
-      return fmtDia.format(new Date(t));
-    }
-
-    function diasAte(alvo) {
-      var a = diaDe(Date.now()).split("-");
-      var b = diaDe(alvo).split("-");
-      return Math.round((Date.UTC(+b[0], b[1] - 1, +b[2]) - Date.UTC(+a[0], a[1] - 1, +a[2])) / 86400000);
-    }
-
-    function data(t) {
-      return fmtData ? fmtData.format(new Date(t)) : new Date(t).toLocaleDateString();
-    }
-
-    function hora(t) {
-      return fmtHora ? fmtHora.format(new Date(t)) : "";
-    }
-
-    /* "hoje" · "amanhã" · "5 dias" · "encerrado" */
-    function falta(t, prefixo) {
-      if (t < Date.now()) return "encerrado";
-      var d = diasAte(t);
-      if (d <= 0) return "hoje";
-      if (d === 1) return "amanhã";
-      return (prefixo ? "em " : "") + d + " dias";
-    }
-
-    function num(n) {
-      return (Math.round(n * 10) / 10).toLocaleString("pt-BR", {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-      });
-    }
-
-    function plural(n, um, varios) {
-      return n + " " + (n === 1 ? um : varios);
-    }
-
-    function esc(s) {
-      return String(s).replace(/[&<>"]/g, function (c) {
-        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
-      });
-    }
-
-    /* ---------------------------------------------------------------
-     * Dados de uma disciplina
-     *
-     * Boletim → o que já foi corrigido. Tarefas e questionários → prazos,
-     * ligados ao boletim pelo GradeItemId. Para saber se o aluno fez algo que
-     * ainda não tem nota: envios da tarefa (mysubmissions), conclusão do
-     * tópico de conteúdo (toc + myItems) e a Lista de questionários.
-     * ------------------------------------------------------------- */
-    var cache = {};
-
-    function dados(ou) {
-      if (!cache[ou]) {
-        cache[ou] = baixar(ou).catch(function (erro) {
-          delete cache[ou]; /* deixa tentar de novo quando o card voltar */
-          throw erro;
-        });
-      }
-      return cache[ou];
-    }
-
-    function baixar(ou) {
-      var base = API + ou + "/";
-      return Promise.all([
-        pegar(base + "grades/"),
-        pegar(base + "grades/values/myGradeValues/"),
-        pegar(base + "dropbox/folders/").then(lista, vazio),
-        pegar(base + "quizzes/").then(lista, vazio),
-        pegar(base + "content/toc").then(null, nada),
-        pegar(base + "content/myItems/").then(lista, vazio),
-        pegar(LISTA_QUESTIONARIOS + ou, true).then(lerListaDeQuestionarios, function () {
-          return {};
-        })
-      ]).then(function (r) {
-        var itens = classificar(r[0], r[1], r[2], r[3], r[4], r[5], r[6]);
-        var envios = itens
-          .filter(function (it) {
-            return it.estado === null && it.tarefa && !it.enviado;
-          })
-          .map(function (it) {
-            return pegar(base + "dropbox/folders/" + it.tarefa + "/submissions/mysubmissions/").then(
-              function (e) {
-                it.enviado = lista(e).some(function (x) {
-                  return x.Submissions && x.Submissions.length;
-                });
-              },
-              function () {}
-            );
-          });
-        return Promise.all(envios).then(function () {
-          return resumir(itens, r[1]);
-        });
-      });
-    }
-
-    /* Página "Lista de questionários": uma tabela com uma seção por grupo de
-     * avaliação ("Avaliação 1 (Av1) - Primeiro Fechamento") e, em cada linha,
-     * o link GoToQuiz(id), o status e as tentativas "usadas / permitidas". */
-    function lerListaDeQuestionarios(html) {
-      var mapa = {};
-      var doc = new DOMParser().parseFromString(html, "text/html");
-      var secao = "";
-      var linhas = doc.querySelectorAll("table.d2l-table tr");
-      for (var i = 0; i < linhas.length; i++) {
-        var tr = linhas[i];
-        var celulas = tr.children;
-        if (!celulas.length) continue;
-        if (/\bd_gh\b/.test(tr.className)) {
-          secao = texto(celulas[0]);
-          continue;
-        }
-        var link = tr.querySelector("[onclick*='GoToQuiz(']");
-        var id = link && (link.getAttribute("onclick").match(/GoToQuiz\((\d+)/) || [])[1];
-        if (!id) continue;
-        var usadas = (texto(celulas[celulas.length - 1]).match(/^(\d+)\s*\//) || [])[1];
-        mapa[id] = {
-          secao: secao,
-          usadas: usadas ? parseInt(usadas, 10) : 0,
-          /* A tentativa aberta é marcada por um ícone na própria linha. O
-             texto "Tentativa em andamento" da coluna de status NÃO serve: é só
-             o nome do link de feedback em questionários já corrigidos. */
-          andamento: !!tr.querySelector("img[alt*='em andamento' i]")
-        };
-      }
-      return mapa;
-    }
-
-    function texto(el) {
-      return (el.textContent || "").replace(/\s+/g, " ").trim();
-    }
-
-    function topicos(toc) {
-      var saida = [];
-      (function andar(modulos) {
-        (modulos || []).forEach(function (m) {
-          (m.Topics || []).forEach(function (t) {
-            saida.push(t);
-          });
-          andar(m.Modules);
-        });
-      })(toc && toc.Modules);
-      return saida;
-    }
-
-    function classificar(boletim, valores, pastas, questionarios, toc, meusItens, listaQ) {
-      var nota = {};
-      valores.forEach(function (v) {
-        nota[String(v.GradeObjectIdentifier)] = v;
-      });
-
-      var concluido = {};
-      meusItens.forEach(function (i) {
-        if (i.DateCompleted) concluido[i.ItemId] = true;
-      });
-      var feitoPeloConteudo = {};
-      topicos(toc).forEach(function (t) {
-        if (t.GradeItemId && concluido[t.TopicId]) feitoPeloConteudo[t.GradeItemId] = true;
-      });
-
-      return boletim
-        .filter(function (g) {
-          return g.GradeType === "Numeric" && !g.IsHidden && g.MaxPoints > 0;
-        })
-        .map(function (g) {
-          var it = {
-            nome: g.Name,
-            max: g.MaxPoints,
-            pontos: null,
-            prazo: null,
-            tarefa: null,
-            secao: "",
-            enviado: !!feitoPeloConteudo[g.Id],
-            andamento: false,
-            estado: null
-          };
-
-          pastas.forEach(function (p) {
-            if (p.GradeItemId !== g.Id || p.IsHidden) return;
-            it.tarefa = p.Id;
-            it.prazo = ts(p.DueDate) || ts((p.Availability || {}).EndDate);
-          });
-          questionarios.forEach(function (q) {
-            if (q.GradeItemId !== g.Id || q.IsActive === false) return;
-            it.prazo = ts(q.DueDate) || ts(q.EndDate);
-            var l = listaQ[String(q.QuizId)];
-            if (l) {
-              it.secao = l.secao;
-              it.andamento = l.andamento;
-              if (l.usadas > 0 && !l.andamento) it.enviado = true;
-            }
-          });
-
-          var v = nota[String(g.Id)];
-          if (v && v.PointsNumerator !== null && v.PointsNumerator !== undefined) {
-            it.pontos = v.PointsNumerator;
-            it.estado = "corrigida";
-          }
-          return it;
-        });
-    }
-
-    function formula(valores, n) {
-      var re = new RegExp("^\\s*nota\\s*av\\s*" + n + "\\b", "i");
-      for (var i = 0; i < valores.length; i++) {
-        if (re.test(valores[i].GradeObjectName)) return valores[i];
-      }
-      return null;
-    }
-
-    /* "Avaliação 1 (Av1) - Último Fechamento", 2º grupo →
-       curto "2º Fechamento" (mesma largura em todas as linhas do card),
-       longo "Av1 · Último Fechamento" (nome oficial, no resumo). */
-    function nomesDoPrazo(secao, ordem) {
-      var partes = secao.split(/\s[-–]\s/);
-      var fim = partes.length > 1 ? partes[partes.length - 1] : "";
-      var av = (secao.match(/\((Av\s*\d)\)/i) || [])[1];
-      if (!fim) return null;
-      return {
-        curto: ordem + "º " + fim.split(/\s+/).pop(),
-        longo: (av ? av.replace(/\s/g, "") + " · " : "") + fim
-      };
-    }
-
-    function estadoFinal(it, agora) {
-      if (it.estado) return it.estado;
-      var vencido = it.prazo && it.prazo < agora;
-      if (it.andamento && !vencido) return "iniciada";
-      if (it.enviado || it.andamento) return "aguardando";
-      if (vencido) return "perdida";
-      return "afazer";
-    }
-
-    function contar(itens) {
-      var c = { itens: itens, corrigida: 0, aguardando: 0, iniciada: 0, perdida: 0, afazer: 0 };
-      itens.forEach(function (it) {
-        c[it.estado]++;
-      });
-      c.entregues = c.corrigida + c.aguardando;
-      c.pendentes = c.afazer + c.iniciada;
-      return c;
-    }
-
-    function resumir(itens, valores) {
-      var agora = Date.now();
-      itens.forEach(function (it) {
-        it.estado = estadoFinal(it, agora);
-      });
-
-      var r = { total: 0, ok: 0, av1: 0, av1Max: 0, av2: null, comAv: false, prazos: [] };
-      itens.forEach(function (it) {
-        r.total += it.max;
-        if (it.estado === "corrigida") r.ok += it.pontos;
-      });
-
-      /* Um grupo por dia de prazo (Brasília). O curso de Música tem dois. */
-      var porDia = {};
-      itens.forEach(function (it) {
-        var chave = it.prazo ? diaDe(it.prazo) : "sem";
-        if (!porDia[chave]) porDia[chave] = { dia: chave, prazo: it.prazo, itens: [], secao: "" };
-        var g = porDia[chave];
-        g.itens.push(it);
-        if (it.prazo && it.prazo > g.prazo) g.prazo = it.prazo;
-        if (!g.secao && it.secao) g.secao = it.secao;
-      });
-      var grupos = Object.keys(porDia)
-        .map(function (k) {
-          return porDia[k];
-        })
-        .sort(function (a, b) {
-          return (a.prazo || Infinity) - (b.prazo || Infinity);
-        })
-        .slice(0, MAX_PRAZOS);
-
-      grupos.forEach(function (g, i) {
-        var nomes = nomesDoPrazo(g.secao, i + 1);
-        if (!g.prazo) nomes = { curto: "Sem prazo", longo: "Sem prazo" };
-        g.curto = nomes ? nomes.curto : grupos.length > 1 ? i + 1 + "º prazo" : "Prazo";
-        g.longo = nomes ? nomes.longo : "Próximo prazo";
-        g.c = contar(g.itens);
-      });
-      r.prazos = grupos;
-
-      /* Disciplinas como Canto Coral e Atividades Extensionistas não têm
-         Av1/Av2: é um item só, valendo 10. Ali a regra do manual não se
-         aplica, então mostramos só a nota, sem situação. */
-      var f1 = formula(valores, 1);
-      var f2 = formula(valores, 2);
-      r.comAv = !!f1;
-      r.av1 = f1 && f1.PointsNumerator !== null ? f1.PointsNumerator : r.ok;
-      r.av1Max = f1 && f1.PointsDenominator ? f1.PointsDenominator : r.total;
-      /* A fórmula da Av2 vale 0 até a prova ser lançada; 0 não é resultado. */
-      if (f2 && f2.PointsNumerator > 0) r.av2 = f2.PointsNumerator;
-      r.c = contar(itens);
-      return r;
-    }
-
-    /* ---------------------------------------------------------------
      * Desenho dentro do card
      * ------------------------------------------------------------- */
-    function situacao(r) {
-      if (!r.comAv) return null;
-      if (r.av2 !== null) {
-        var soma = r.av1 + r.av2;
-        if (soma >= APROVA) return ["aprovado", "Aprovado · " + num(soma)];
-        if (soma >= RECUPERA) return ["recuperacao", "Av3 (recuperação) · " + num(soma)];
-        return ["reprovado", "Reprovado · " + num(soma)];
-      }
-      if (r.c.aguardando || r.c.pendentes) return null;
-      var resta = Math.max(0, APROVA - r.av1);
-      if (resta === 0) return ["aprovado", "Av1 já garante os " + num(APROVA)];
-      return ["", "Precisa de " + num(resta) + " na Av2"];
-    }
-
-    /* O estado que mais pede atenção naquele prazo, sempre à direita. */
-    function destaque(c) {
-      if (c.iniciada) return ["iniciada", "⚠ " + plural(c.iniciada, "não enviada", "não enviadas")];
-      if (c.perdida) return ["perdida", plural(c.perdida, "perdida", "perdidas")];
-      if (c.aguardando) return ["aguardando", c.aguardando + " aguardando"];
-      if (c.corrigida && c.corrigida === c.itens.length) return ["corrigida", "corrigido"];
-      if (c.afazer) return ["", c.afazer + " a fazer"];
-      return ["", ""];
-    }
-
-    var ROTULO = {
-      corrigida: "corrigida",
-      aguardando: "aguardando correção",
-      iniciada: "iniciada e não enviada",
-      perdida: "perdida",
-      afazer: "a fazer"
-    };
-
-    function segmentos(itens) {
-      return (
-        '<div class="eaa-seg" aria-hidden="true">' +
-        itens
-          .map(function (it) {
-            return '<i class="' + it.estado + '"></i>';
-          })
-          .join("") +
-        "</div>"
-      );
-    }
-
     function linhaDoPrazo(g) {
-      var d = destaque(g.c);
-      var quando = g.prazo ? data(g.prazo) + " · " + falta(g.prazo) : "sem data";
+      var d = A.destaque(g.c);
+      var quando = A.quando(g);
       var encerrado = g.prazo && g.prazo < Date.now();
-      var urgente = !encerrado && g.prazo && g.c.pendentes && diasAte(g.prazo) <= 1;
       var leitura =
         g.curto + ", " + quando + ": " +
         g.c.itens
           .map(function (it) {
-            return it.nome + " " + ROTULO[it.estado];
+            return it.nome + " " + A.ROTULO[it.estado];
           })
           .join("; ");
       return (
-        '<div class="eaa-prazo' + (encerrado ? " encerrado" : "") + (urgente ? " urgente" : "") +
+        '<div class="eaa-prazo' + (encerrado ? " encerrado" : "") + (A.urgente(g) ? " urgente" : "") +
         '" role="group" aria-label="' + esc(leitura) + '">' +
         '<div class="eaa-par"><span class="eaa-nome">' + esc(g.curto) + '</span><span class="eaa-quando">' + esc(quando) + "</span></div>" +
-        segmentos(g.c.itens) +
+        A.segmentos(g.c.itens) +
         '<div class="eaa-par eaa-leg"><span>' + g.c.entregues + " de " + g.c.itens.length + " entregues</span>" +
         '<span class="eaa-tag ' + d[0] + '">' + d[1] + "</span></div>" +
         "</div>"
@@ -522,12 +94,11 @@ EAAPlus.add({
     }
 
     function html(r) {
-      var rotulo = r.comAv ? "Av1" : "Nota";
       var saida =
-        '<div class="eaa-par eaa-cab"><span class="eaa-rot">' + rotulo + "</span>" +
-        '<span class="eaa-val">' + num(r.av1) + " / " + num(r.av1Max) + "</span></div>" +
+        '<div class="eaa-par eaa-cab"><span class="eaa-rot">' + r.rotulo + "</span>" +
+        '<span class="eaa-val">' + A.num(r.av1) + " / " + A.num(r.av1Max) + "</span></div>" +
         r.prazos.map(linhaDoPrazo).join("");
-      var s = situacao(r);
+      var s = A.situacao(r);
       if (s) saida += '<div class="eaa-sit ' + s[0] + '">' + s[1] + "</div>";
       return saida;
     }
@@ -553,7 +124,7 @@ EAAPlus.add({
         var p = prontos[ou];
         if (!p) return;
         p.r.prazos.forEach(function (g) {
-          if (g.prazo && g.prazo >= agora && (!alvo || diaDe(g.prazo) < alvo)) alvo = diaDe(g.prazo);
+          if (g.prazo && g.prazo >= agora && (!alvo || A.diaDe(g.prazo) < alvo)) alvo = A.diaDe(g.prazo);
         });
       });
       if (!alvo) return null;
@@ -563,7 +134,7 @@ EAAPlus.add({
         var p = prontos[ou];
         if (!p) return;
         p.r.prazos.forEach(function (g) {
-          if (!g.prazo || diaDe(g.prazo) !== alvo) return;
+          if (!g.prazo || A.diaDe(g.prazo) !== alvo) return;
           res.prazo = Math.max(res.prazo, g.prazo);
           if (!res.longo && g.secao) res.longo = g.longo;
           res.itens = res.itens.concat(g.c.itens);
@@ -571,7 +142,7 @@ EAAPlus.add({
           if (g.c.pendentes) res.disciplinas.push({ ou: ou, nome: p.nome, pendentes: g.c.pendentes, iniciada: g.c.iniciada });
         });
       });
-      res.c = contar(res.itens);
+      res.c = A.contar(res.itens);
       res.longo = res.longo || "Próximo prazo";
       return res;
     }
@@ -581,20 +152,11 @@ EAAPlus.add({
       return antes.length >= 3 ? antes : nome;
     }
 
-    /* Uma legenda só, no resumo (os cards não têm largura para ela). Sempre os
-       cinco estados, na mesma ordem, para o aluno aprender uma vez. */
-    var LEGENDA = [
-      ["corrigida", "Corrigida"],
-      ["aguardando", "Aguardando correção"],
-      ["iniciada", "Iniciada, não enviada"],
-      ["perdida", "Prazo perdido"],
-      ["afazer", "A fazer"]
-    ];
-
+    /* Uma legenda só, no resumo (os cards não têm largura para ela). */
     function legenda() {
       return (
         '<ul class="eaa-r-legenda" aria-label="Legenda das cores">' +
-        LEGENDA.map(function (l) {
+        A.LEGENDA.map(function (l) {
           return '<li><i class="' + l[0] + '"></i>' + l[1] + "</li>";
         }).join("") +
         "</ul>"
@@ -602,12 +164,12 @@ EAAPlus.add({
     }
 
     function htmlDoResumo(res) {
-      var urgente = res.c.pendentes && diasAte(res.prazo) <= 1;
+      var urgente = res.c.pendentes && A.diasAte(res.prazo) <= 1;
       var tudo = !res.c.pendentes;
       var direita = tudo
         ? '<span class="eaa-r-tag corrigida">✓ tudo entregue</span>'
         : '<span class="eaa-r-tag' + (res.iniciadas ? " iniciada" : "") + '">' +
-          (res.iniciadas ? "⚠ " + plural(res.iniciadas, "não enviada", "não enviadas") + " · " : "") +
+          (res.iniciadas ? "⚠ " + A.plural(res.iniciadas, "não enviada", "não enviadas") + " · " : "") +
           "faltam " + res.c.pendentes + "</span>";
       var fichas = res.disciplinas
         .map(function (d) {
@@ -620,8 +182,8 @@ EAAPlus.add({
       return (
         '<div class="eaa-r-par"><span class="eaa-r-titulo">' + esc(res.longo) + "</span>" +
         '<span class="eaa-r-quando' + (urgente ? " urgente" : "") + '">' +
-        data(res.prazo) + " às " + hora(res.prazo) + " · " + falta(res.prazo, true) + "</span></div>" +
-        segmentos(res.c.itens).replace("eaa-seg", "eaa-seg eaa-r-seg") +
+        A.data(res.prazo) + " às " + A.hora(res.prazo) + " · " + A.falta(res.prazo, true) + "</span></div>" +
+        A.segmentos(res.c.itens, "eaa-r-seg") +
         '<div class="eaa-r-par eaa-r-leg"><span>' + res.c.entregues + " de " + res.c.itens.length +
         " atividades entregues</span>" + direita + "</div>" +
         (fichas ? '<div class="eaa-r-fichas">' + fichas + "</div>" : "") +
@@ -685,7 +247,7 @@ EAAPlus.add({
          traz "Técnica Vocal I, Mus_EAD_85284_2026_2_275, 2026.2". */
       var nome = (cartao.getAttribute("text") || "").replace(/,\s*[^\s,]*_[^,]*(,.*)?$/, "").trim() || "Disciplina";
 
-      dados(ou).then(
+      A.dados(ou).then(
         function (r) {
           if (!r.total) return remover();
           prontos[ou] = { r: r, nome: nome };

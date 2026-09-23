@@ -4,8 +4,9 @@ Extensão do Chrome (Manifest V3) que melhora, para os alunos da Escola de
 Adoração e Arte (EAA / FABAT), duas páginas:
 
 - **Aulas Síncronas**: <https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/>
-- **AVA (Brightspace)**, página inicial: <https://batistas.brightspace.com/d2l/home>
-  (desde a v1.1.0; o aluno já está logado, a extensão usa a sessão dele)
+- **AVA (Brightspace)**: página inicial e **todas as páginas de disciplina**
+  (`https://batistas.brightspace.com/d2l/*`, desde a v1.1.0; o aluno já está
+  logado, a extensão usa a sessão dele)
 
 O autor é **aluno** da Licenciatura em Música, não funcionário. **Não tem acesso
 ao WordPress da escola** — por isso isto é uma extensão e não uma edição do site.
@@ -19,7 +20,8 @@ algo sobre a página, a loja ou o Chrome, verifique — não chute.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 33 testes E2E com a extensão carregada de verdade
+npm test                           # 46 testes E2E com a extensão carregada de verdade
+npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
 npm run check                      # sintaxe + regras do manifest + regra do fetch
 npm run build                      # dist/eaa-plus-vX.Y.Z.zip + dist/colar-no-elementor.html
 ```
@@ -37,14 +39,18 @@ passe na linha de comando.
 ```
 manifest.json                 MV3, sem "permissions"; 2 content_scripts (escola, AVA)
 src/core.js                   EAAPlus.add() / EAAPlus.periodos() — SEMPRE o 1º js
+src/ava-dados.js              EAAPlus.ava: dados e regras do AVA (ÚNICO arquivo com fetch)
 src/features/<nome>.js|.css   uma melhoria por arquivo
-src/features/ava-progresso.js/.css progresso nos cards + resumo do prazo (único com fetch)
+src/features/ava-progresso.*  página inicial do AVA: progresso nos cards + resumo do prazo
+src/features/ava-disciplina.* páginas de disciplina: barra na faixa azul + painel
 tests/gerar-fixtures.mjs      gera páginas-réplica (datas relativas ao AGORA)
 tests/fixtures-ava.mjs        réplica do AVA (shadow DOM) + respostas da API inventadas
 tests/servidor.mjs            servidor das réplicas; /d2l/api/* vem de api.json
 tests/navegador.mjs           Chromium com a extensão, compartilhado pelas suítes
 tests/extensao.spec.mjs       testes da página de aulas
-tests/ava.spec.mjs            testes do AVA
+tests/ava.spec.mjs            testes do AVA (página inicial)
+tests/ava-disciplina.spec.mjs testes da barra nas páginas de disciplina
+tools/dev.mjs                 npm run dev (cópia em .dev-build/ com recarregador)
 tools/build.mjs               zip da loja + bloco para colar no Elementor
 tools/verificar-manifest.mjs  trava regras que afetam a revisão da loja
 store/                        imagens da listagem (ícone, promo 440×280, marquee)
@@ -56,9 +62,12 @@ GUIA-PUBLICACAO.md            passo a passo do painel da Chrome Web Store
 Cada uma destas mudaria o que precisa ser declarado na aba de Privacidade do
 painel e/ou atrasaria a revisão do Google. `verificar-manifest.mjs` cobra várias.
 
-- `matches` restrito a **duas** páginas: aulas síncronas da escola e
-  `batistas.brightspace.com/d2l/home` (com e sem `?`). Um bloco por site,
-  nunca misturados.
+- `matches` restrito a dois lugares: a página de aulas síncronas da escola e
+  `https://batistas.brightspace.com/d2l/*` (ampliado de `/d2l/home` em
+  2026-09-23, a pedido do usuário, para a barra das páginas de disciplina).
+  Um bloco por site, nunca misturados. Cada melhoria do AVA confere se está
+  na página certa (`/d2l/home` exato para os cards; link "Início do Curso"
+  na faixa para a barra da disciplina).
 - Nenhuma chave `permissions` / `host_permissions`.
 - Zero código remoto: nada de script externo, `eval`, CDN.
 - `fetch` só para rotas do próprio `batistas.brightspace.com` (caminho
@@ -165,6 +174,26 @@ API (`le` 1.99; o servidor aceita 1.0–1.99), tudo GET com a sessão:
   aprova; 4 a 6 → Av3; < 4 reprova. Calouros até 06/02/2026: 4 + 4 + fóruns 2.
 - Ao inspecionar o AVA, não imprima notas, nomes nem tokens — só estrutura.
 
+## Contrato com as páginas de disciplina — conferido em 2026-09-23
+
+Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
+`/d2l/lms/quizzing/user/quizzes_list.d2l?ou=`, `/d2l/lms/dropbox/…`,
+`/d2l/lms/grades/my_grades/main.d2l?ou=`, `/d2l/lms/news/…`,
+`/d2l/lms/classlist/…`. Todas têm a mesma faixa:
+
+| O quê | Onde |
+|---|---|
+| faixa da disciplina | `nav.d2l-navigation-s` (position:relative) → `d2l-labs-navigation` → `d2l-labs-navigation-main-footer` (azul `rgb(0,48,84)`, 62px) |
+| alinhamento | `.d2l-labs-navigation-centerer` no shadow do footer (máx. 1230px, padding 0 30px) |
+| id da disciplina | link `a[href="/d2l/home/{ou}"]` ("Início do Curso"), DOM normal |
+| links do AVA | no DOM normal do footer; terminam ~x=864 com a janela em 1496px |
+
+- **Conteúdo é um app com altura fixa pela janela**: inserir qualquer coisa no
+  fluxo empurra a aula para fora da tela (testado: +45px de rolagem). Por isso
+  a barra é `position:absolute` DENTRO da faixa, alinhada à direita.
+- Links das atividades: tarefa `/d2l/lms/dropbox/user/folder_submit_files.d2l?db={id}&grpid=0&isprv=0&bp=0&ou={ou}`;
+  questionário `/d2l/lms/quizzing/user/quiz_summary.d2l?ou={ou}&qi={id}&cfql=1`.
+
 ## Armadilhas conhecidas (todas já custaram tempo)
 
 1. **CSS do tema contra botões injetados.** O tema aplica
@@ -220,8 +249,8 @@ API (`le` 1.99; o servidor aceita 1.0–1.99), tudo GET com a sessão:
   `GUIA-PUBLICACAO.md`, seção 5. **A justificativa de host é obrigatória** mesmo
   sem a chave `permissions` — o `matches` conta.
 - Ampliar `matches` para outra página = nova revisão do Google. A 1.1.0 amplia
-  (AVA) e passa a **ler dados do aluno**: precisa de política de privacidade
-  publicada e de "Conteúdo do site" marcado na aba Privacidade.
+  (AVA, `/d2l/*`) e passa a **ler dados do aluno**: precisa de política de
+  privacidade publicada e de "Conteúdo do site" marcado na aba Privacidade.
 - Extensão **não funciona no celular** (Chrome Android/iOS não roda extensão).
   A saída é a escola colar `dist/colar-no-elementor.html` no widget 7dfc076.
 

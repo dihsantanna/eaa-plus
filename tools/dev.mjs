@@ -27,7 +27,7 @@ const SAIDA = ".dev-build/ext";
 const RECARREGADOR = `/* EAA+ (dev) — recarrega a extensão quando npm run dev avisa. */
 const VERSAO = "http://localhost:${PORTA}/versao";
 const PAGINAS = [
-  "https://batistas.brightspace.com/d2l/home*",
+  "https://batistas.brightspace.com/d2l/*",
   "https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/*"
 ];
 let atual = null;

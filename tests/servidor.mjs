@@ -24,8 +24,11 @@ createServer(async (req, res) => {
       res.writeHead(r.status, { "content-type": "text/html; charset=utf-8" });
       return res.end(r.html);
     }
-    res.writeHead(r ? r.status : 404, { "content-type": "application/json; charset=utf-8" });
-    return res.end(JSON.stringify(r ? r.corpo : { title: "Not Found" }));
+    /* /d2l/lms/ fora do mapa pode ser uma página de disciplina da réplica */
+    if (r || rota.startsWith("/d2l/api/")) {
+      res.writeHead(r ? r.status : 404, { "content-type": "application/json; charset=utf-8" });
+      return res.end(JSON.stringify(r ? r.corpo : { title: "Not Found" }));
+    }
   }
 
   let caminho = normalize(rota).replace(/^(\.\.[/\\])+/, "");

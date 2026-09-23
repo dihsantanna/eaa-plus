@@ -1,10 +1,10 @@
 # EAA+ — Melhorias para alunos
 ### Guia de publicação na Chrome Web Store · versão 1.1.0
 
-> **Atualização 1.1.0 (AVA).** Esta versão passa a rodar também na página
-> inicial do AVA (`batistas.brightspace.com/d2l/home`) e **lê as notas e
-> entregas do aluno** pela API do Brightspace, com a sessão dele, só dentro
-> do navegador. Isso muda quatro coisas no painel — todas já refletidas nas
+> **Atualização 1.1.0 (AVA).** Esta versão passa a rodar também no AVA
+> (`batistas.brightspace.com/d2l/*`: página inicial e páginas de disciplina)
+> e **lê as notas e entregas do aluno** no próprio Brightspace, com a sessão
+> dele, só dentro do navegador. Isso muda quatro coisas no painel — todas já refletidas nas
 > seções 4 e 5 abaixo:
 >
 > 1. o propósito único precisa ser reescrito (5.1);
@@ -30,14 +30,16 @@
 | `src/core.js` | Núcleo: registra as melhorias e isola falhas entre elas |
 | `src/features/filtro-periodos.*` | Melhoria 1 — abas de filtro por período |
 | `src/features/proxima-aula.*` | Melhoria 2 — card da próxima aula |
-| `src/features/ava-progresso.js` | Melhoria 3 — progresso das avaliações nos cards do AVA |
+| `src/ava-dados.js` | Leitura das notas e entregas no AVA (único arquivo com acesso à rede) |
+| `src/features/ava-progresso.*` | Melhoria 3 — progresso nos cards da página inicial do AVA |
+| `src/features/ava-disciplina.*` | Melhoria 4 — barra de progresso nas páginas de cada disciplina |
 | `icons/16, 48, 128` | Ícones (o de 128 já com o padding de 16px exigido pela loja) |
 
 **A extensão roda em duas páginas, cada uma com seu próprio bloco:**
 
 ```
 https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/*
-https://batistas.brightspace.com/d2l/home      (e /d2l/home?*)
+https://batistas.brightspace.com/d2l/*         (página inicial + páginas de disciplina)
 ```
 
 Em qualquer outra página ela não carrega, não observa nada e não existe. Escopo estreito assim é o maior acelerador de revisão que existe — mas atenção: mesmo sem a chave `permissions`, o Google trata esse `matches` como permissão de host e **exige justificativa** (seção 5.2).
@@ -92,8 +94,8 @@ vínculo com a Escola de Adoração e Arte nem com a Faculdade Batista
 
 O QUE ELA FAZ
 
-A extensão melhora duas páginas que o aluno usa todo dia: a de Aulas
-Síncronas e a página inicial do AVA (Brightspace).
+A extensão melhora as páginas que o aluno usa todo dia: a de Aulas
+Síncronas e o AVA (Brightspace).
 
 NA PÁGINA DE AULAS SÍNCRONAS
 
@@ -131,6 +133,12 @@ NO AVA (BRIGHTSPACE)
      para chegar a 6,0; depois da Av2, se aprovou ou vai para a Av3
      (regra do Manual do Aluno EaD)
    • Tudo sem precisar entrar em cada disciplina
+
+4. Barra da disciplina
+   • Em qualquer página de uma disciplina (conteúdo, atividades,
+     notas...), a mesma barra aparece na faixa de navegação dela
+   • Um clique abre a lista das atividades de cada fechamento, com o
+     estado de cada uma e o link direto para ela
 
 OBSERVAÇÃO
 Extensões do Chrome não funcionam no celular. Esta extensão só tem
@@ -199,16 +207,18 @@ A extensão atua em apenas duas páginas da instituição:
    Lê o calendário de aulas já exibido e insere, no HTML da própria
    página, abas de filtro por período e um card com a próxima aula.
 
-2. https://batistas.brightspace.com/d2l/home (página inicial do AVA)
-   Em cada card de disciplina, insere uma barra de progresso das
-   avaliações e, acima dos cards, um resumo do próximo prazo. Para
+2. https://batistas.brightspace.com/d2l/* (AVA da instituição)
+   Na página inicial, insere em cada card de disciplina uma barra de
+   progresso das avaliações e, acima dos cards, um resumo do próximo
+   prazo. Nas páginas de uma disciplina, mostra a mesma barra na faixa
+   de navegação da disciplina, com a lista das atividades. Para
    isso consulta, com a sessão do próprio aluno e apenas por leitura
    (GET), a API e páginas do Brightspace no mesmo domínio: boletim,
    tarefas, questionários, conclusão de conteúdo e a lista de
    questionários da disciplina. Os dados ficam na memória da aba e
    não são enviados a nenhum outro lugar.
 
-Os padrões de correspondência estão restritos a essas duas páginas. A
+Os padrões de correspondência estão restritos a esses dois sites. A
 extensão não roda em nenhum outro site, não tem servidor próprio e não
 transmite dados do usuário para fora do navegador.
 ```

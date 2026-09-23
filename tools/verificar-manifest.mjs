@@ -22,9 +22,10 @@ if (m.permissions && m.permissions.length)
 if (m.host_permissions && m.host_permissions.length)
   erros.push(`"host_permissions" não deveria existir: ${JSON.stringify(m.host_permissions)}`);
 
-/* Cada site tem o seu bloco. O do AVA fica preso à página inicial. */
+/* Cada site tem o seu bloco. O do AVA cobre as páginas /d2l/ do Brightspace da
+   escola (página inicial + todas as páginas de disciplina) e nada além. */
 const ESCOLA = "https://escoladeadoracaoearte.com.br/";
-const AVA = ["https://batistas.brightspace.com/d2l/home", "https://batistas.brightspace.com/d2l/home?*"];
+const AVA = ["https://batistas.brightspace.com/d2l/*"];
 const doAva = (p) => AVA.includes(p);
 
 const arquivosDoAva = new Set();
@@ -49,8 +50,14 @@ for (const cs of m.content_scripts || []) {
   }
 }
 
-/* ---------- código: sintaxe, zero código remoto, fetch só na API do AVA ---------- */
-const js = ["src/core.js", ...readdirSync("src/features").filter((f) => f.endsWith(".js")).map((f) => `src/features/${f}`)];
+/* ---------- código: sintaxe, zero código remoto, fetch só no AVA ---------- */
+const js = readdirSync("src", { recursive: true })
+  .map((f) => "src/" + String(f).replace(/\\/g, "/"))
+  .filter((f) => f.endsWith(".js"))
+  .sort();
+for (const f of js)
+  if (!arquivosDoAva.has(f) && !arquivosDaEscola.has(f))
+    erros.push(`${f} existe em src/ mas não está em nenhum bloco do manifest`);
 
 for (const f of js) {
   try {
