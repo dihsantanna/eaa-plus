@@ -4,41 +4,16 @@
  * Rodar:  npm test
  */
 
-import { test as base, expect, chromium } from "@playwright/test";
-import { resolve } from "node:path";
+import { test as base, expect } from "./navegador.mjs";
 
-const EXT = resolve(".test-build/ext");
-
-/* Um navegador com a extensão carregada, compartilhado pela suíte. */
+/* Nas páginas da escola, esperar a barra de abas antes de cada teste. */
 const test = base.extend({
-  contexto: [
-    async ({}, use) => {
-      const ctx = await chromium.launchPersistentContext("", {
-        headless: false,
-        args: [
-          "--headless=new",
-          `--disable-extensions-except=${EXT}`,
-          `--load-extension=${EXT}`,
-        ],
-        timezoneId: "America/Sao_Paulo",
-        viewport: { width: 1100, height: 750 },
-      });
-      await use(ctx);
-      await ctx.close();
-    },
-    { scope: "worker" },
-  ],
-  page: async ({ contexto, baseURL }, use) => {
-    const page = await contexto.newPage();
-    const erros = [];
-    page.on("pageerror", (e) => erros.push(String(e)));
+  page: async ({ page, baseURL }, use) => {
     page.abrir = async (nome) => {
       await page.goto(`${baseURL}/${nome}.html`);
       await page.waitForSelector("#eaa-period-filter", { timeout: 8000 });
     };
     await use(page);
-    expect(erros, "erros de JavaScript na página").toEqual([]);
-    await page.close();
   },
 });
 

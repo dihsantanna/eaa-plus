@@ -1,15 +1,23 @@
 # EAA+ — Melhorias para alunos
 
-Extensão do Chrome que adiciona à página de
-[Aulas Síncronas](https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/)
-da Escola de Adoração e Arte:
+Extensão do Chrome para alunos da Escola de Adoração e Arte.
+
+Na página de
+[Aulas Síncronas](https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/):
 
 - **Filtro por período** — abas Todos / 1º a 4º, fixas no topo ao rolar.
 - **Próxima aula** — com link, contagem regressiva, "AO VIVO AGORA" e setas
   para percorrer as seguintes (inclusive aulas no mesmo horário).
 
+Na página inicial do [AVA](https://batistas.brightspace.com/d2l/home):
+
+- **Progresso nas disciplinas** — em cada card, a Av1 corrigida, o que aguarda
+  correção, o que ficou para trás, o próximo prazo e quanto falta na Av2.
+
 Projeto independente de aluno, sem vínculo oficial com a EAA ou a FABAT.
-Não coleta dados, não faz requisições de rede, roda só nessa página.
+Roda só nessas duas páginas. Nada sai do navegador: no AVA, lê as notas do
+próprio aluno pela API do Brightspace (só leitura, com a sessão dele) e não
+guarda nada. Detalhes em [`POLITICA-DE-PRIVACIDADE.md`](POLITICA-DE-PRIVACIDADE.md).
 
 ## Desenvolvimento
 

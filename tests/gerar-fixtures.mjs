@@ -2,6 +2,7 @@
  *
  * 1. Copia a extensão para .test-build/ext trocando o `matches` para localhost.
  * 2. Gera páginas-réplica da página real em .test-build/site.
+ * 3. Gera a réplica do AVA e as respostas da API (ver fixtures-ava.mjs).
  *
  * Por que gerar na hora: o card de próxima aula depende do relógio. Content
  * scripts rodam num "mundo isolado" do Chrome, então NÃO dá para falsificar o
@@ -14,6 +15,7 @@
  */
 
 import { cpSync, mkdirSync, rmSync, readFileSync, writeFileSync } from "node:fs";
+import { gerarAva } from "./fixtures-ava.mjs";
 
 const RAIZ = ".test-build";
 
@@ -26,8 +28,20 @@ export default function gerar() {
   cpSync("src", `${RAIZ}/ext/src`, { recursive: true });
   cpSync("icons", `${RAIZ}/ext/icons`, { recursive: true });
   const m = JSON.parse(readFileSync("manifest.json", "utf8"));
-  m.content_scripts[0].matches = ["http://localhost/*", "http://127.0.0.1/*"];
+  /* Cada bloco continua só na sua página: a escola em tudo menos /d2l/,
+     o AVA só na réplica da página inicial. */
+  for (const cs of m.content_scripts) {
+    if (cs.matches.some((p) => p.includes("brightspace.com"))) {
+      cs.matches = ["http://localhost/d2l/*", "http://127.0.0.1/d2l/*"];
+    } else {
+      cs.matches = ["http://localhost/*", "http://127.0.0.1/*"];
+      cs.exclude_matches = ["http://localhost/d2l/*", "http://127.0.0.1/d2l/*"];
+    }
+  }
   writeFileSync(`${RAIZ}/ext/manifest.json`, JSON.stringify(m, null, 2));
+
+  /* ---------- réplica do AVA (Brightspace) ---------- */
+  gerarAva(RAIZ);
 
   /* ---------- datas no fuso de Brasília ---------- */
   const fmt = new Intl.DateTimeFormat("en-US", {
