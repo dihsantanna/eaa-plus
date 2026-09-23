@@ -14,7 +14,10 @@ import { minify } from "terser";
 execSync("npm run check", { stdio: "inherit" });
 
 const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
-const cs = manifest.content_scripts[0];
+/* Só o bloco da escola vai para o Elementor — o do AVA não roda naquela página. */
+const cs = manifest.content_scripts.find((b) =>
+  b.matches.every((p) => p.startsWith("https://escoladeadoracaoearte.com.br/"))
+);
 
 rmSync("dist", { recursive: true, force: true });
 mkdirSync("dist");

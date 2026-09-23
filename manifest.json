@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "EAA+ — Melhorias para alunos",
-  "version": "1.0.0",
-  "description": "Melhorias de usabilidade nas páginas da Escola de Adoração e Arte (FABAT): filtro por período e destaque da próxima aula.",
+  "version": "1.1.0",
+  "description": "Melhorias para alunos da EAA/FABAT: filtro e próxima aula nas aulas síncronas e progresso das avaliações no AVA.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -23,6 +23,20 @@
         "src/features/proxima-aula.css"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://batistas.brightspace.com/d2l/home",
+        "https://batistas.brightspace.com/d2l/home?*"
+      ],
+      "js": [
+        "src/core.js",
+        "src/features/ava-progresso.js"
+      ],
+      "run_at": "document_idle",
+      "css": [
+        "src/features/ava-progresso.css"
+      ]
     }
   ]
 }

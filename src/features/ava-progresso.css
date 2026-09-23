@@ -1,0 +1,180 @@
+/* EAA+ · resumo do próximo prazo, acima dos cards de "Minhas Disciplinas".
+ * Fica no DOM normal da página (fora do shadow DOM), por isso é CSS do
+ * manifest. Os blocos DENTRO dos cards têm o CSS no próprio JS.
+ *
+ * Grade de 4px e simetria: toda linha é "esquerda | direita" com as mesmas
+ * margens; fichas com a mesma altura e o mesmo raio. Cores da D2L. */
+
+#eaa-resumo {
+  box-sizing: border-box;
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 16px;
+  border: 1px solid #cdd5dc;
+  border-radius: 6px;
+  background: #fff;
+  font: 400 14px/20px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color: #494c4e;
+}
+
+#eaa-resumo * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+#eaa-resumo .eaa-r-par {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+
+#eaa-resumo .eaa-r-par > :last-child {
+  flex: none;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+#eaa-resumo .eaa-r-titulo {
+  font-size: 16px;
+  font-weight: 700;
+  color: #202122;
+}
+
+#eaa-resumo .eaa-r-quando {
+  font-weight: 700;
+  color: #202122;
+}
+
+#eaa-resumo .eaa-r-quando.urgente {
+  color: #cd2026;
+}
+
+#eaa-resumo .eaa-seg {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+}
+
+#eaa-resumo .eaa-seg i {
+  flex: 1 1 0;
+  border-radius: 4px;
+  background: #e3e9f1;
+}
+
+#eaa-resumo .eaa-seg .corrigida { background: #46a661; }
+#eaa-resumo .eaa-seg .aguardando { background: #ffba59; }
+#eaa-resumo .eaa-seg .iniciada { background: #e87511; }
+#eaa-resumo .eaa-seg .perdida { background: #cd2026; }
+
+#eaa-resumo .eaa-r-leg {
+  font-size: 13px;
+}
+
+#eaa-resumo .eaa-r-tag {
+  font-weight: 700;
+  color: #202122;
+}
+
+#eaa-resumo .eaa-r-tag.iniciada { color: #b34f00; }
+#eaa-resumo .eaa-r-tag.corrigida { color: #2c7a43; }
+
+#eaa-resumo .eaa-r-fichas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+#eaa-resumo .eaa-r-ficha {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 4px 0 12px;
+  border: 1px solid #cdd5dc;
+  border-radius: 14px;
+  background: #f9fbff;
+  color: #202122;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+#eaa-resumo .eaa-r-ficha:hover,
+#eaa-resumo .eaa-r-ficha:focus-visible {
+  border-color: #006fbf;
+  color: #006fbf;
+}
+
+#eaa-resumo .eaa-r-ficha:focus-visible {
+  outline: 2px solid #006fbf;
+  outline-offset: 2px;
+}
+
+#eaa-resumo .eaa-r-fnome {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#eaa-resumo .eaa-r-fnum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #e3e9f1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Legenda: cinco itens de uma borda à outra, com espaços iguais entre eles —
+   alinhada às linhas "esquerda | direita" do resto do resumo. */
+#eaa-resumo .eaa-r-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid #e3e9f1;
+  list-style: none;
+  font-size: 12px;
+  line-height: 16px;
+  color: #6e7477;
+}
+
+#eaa-resumo .eaa-r-legenda li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+#eaa-resumo .eaa-r-legenda i {
+  flex: none;
+  width: 16px;
+  height: 8px;
+  border-radius: 4px;
+  background: #e3e9f1;
+}
+
+#eaa-resumo .eaa-r-legenda .corrigida { background: #46a661; }
+#eaa-resumo .eaa-r-legenda .aguardando { background: #ffba59; }
+#eaa-resumo .eaa-r-legenda .iniciada { background: #e87511; }
+#eaa-resumo .eaa-r-legenda .perdida { background: #cd2026; }
+
+#eaa-resumo .eaa-r-ficha.iniciada {
+  border-color: #e87511;
+}
+
+#eaa-resumo .eaa-r-ficha.iniciada .eaa-r-fnum {
+  background: #e87511;
+  color: #fff;
+}

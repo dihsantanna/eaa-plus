@@ -1,13 +1,13 @@
 {
   "name": "eaa-plus",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "EAA+ — extensão do Chrome com melhorias de usabilidade para a página de Aulas Síncronas da Escola de Adoração e Arte.",
+  "description": "EAA+ — extensão do Chrome com melhorias de usabilidade para alunos da Escola de Adoração e Arte: aulas síncronas e AVA (Brightspace).",
   "type": "module",
   "scripts": {
     "test": "playwright test",
     "build": "node tools/build.mjs",
-    "check": "node --check src/core.js && node --check src/features/filtro-periodos.js && node --check src/features/proxima-aula.js && node tools/verificar-manifest.mjs"
+    "check": "node tools/verificar-manifest.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

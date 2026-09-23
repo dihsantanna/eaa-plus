@@ -1,11 +1,28 @@
 # EAA+ — Melhorias para alunos
-### Guia de publicação na Chrome Web Store · versão 1.0.0
+### Guia de publicação na Chrome Web Store · versão 1.1.0
+
+> **Atualização 1.1.0 (AVA).** Esta versão passa a rodar também na página
+> inicial do AVA (`batistas.brightspace.com/d2l/home`) e **lê as notas e
+> entregas do aluno** pela API do Brightspace, com a sessão dele, só dentro
+> do navegador. Isso muda quatro coisas no painel — todas já refletidas nas
+> seções 4 e 5 abaixo:
+>
+> 1. o propósito único precisa ser reescrito (5.1);
+> 2. a justificativa de host cobre dois sites (5.2);
+> 3. a aba de dados deixa de ser "não coleta nada": marcar **Conteúdo do site** (5.4);
+> 4. passa a ser **obrigatório** ter uma URL de política de privacidade (5.5).
+>
+> Fonte do item 3 e 4: FAQ do *User Data Policy*, perguntas 3 e 6 — dado
+> processado só no aparelho também precisa ser declarado.
+>
+> Como amplia o `matches`, a atualização volta para a fila de revisão, e o
+> Chrome pede ao usuário que aceite o novo acesso antes de reativar a extensão.
 
 ---
 
 ## 1. O que está no pacote
 
-`eaa-plus-v1.0.0.zip` — gerado por `npm run build`, pronto para upload:
+`eaa-plus-v1.1.0.zip` — gerado por `npm run build`, pronto para upload:
 
 | Arquivo | Função |
 |---|---|
@@ -13,12 +30,14 @@
 | `src/core.js` | Núcleo: registra as melhorias e isola falhas entre elas |
 | `src/features/filtro-periodos.*` | Melhoria 1 — abas de filtro por período |
 | `src/features/proxima-aula.*` | Melhoria 2 — card da próxima aula |
+| `src/features/ava-progresso.js` | Melhoria 3 — progresso das avaliações nos cards do AVA |
 | `icons/16, 48, 128` | Ícones (o de 128 já com o padding de 16px exigido pela loja) |
 
-**A extensão roda hoje em uma única URL:**
+**A extensão roda em duas páginas, cada uma com seu próprio bloco:**
 
 ```
 https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/*
+https://batistas.brightspace.com/d2l/home      (e /d2l/home?*)
 ```
 
 Em qualquer outra página ela não carrega, não observa nada e não existe. Escopo estreito assim é o maior acelerador de revisão que existe — mas atenção: mesmo sem a chave `permissions`, o Google trata esse `matches` como permissão de host e **exige justificativa** (seção 5.2).
@@ -34,6 +53,7 @@ Em qualquer outra página ela não carrega, não observa nada e não existe. Esc
 5. Abra a página de aulas síncronas.
 
 Você deve ver as abas de período e, logo abaixo, o card da próxima aula.
+No AVA (logado), cada card de "Minhas Disciplinas" ganha a barra de progresso.
 
 Teste local **não consome** slot do limite de extensões da conta.
 
@@ -58,7 +78,7 @@ EAA+ — Melhorias para alunos
 **Descrição curta / Summary**
 
 ```
-Melhorias de usabilidade nas páginas da Escola de Adoração e Arte (FABAT): filtro por período e destaque da próxima aula.
+Melhorias para alunos da EAA/FABAT: filtro e próxima aula nas aulas síncronas e progresso das avaliações no AVA.
 ```
 
 **Descrição detalhada**
@@ -72,8 +92,10 @@ vínculo com a Escola de Adoração e Arte nem com a Faculdade Batista
 
 O QUE ELA FAZ
 
-A página de Aulas Síncronas lista todas as disciplinas do semestre de
-uma vez só. A extensão acrescenta duas coisas a essa página:
+A extensão melhora duas páginas que o aluno usa todo dia: a de Aulas
+Síncronas e a página inicial do AVA (Brightspace).
+
+NA PÁGINA DE AULAS SÍNCRONAS
 
 1. Filtro por período
    • Abas: Todos, 1º, 2º, 3º e 4º Período
@@ -96,14 +118,30 @@ uma vez só. A extensão acrescenta duas coisas a essa página:
 
 Ambas funcionam com navegação por teclado e marcação de acessibilidade.
 
+NO AVA (BRIGHTSPACE)
+
+3. Progresso nas disciplinas
+   • Em cada card de "Minhas Disciplinas", uma barra com a Av1: quanto
+     já foi corrigido, o que está aguardando correção e o que ficou
+     para trás
+   • Contagem de atividades corrigidas, aguardando, perdidas e a fazer
+   • O próximo prazo de cada disciplina, destacado quando é hoje ou
+     amanhã
+   • Quando todas as atividades estão resolvidas, quanto falta na Av2
+     para chegar a 6,0; depois da Av2, se aprovou ou vai para a Av3
+     (regra do Manual do Aluno EaD)
+   • Tudo sem precisar entrar em cada disciplina
+
 OBSERVAÇÃO
 Extensões do Chrome não funcionam no celular. Esta extensão só tem
 efeito no computador.
 
 PRIVACIDADE
-Não coleta, não armazena e não envia nenhum dado. Não faz nenhuma
-requisição de rede. Todo o processamento acontece na sua própria
-página, no seu navegador.
+Nada sai do seu navegador. Na página de aulas, a extensão só lê o que
+já está na tela. No AVA, ela consulta as suas notas e entregas no
+próprio Brightspace, com a sua sessão, apenas para montar a barra de
+progresso — os dados ficam na memória da aba e somem ao fechá-la. Não
+há servidor da extensão, não há coleta, não há armazenamento.
 ```
 
 **Categoria:** Educação
@@ -135,10 +173,16 @@ Esta aba **bloqueia o envio** enquanto os quatro itens abaixo não estiverem pre
 ### 5.1 Descrição do único propósito
 
 ```
-Melhorar a usabilidade da página de aulas síncronas da Escola de
-Adoração e Arte para os alunos, com um filtro por período letivo e o
-destaque da próxima aula agendada.
+Ajudar o aluno da Escola de Adoração e Arte (FABAT) a acompanhar a
+própria vida acadêmica nas páginas da instituição: filtrar as aulas
+síncronas por período e destacar a próxima aula, e mostrar no AVA o
+progresso e os prazos das avaliações de cada disciplina.
 ```
+
+> Texto anterior (até a v1.0.0), só para referência: *"Melhorar a
+> usabilidade da página de aulas síncronas da Escola de Adoração e Arte
+> para os alunos, com um filtro por período letivo e o destaque da próxima
+> aula agendada."*
 
 > A política do Google exige propósito **único e estreito**. As duas melhorias
 > passam porque servem ao mesmo objetivo — achar sua aula mais rápido naquela
@@ -149,29 +193,40 @@ destaque da próxima aula agendada.
 ### 5.2 Justificativa do uso da permissão do host
 
 ```
-A extensão atua exclusivamente na página pública de aulas síncronas da
-Escola de Adoração e Arte
-(https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/).
+A extensão atua em apenas duas páginas da instituição:
 
-O acesso a esse host é necessário porque toda a funcionalidade consiste
-em ler o calendário de aulas já exibido nessa página e inserir, no
-próprio HTML dela, uma barra de abas para filtrar as disciplinas por
-período letivo e um card destacando a próxima aula agendada.
+1. https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/
+   Lê o calendário de aulas já exibido e insere, no HTML da própria
+   página, abas de filtro por período e um card com a próxima aula.
 
-O padrão de correspondência está restrito a essa única URL. A extensão
-não é executada em nenhum outro site, não lê nem transmite dados do
-usuário e não faz requisições de rede.
+2. https://batistas.brightspace.com/d2l/home (página inicial do AVA)
+   Em cada card de disciplina, insere uma barra de progresso das
+   avaliações e, acima dos cards, um resumo do próximo prazo. Para
+   isso consulta, com a sessão do próprio aluno e apenas por leitura
+   (GET), a API e páginas do Brightspace no mesmo domínio: boletim,
+   tarefas, questionários, conclusão de conteúdo e a lista de
+   questionários da disciplina. Os dados ficam na memória da aba e
+   não são enviados a nenhum outro lugar.
+
+Os padrões de correspondência estão restritos a essas duas páginas. A
+extensão não roda em nenhum outro site, não tem servidor próprio e não
+transmite dados do usuário para fora do navegador.
 ```
 
 ### 5.3 Uso de código remoto
 
 Não é um campo de texto: é uma escolha. Marque **"Não estou usando código remoto"**.
 
-É a resposta correta — todo o JavaScript e CSS está dentro do `.zip`. A extensão não carrega script externo, não usa `eval`, não busca configuração em servidor nenhum.
+É a resposta correta — todo o JavaScript e CSS está dentro do `.zip`. A extensão não carrega script externo, não usa `eval`, não busca configuração em servidor nenhum. As chamadas à API do Brightspace trazem **dados** (JSON), nunca código — isso não é código remoto.
 
 ### 5.4 Certificação de uso de dados
 
-1. Na pergunta sobre coleta, declare que **não coleta nenhum tipo de dado do usuário** (não marque nenhuma categoria).
+1. Na pergunta sobre coleta, marque **"Conteúdo do site"** (a extensão lê
+   notas, entregas e prazos exibidos/servidos pelo AVA). Não marque as
+   outras: ela não lê nome, matrícula, senha, mensagens, histórico nem
+   localização. Se o painel pedir, descreva: *"Notas e prazos das
+   avaliações do próprio aluno, lidos do AVA da instituição e usados só
+   para exibir o progresso na tela; nada é enviado para fora do navegador."*
 2. Marque as **três caixas de certificação** no fim da aba:
    - não vende dados a terceiros;
    - não usa nem transfere dados para fins alheios ao propósito único;
@@ -179,7 +234,12 @@ Não é um campo de texto: é uma escolha. Marque **"Não estou usando código r
 
 As três são verdadeiras neste caso.
 
-Não é necessária política de privacidade, porque nada é coletado.
+### 5.5 Política de privacidade (obrigatória a partir da 1.1.0)
+
+O painel pede uma **URL pública**. O texto está pronto em
+`POLITICA-DE-PRIVACIDADE.md`. Falta decidir **onde publicar**: qualquer
+página pública e estável serve (Google Sites, GitHub Pages, Notion
+público...). Cole a URL no campo *Privacy policy* da aba.
 
 > **Depois de preencher, clique em "Salvar rascunho" antes de tentar enviar.**
 > O botão "Enviar para análise" só libera quando os quatro itens estão salvos.
@@ -206,7 +266,7 @@ Países: pode deixar só o Brasil.
 
 Prazo: a documentação do Google diz que a maioria é revisada **em poucos dias, podendo chegar a algumas semanas**. A própria página de revisão registrou (abril/2026) um volume alto de submissões alongando os prazos. Passou de três semanas sem resposta, aí sim vale abrir suporte.
 
-A seu favor na fila: extensão nova e pequena, **zero permissões**, código não ofuscado, host único.
+A seu favor na fila: extensão pequena, **zero permissões**, código não ofuscado, duas páginas bem delimitadas, só leitura.
 
 ---
 
@@ -220,7 +280,7 @@ Com a extensão publicada e funcionando, você tem uma demonstração concreta p
 
 ---
 
-## 9. Como adicionar a melhoria #3
+## 9. Como adicionar uma melhoria nova
 
 Cada melhoria é um arquivo isolado que se registra no núcleo. Se uma quebrar, as outras continuam funcionando.
 
@@ -249,7 +309,7 @@ Utilitário disponível: `EAAPlus.periodos("1º ao 4º período")` devolve `[1,2
 
 **b) Registre no `manifest.json`,** acrescentando aos arrays `js` e `css` do bloco existente (mesma página) ou criando um novo bloco em `content_scripts` com seu próprio `matches` (outra página).
 
-**c) Suba a versão** (`1.0.0` → `1.1.0`) e reenvie em **Package** → *Upload new package*.
+**c) Suba a versão** (ex.: `1.1.0` → `1.2.0`) e reenvie em **Package** → *Upload new package*.
 
 Ampliar o `matches` para uma página nova **muda as permissões do item**, então a atualização volta para a fila de revisão. É normal.
 
@@ -263,6 +323,8 @@ Ampliar o `matches` para uma página nova **muda as permissões do item**, entã
 
 **O menu do tema.** Para a barra de abas não ficar escondida atrás do menu do site, o código mede a borda inferior do `#masthead` (tema Eduma) durante a rolagem. Se o tema for trocado, a barra continua funcionando, só passa a grudar no topo absoluto da janela.
 
+**O AVA.** O Brightspace é atualizado pela D2L sem aviso. A melhoria depende do id `enrollment-card-{número}` nos cards e das rotas `/d2l/api/le/1.99/...`. Se algo mudar, os cards ficam como eram (sem erro na tela) e o Console mostra `[EAA+] progresso da disciplina ...`.
+
 Para diagnosticar: `F12` → Console. Se uma melhoria quebrar, o núcleo registra `[EAA+] melhoria "id" falhou:` e segue rodando as outras.
 
 ---
@@ -273,4 +335,5 @@ Para diagnosticar: `F12` → Console. Se uma melhoria quebrar, o núcleo registr
 - [Publish in the Chrome Web Store](https://developer.chrome.com/docs/webstore/publish)
 - [Image guidelines](https://developer.chrome.com/docs/webstore/images)
 - [Review process](https://developer.chrome.com/docs/webstore/review-process)
+- [User Data Policy — FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq) (perguntas 3 e 6)
 - Extensões no Android: [Does Chrome for Android Support Extensions?](https://www.quetta.net/blog/does-chrome-android-support-extensions) · [Chrome for Android may get extension support](https://sammyguru.com/google-chrome-for-android-may-get-extension-support-in-the-future/)
