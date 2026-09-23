@@ -8,7 +8,7 @@ import { resolve } from "node:path";
 const EXT = resolve(".test-build/ext");
 
 export const test = base.extend({
-  contexto: [
+  extensionContext: [
     async ({}, use) => {
       const ctx = await chromium.launchPersistentContext("", {
         headless: false,
@@ -26,20 +26,20 @@ export const test = base.extend({
     { scope: "worker" },
   ],
   /* Service worker da extensão: dá acesso ao chrome.storage.session. */
-  fundo: async ({ contexto }, use) => {
-    let sw = contexto.serviceWorkers().find((s) => s.url().startsWith("chrome-extension://"));
-    if (!sw) sw = await contexto.waitForEvent("serviceworker");
+  background: async ({ extensionContext }, use) => {
+    let sw = extensionContext.serviceWorkers().find((s) => s.url().startsWith("chrome-extension://"));
+    if (!sw) sw = await extensionContext.waitForEvent("serviceworker");
     await use(sw);
   },
-  page: async ({ contexto, fundo }, use) => {
+  page: async ({ extensionContext, background }, use) => {
     /* O cache entre páginas vive enquanto o navegador vive: cada teste começa
        sem nada guardado pelo anterior. */
-    await fundo.evaluate(() => chrome.storage.session.clear());
-    const page = await contexto.newPage();
-    const erros = [];
-    page.on("pageerror", (e) => erros.push(String(e)));
+    await background.evaluate(() => chrome.storage.session.clear());
+    const page = await extensionContext.newPage();
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(String(e)));
     await use(page);
-    expect(erros, "erros de JavaScript na página").toEqual([]);
+    expect(errors, "erros de JavaScript na página").toEqual([]);
     await page.close();
   },
 });

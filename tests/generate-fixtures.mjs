@@ -2,7 +2,7 @@
  *
  * 1. Copia a extensão para .test-build/ext trocando o `matches` para localhost.
  * 2. Gera páginas-réplica da página real em .test-build/site.
- * 3. Gera a réplica do AVA e as respostas da API (ver fixtures-ava.mjs).
+ * 3. Gera a réplica do AVA e as respostas da API (ver ava-fixtures.mjs).
  *
  * Por que gerar na hora: o card de próxima aula depende do relógio. Content
  * scripts rodam num "mundo isolado" do Chrome, então NÃO dá para falsificar o
@@ -15,18 +15,18 @@
  */
 
 import { cpSync, mkdirSync, rmSync, readFileSync, writeFileSync } from "node:fs";
-import { gerarAva } from "./fixtures-ava.mjs";
+import { generateAva } from "./ava-fixtures.mjs";
 
-const RAIZ = ".test-build";
+const ROOT = ".test-build";
 
-export default function gerar() {
-  rmSync(RAIZ, { recursive: true, force: true });
-  mkdirSync(`${RAIZ}/site`, { recursive: true });
+export default function generate() {
+  rmSync(ROOT, { recursive: true, force: true });
+  mkdirSync(`${ROOT}/site`, { recursive: true });
 
   /* ---------- extensão apontando para localhost ---------- */
-  mkdirSync(`${RAIZ}/ext`, { recursive: true });
-  cpSync("src", `${RAIZ}/ext/src`, { recursive: true });
-  cpSync("icons", `${RAIZ}/ext/icons`, { recursive: true });
+  mkdirSync(`${ROOT}/ext`, { recursive: true });
+  cpSync("src", `${ROOT}/ext/src`, { recursive: true });
+  cpSync("icons", `${ROOT}/ext/icons`, { recursive: true });
   const m = JSON.parse(readFileSync("manifest.json", "utf8"));
   /* Cada bloco continua só na sua página: a escola em tudo menos /d2l/,
      o AVA só na réplica da página inicial. */
@@ -38,10 +38,10 @@ export default function gerar() {
       cs.exclude_matches = ["http://localhost/d2l/*", "http://127.0.0.1/d2l/*"];
     }
   }
-  writeFileSync(`${RAIZ}/ext/manifest.json`, JSON.stringify(m, null, 2));
+  writeFileSync(`${ROOT}/ext/manifest.json`, JSON.stringify(m, null, 2));
 
   /* ---------- réplica do AVA (Brightspace) ---------- */
-  gerarAva(RAIZ);
+  generateAva(ROOT);
 
   /* ---------- datas no fuso de Brasília ---------- */
   const fmt = new Intl.DateTimeFormat("en-US", {
@@ -53,11 +53,11 @@ export default function gerar() {
     hour: "2-digit",
     minute: "2-digit",
   });
-  const diaSemana = new Intl.DateTimeFormat("pt-BR", {
+  const dayName = new Intl.DateTimeFormat("pt-BR", {
     timeZone: "America/Sao_Paulo",
     weekday: "long",
   });
-  const parede = (d) => {
+  const wall = (d) => {
     const p = {};
     for (const x of fmt.formatToParts(d)) p[x.type] = x.value;
     if (p.hour === "24") p.hour = "00";
@@ -65,37 +65,37 @@ export default function gerar() {
   };
 
   /** Linha da tabela começando `min` minutos a partir de agora. */
-  const linha = (min, duracao = 60) => {
-    const ini = new Date(Date.now() + min * 60000);
-    const fim = new Date(ini.getTime() + duracao * 60000);
-    const a = parede(ini);
-    const b = parede(fim);
-    const dia = diaSemana.format(ini);
+  const row = (min, duration = 60) => {
+    const startAt = new Date(Date.now() + min * 60000);
+    const end = new Date(startAt.getTime() + duration * 60000);
+    const a = wall(startAt);
+    const b = wall(end);
+    const day = dayName.format(startAt);
     return [
       `${a.day}/${a.month}/${a.year}`,
-      dia.charAt(0).toUpperCase() + dia.slice(1),
+      day.charAt(0).toUpperCase() + day.slice(1),
       `${a.hour}:${a.minute} às ${b.hour}:${b.minute}`,
     ];
   };
 
   /* ---------- estrutura igual à da página real ---------- */
-  const card = (nome, prof, periodo, cor, linhas, comLink = true) => `
-<article class="card" style="--accent-color: ${cor};">
+  const card = (name, depth, period, color, rows, withLink = true) => `
+<article class="card" style="--accent-color: ${color};">
   <div class="card-head">
-    <div class="initial">${nome[0]}</div>
+    <div class="initial">${name[0]}</div>
     <div class="head-text">
-      <p class="discipline">${nome}</p>
-      <div class="meta"><span>${prof}</span><span class="period-tag">${periodo}</span><span>${linhas.length} aulas</span></div>
+      <p class="discipline">${name}</p>
+      <div class="meta"><span>${depth}</span><span class="period-tag">${period}</span><span>${rows.length} aulas</span></div>
     </div>
     <div class="head-actions">${
-      comLink
+      withLink
         ? '<a class="btn-link" href="https://meet.example.com/teste" target="_blank" rel="noopener noreferrer">Entrar na aula</a>'
         : '<span class="btn-link-off">Link a confirmar</span>'
     }</div>
   </div>
   <div class="card-body"><div class="card-body-inner"><table>
     <thead><tr><th>Data</th><th>Dia da semana</th><th>Horário</th></tr></thead>
-    <tbody>${linhas
+    <tbody>${rows
       .map((l) => `<tr><td>${l[0]}</td><td><span class="day-tag">${l[1]}</span></td><td>${l[2]}</td></tr>`)
       .join("")}</tbody>
   </table></div></div>
@@ -131,76 +131,76 @@ input[type="submit"],button{padding:11px 25px}
   <footer></footer>
 </div>`;
 
-  const pagina = (corpo) => `<!doctype html>
+  const page = (body) => `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><title>Réplica</title><style>${CSS}</style></head>
-<body>${corpo}</body></html>`;
+<body>${body}</body></html>`;
 
-  const escrever = (nome, html) => writeFileSync(`${RAIZ}/site/${nome}.html`, html);
+  const write = (name, html) => writeFileSync(`${ROOT}/site/${name}.html`, html);
 
   /* Todos os formatos de etiqueta de período que existem na página real. */
-  escrever(
-    "periodos",
-    pagina(wrap([
-      card("Canto Coral", "Prof. A", "1º ao 4º período", "#6E1F26", [linha(60 * 24)]),
-      card("Estudo Dirigido", "Prof. B", "4º período", "#223A5E", [linha(60 * 25)]),
-      card("Projetos Sociais", "Prof. C", "3º e 4º período", "#5B3A6E", [linha(60 * 26)]),
-      card("Tecnologia", "Prof. D", "1º, 2º e 3º períodos", "#285C58", [linha(60 * 27)]),
-      card("Flauta Doce", "Prof. E", "2º ao 4º período", "#B4892E", [linha(60 * 28)]),
-      card("Técnica Vocal I", "Prof. F", "1º período", "#5A6B2E", [linha(60 * 29)]),
+  write(
+    "periods",
+    page(wrap([
+      card("Canto Coral", "Prof. A", "1º ao 4º período", "#6E1F26", [row(60 * 24)]),
+      card("Estudo Dirigido", "Prof. B", "4º período", "#223A5E", [row(60 * 25)]),
+      card("Projetos Sociais", "Prof. C", "3º e 4º período", "#5B3A6E", [row(60 * 26)]),
+      card("Tecnologia", "Prof. D", "1º, 2º e 3º períodos", "#285C58", [row(60 * 27)]),
+      card("Flauta Doce", "Prof. E", "2º ao 4º período", "#B4892E", [row(60 * 28)]),
+      card("Técnica Vocal I", "Prof. F", "1º período", "#5A6B2E", [row(60 * 29)]),
       ...Array.from({ length: 20 }, (_, i) =>
-        card(`Disciplina ${i + 1}`, "Prof. X", "2º período", "#6E1F26", [linha(60 * (30 + i))])
+        card(`Disciplina ${i + 1}`, "Prof. X", "2º período", "#6E1F26", [row(60 * (30 + i))])
       ),
     ]))
   );
 
-  escrever(
-    "futuro",
-    pagina(wrap([
-      card("Orquestrando Saberes", "Profa. Joyce", "1º período", "#5A6B2E", [linha(55)]),
-      card("Estudo Dirigido", "Prof. Leandro", "4º período", "#223A5E", [linha(180)]),
-      card("Ensaio Canto Coral", "Profa. Rosângela", "1º ao 4º período", "#5B3A6E", [linha(300)], false),
+  write(
+    "future",
+    page(wrap([
+      card("Orquestrando Saberes", "Profa. Joyce", "1º período", "#5A6B2E", [row(55)]),
+      card("Estudo Dirigido", "Prof. Leandro", "4º período", "#223A5E", [row(180)]),
+      card("Ensaio Canto Coral", "Profa. Rosângela", "1º ao 4º período", "#5B3A6E", [row(300)], false),
     ]))
   );
 
-  escrever(
-    "ao-vivo",
-    pagina(wrap([
-      card("Louvor e Adoração", "Profa. Mariane", "1º período", "#B4892E", [linha(-12)]),
-      card("Estudo Dirigido", "Prof. Leandro", "4º período", "#223A5E", [linha(180)]),
+  write(
+    "live",
+    page(wrap([
+      card("Louvor e Adoração", "Profa. Mariane", "1º período", "#B4892E", [row(-12)]),
+      card("Estudo Dirigido", "Prof. Leandro", "4º período", "#223A5E", [row(180)]),
     ]))
   );
 
-  escrever(
-    "sem-link",
-    pagina(wrap([card("Ensaio Canto Coral", "Profa. Rosângela", "1º ao 4º período", "#5B3A6E", [linha(40)], false)]))
+  write(
+    "no-link",
+    page(wrap([card("Ensaio Canto Coral", "Profa. Rosângela", "1º ao 4º período", "#5B3A6E", [row(40)], false)]))
   );
 
-  escrever(
-    "passado",
-    pagina(wrap([card("Canto Coral", "Prof. Samuel", "1º ao 4º período", "#6E1F26", [linha(-60 * 24 * 5)])]))
+  write(
+    "past",
+    page(wrap([card("Canto Coral", "Prof. Samuel", "1º ao 4º período", "#6E1F26", [row(-60 * 24 * 5)])]))
   );
 
   /* Duas aulas começando no MESMO minuto: o caso real que motivou as setas.
      A linha é calculada uma vez só para as duas ficarem idênticas mesmo se o
      relógio virar o minuto entre uma chamada e outra. */
-  const mesmoHorario = linha(40);
-  escrever(
-    "choque",
-    pagina(wrap([
-      card("Projetos Sociais", "Prof. A", "3º e 4º período", "#5B3A6E", [mesmoHorario]),
-      card("Tecnologia aplicada à música", "Profa. B", "1º, 2º e 3º períodos", "#223A5E", [mesmoHorario]),
-      card("História da Música I", "Prof. C", "3º período", "#285C58", [linha(180)]),
+  const sameTime = row(40);
+  write(
+    "clash",
+    page(wrap([
+      card("Projetos Sociais", "Prof. A", "3º e 4º período", "#5B3A6E", [sameTime]),
+      card("Tecnologia aplicada à música", "Profa. B", "1º, 2º e 3º períodos", "#223A5E", [sameTime]),
+      card("História da Música I", "Prof. C", "3º período", "#285C58", [row(180)]),
     ]))
   );
 
   /* Widget do Elementor que renderiza depois do document_idle. */
-  const conteudoTardio = JSON.stringify(
-    wrap([card("Canto Coral", "Prof. A", "1º ao 4º período", "#6E1F26", [linha(90)])])
+  const lateContent = JSON.stringify(
+    wrap([card("Canto Coral", "Prof. A", "1º ao 4º período", "#6E1F26", [row(90)])])
   );
-  escrever(
-    "tardio",
-    pagina(
-      `<div id="host"></div><script>setTimeout(function(){document.getElementById("host").innerHTML=${conteudoTardio};},2000);</script>`
+  write(
+    "late",
+    page(
+      `<div id="host"></div><script>setTimeout(function(){document.getElementById("host").innerHTML=${lateContent};},2000);</script>`
     )
   );
 }

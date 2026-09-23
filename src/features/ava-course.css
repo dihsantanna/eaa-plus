@@ -4,10 +4,10 @@
  * bloco por atividade), em versão clara sobre o azul da faixa. Grade de 4px;
  * todas as colunas com a mesma largura e as barras com a mesma altura.
  *
- * Tudo com #eaa-disc na frente e padding/margem explícitos: o AVA estiliza
+ * Tudo com #eaa-course na frente e padding/margem explícitos: o AVA estiliza
  * <button>, <h3> e <ul> de formas diferentes em cada rota. */
 
-#eaa-disc {
+#eaa-course {
   position: absolute;
   z-index: 1000;
   display: flex;
@@ -17,18 +17,18 @@
   color: #fff;
 }
 
-#eaa-disc * {
+#eaa-course * {
   box-sizing: border-box;
   margin: 0;
 }
 
-#eaa-disc.sem-espaco {
+#eaa-course.no-room {
   display: none;
 }
 
 /* ---------- a barra (um botão só) ---------- */
 
-#eaa-disc .eaa-d-botao {
+#eaa-course .eaa-d-button {
   appearance: none;
   display: flex;
   align-items: center;
@@ -45,95 +45,95 @@
   cursor: pointer;
 }
 
-#eaa-disc .eaa-d-botao:hover {
+#eaa-course .eaa-d-button:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
-#eaa-disc .eaa-d-botao[aria-expanded="true"] {
+#eaa-course .eaa-d-button[aria-expanded="true"] {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.24);
 }
 
-#eaa-disc .eaa-d-botao:focus-visible {
+#eaa-course .eaa-d-button:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
 
-#eaa-disc .eaa-d-nota,
-#eaa-disc .eaa-d-col {
+#eaa-course .eaa-d-grade,
+#eaa-course .eaa-d-col {
   display: grid;
   gap: 4px;
   align-content: center;
 }
 
-#eaa-disc .eaa-d-nota {
+#eaa-course .eaa-d-grade {
   width: 64px;
 }
 
-#eaa-disc .eaa-d-col {
+#eaa-course .eaa-d-col {
   width: 144px;
 }
 
-#eaa-disc .eaa-d-rot {
+#eaa-course .eaa-d-label {
   color: rgba(255, 255, 255, 0.78);
 }
 
-#eaa-disc .eaa-d-val {
+#eaa-course .eaa-d-val {
   font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-#eaa-disc .eaa-d-par {
+#eaa-course .eaa-d-pair {
   display: flex;
   justify-content: space-between;
   gap: 8px;
   white-space: nowrap;
 }
 
-#eaa-disc .eaa-d-nome {
+#eaa-course .eaa-d-name {
   font-weight: 700;
 }
 
-#eaa-disc .eaa-d-data,
-#eaa-disc .eaa-d-leg {
+#eaa-course .eaa-d-date,
+#eaa-course .eaa-d-caption {
   color: rgba(255, 255, 255, 0.78);
   font-variant-numeric: tabular-nums;
 }
 
-#eaa-disc .eaa-d-col.urgente .eaa-d-dias {
+#eaa-course .eaa-d-col.urgent .eaa-d-days {
   color: #ffb3b3;
   font-weight: 700;
 }
 
-#eaa-disc .eaa-d-alerta {
+#eaa-course .eaa-d-alert {
   margin-right: 4px;
   color: #ffa55c;
   font-weight: 700;
 }
 
-#eaa-disc .eaa-d-col.encerrado {
+#eaa-course .eaa-d-col.closed {
   opacity: 0.72;
 }
 
-#eaa-disc .eaa-seg {
+#eaa-course .eaa-seg {
   display: flex;
   gap: 2px;
   height: 6px;
 }
 
-#eaa-disc .eaa-seg i {
+#eaa-course .eaa-seg i {
   flex: 1 1 0;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.24);
 }
 
-#eaa-disc .eaa-seg .corrigida { background: #46a661; }
-#eaa-disc .eaa-seg .aguardando { background: #ffba59; }
-#eaa-disc .eaa-seg .iniciada { background: #e87511; }
-#eaa-disc .eaa-seg .perdida { background: #cd2026; }
+#eaa-course .eaa-seg .graded { background: #46a661; }
+#eaa-course .eaa-seg .awaiting { background: #ffba59; }
+#eaa-course .eaa-seg .started { background: #e87511; }
+#eaa-course .eaa-seg .missed { background: #cd2026; }
 
-#eaa-disc .eaa-d-oculto {
+#eaa-course .eaa-d-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -142,19 +142,19 @@
   white-space: nowrap;
 }
 
-#eaa-disc .eaa-d-seta {
+#eaa-course .eaa-d-arrow {
   display: flex;
   color: rgba(255, 255, 255, 0.78);
   transition: transform 0.15s ease;
 }
 
-#eaa-disc .eaa-d-botao[aria-expanded="true"] .eaa-d-seta {
+#eaa-course .eaa-d-button[aria-expanded="true"] .eaa-d-arrow {
   transform: rotate(180deg);
 }
 
 /* Carregando: blocos neutros com a altura exata de uma linha de texto
    (12px + 2px acima e abaixo = 16px), para o resultado entrar sem pular. */
-#eaa-disc .eaa-d-vazio {
+#eaa-course .eaa-d-empty {
   display: inline-block;
   height: 12px;
   margin: 2px 0;
@@ -163,42 +163,42 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
-#eaa-disc .eaa-d-botao:disabled {
+#eaa-course .eaa-d-button:disabled {
   cursor: progress;
 }
 
-#eaa-disc .eaa-d-botao:disabled:hover {
+#eaa-course .eaa-d-button:disabled:hover {
   background: transparent;
 }
 
-#eaa-disc .eaa-d-botao:disabled .eaa-d-nome {
+#eaa-course .eaa-d-button:disabled .eaa-d-name {
   font-weight: 400;
   color: rgba(255, 255, 255, 0.78);
 }
 
 /* Janela estreita: fica só o nome do fechamento e a barra, com as colunas
    encolhendo por igual. O ⚠ continua (a data sai, o alerta não). */
-#eaa-disc.compacto .eaa-d-nota,
-#eaa-disc.compacto .eaa-d-leg {
+#eaa-course.compact .eaa-d-grade,
+#eaa-course.compact .eaa-d-caption {
   display: none;
 }
 
-#eaa-disc.compacto .eaa-d-data {
+#eaa-course.compact .eaa-d-date {
   font-size: 0;
 }
 
-#eaa-disc.compacto .eaa-d-alerta {
+#eaa-course.compact .eaa-d-alert {
   margin: 0;
   font-size: 12px;
 }
 
-#eaa-disc.compacto .eaa-d-col {
+#eaa-course.compact .eaa-d-col {
   width: 112px;
 }
 
 /* ---------- o painel de detalhes ---------- */
 
-#eaa-disc .eaa-d-painel {
+#eaa-course .eaa-d-panel {
   position: absolute;
   top: 100%;
   right: 0;
@@ -218,35 +218,35 @@
   text-align: left;
 }
 
-#eaa-disc .eaa-d-painel[hidden] {
+#eaa-course .eaa-d-panel[hidden] {
   display: none;
 }
 
-#eaa-disc .eaa-d-pcab,
-#eaa-disc .eaa-d-gcab {
+#eaa-course .eaa-d-phead,
+#eaa-course .eaa-d-ghead {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 16px;
 }
 
-#eaa-disc .eaa-d-pcab {
+#eaa-course .eaa-d-phead {
   font-size: 16px;
   font-weight: 700;
 }
 
-#eaa-disc .eaa-d-pnota {
+#eaa-course .eaa-d-pgrade {
   font-variant-numeric: tabular-nums;
 }
 
-#eaa-disc .eaa-d-grupo {
+#eaa-course .eaa-d-group {
   display: grid;
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid #e3e9f1;
 }
 
-#eaa-disc .eaa-d-gcab {
+#eaa-course .eaa-d-ghead {
   padding: 0;
   font-size: 13px;
   font-weight: 700;
@@ -254,21 +254,21 @@
   color: #202122;
 }
 
-#eaa-disc .eaa-d-gcab > :last-child {
+#eaa-course .eaa-d-ghead > :last-child {
   font-weight: 400;
   color: #6e7477;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
-#eaa-disc .eaa-d-grupo ul {
+#eaa-course .eaa-d-group ul {
   display: grid;
   gap: 4px;
   padding: 0;
   list-style: none;
 }
 
-#eaa-disc .eaa-d-grupo li {
+#eaa-course .eaa-d-group li {
   display: grid;
   grid-template-columns: 16px minmax(0, 1fr) auto;
   align-items: center;
@@ -278,19 +278,19 @@
   font-size: 13px;
 }
 
-#eaa-disc .eaa-d-grupo li i {
+#eaa-course .eaa-d-group li i {
   width: 16px;
   height: 8px;
   border-radius: 4px;
   background: #e3e9f1;
 }
 
-#eaa-disc .eaa-d-grupo li.corrigida i { background: #46a661; }
-#eaa-disc .eaa-d-grupo li.aguardando i { background: #ffba59; }
-#eaa-disc .eaa-d-grupo li.iniciada i { background: #e87511; }
-#eaa-disc .eaa-d-grupo li.perdida i { background: #cd2026; }
+#eaa-course .eaa-d-group li.graded i { background: #46a661; }
+#eaa-course .eaa-d-group li.awaiting i { background: #ffba59; }
+#eaa-course .eaa-d-group li.started i { background: #e87511; }
+#eaa-course .eaa-d-group li.missed i { background: #cd2026; }
 
-#eaa-disc .eaa-d-inome {
+#eaa-course .eaa-d-iname {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -298,27 +298,27 @@
   text-decoration: none;
 }
 
-#eaa-disc a.eaa-d-inome {
+#eaa-course a.eaa-d-iname {
   color: #006fbf;
 }
 
-#eaa-disc a.eaa-d-inome:hover,
-#eaa-disc a.eaa-d-inome:focus-visible {
+#eaa-course a.eaa-d-iname:hover,
+#eaa-course a.eaa-d-iname:focus-visible {
   text-decoration: underline;
 }
 
-#eaa-disc .eaa-d-estado {
+#eaa-course .eaa-d-state {
   white-space: nowrap;
   font-size: 12px;
   color: #6e7477;
 }
 
-#eaa-disc li.corrigida .eaa-d-estado { color: #2c7a43; }
-#eaa-disc li.aguardando .eaa-d-estado { color: #8a5300; }
-#eaa-disc li.iniciada .eaa-d-estado { color: #b34f00; font-weight: 700; }
-#eaa-disc li.perdida .eaa-d-estado { color: #cd2026; font-weight: 700; }
+#eaa-course li.graded .eaa-d-state { color: #2c7a43; }
+#eaa-course li.awaiting .eaa-d-state { color: #8a5300; }
+#eaa-course li.started .eaa-d-state { color: #b34f00; font-weight: 700; }
+#eaa-course li.missed .eaa-d-state { color: #cd2026; font-weight: 700; }
 
-#eaa-disc .eaa-d-sit {
+#eaa-course .eaa-d-standing {
   height: 28px;
   line-height: 28px;
   border-radius: 4px;
@@ -327,6 +327,6 @@
   background: #f1f5fb;
 }
 
-#eaa-disc .eaa-d-sit.aprovado { background: #e8f5ec; color: #2c7a43; }
-#eaa-disc .eaa-d-sit.recuperacao { background: #fff4e0; color: #8a5300; }
-#eaa-disc .eaa-d-sit.reprovado { background: #fdecec; color: #a3181e; }
+#eaa-course .eaa-d-standing.passed { background: #e8f5ec; color: #2c7a43; }
+#eaa-course .eaa-d-standing.recovery { background: #fff4e0; color: #8a5300; }
+#eaa-course .eaa-d-standing.failed { background: #fdecec; color: #a3181e; }

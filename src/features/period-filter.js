@@ -6,7 +6,7 @@
  */
 
 EAAPlus.add({
-  id: "filtro-periodos",
+  id: "period-filter",
 
   init: function () {
     var FILTER_ID = "eaa-period-filter";
@@ -95,7 +95,7 @@ EAAPlus.add({
 
       cards.forEach(function (card) {
         var tag = card.querySelector(".period-tag");
-        card.dataset.periods = EAAPlus.periodos(
+        card.dataset.periods = EAAPlus.periods(
           tag ? tag.textContent : ""
         ).join(",");
       });

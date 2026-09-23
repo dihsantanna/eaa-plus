@@ -12,7 +12,13 @@ O autor é **aluno** da Licenciatura em Música, não funcionário. **Não tem a
 ao WordPress da escola** — por isso isto é uma extensão e não uma edição do site.
 Projeto independente, sem vínculo oficial com a escola.
 
-Converse em **português**, com respostas **curtas e diretas**. Antes de afirmar
+Converse em **português**, com respostas **curtas e diretas**.
+
+**Código em inglês** (variáveis, funções, classes CSS, ids, `data-*`, chaves,
+nomes de arquivo, scripts npm). **Comentários, texto de tela, títulos de teste e
+mensagens do terminal em português.** Termos do domínio ficam como são: `ou`
+(org unit da D2L), `av1`/`av2`/`av3`, `ava`. Convertido em 2026-09-23 a pedido
+do usuário. Antes de afirmar
 algo sobre a página, a loja ou o Chrome, verifique — não chute.
 
 ## Comandos
@@ -24,8 +30,8 @@ npm test                           # 66 testes E2E com a extensão carregada de 
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
 npm run check                      # sintaxe + regras do manifest + regra do fetch
 npm run build                      # dist/eaa-plus-vX.Y.Z.zip + dist/colar-no-elementor.html
-npm run politica                   # POLITICA-DE-PRIVACIDADE.md → .politica/eaa-plus-privacidade/index.html
-npx vercel deploy .politica/eaa-plus-privacidade --prod   # publica a política (Vercel)
+npm run policy                     # POLITICA-DE-PRIVACIDADE.md → .policy/eaa-plus-privacidade/index.html
+npx vercel deploy .policy/eaa-plus-privacidade --prod   # publica a política (Vercel)
 ```
 
 Rode `npm test` antes de qualquer `npm run build`. O build roda `check` sozinho.
@@ -39,32 +45,35 @@ passe na linha de comando.
 ## Estrutura
 
 ```
-manifest.json                 MV3, permissions só ["storage"]; 2 content_scripts (escola, AVA)
-src/core.js                   EAAPlus.add() / EAAPlus.periodos() — SEMPRE o 1º js
-src/fundo.js                  service worker: só libera storage.session aos content scripts
-src/ava-dados.js              EAAPlus.ava: dados, regras e cache do AVA (ÚNICO arquivo com fetch)
-src/features/<nome>.js|.css   uma melhoria por arquivo
-src/features/ava-progresso.*  página inicial do AVA: progresso nos cards + resumo do prazo
-src/features/ava-disciplina.* páginas de disciplina: barra na faixa azul + painel
-tests/gerar-fixtures.mjs      gera páginas-réplica (datas relativas ao AGORA)
-tests/fixtures-ava.mjs        réplica do AVA (shadow DOM) + respostas da API inventadas
-tests/servidor.mjs            servidor das réplicas; /d2l/api/* vem de api.json
-tests/navegador.mjs           Chromium com a extensão, compartilhado pelas suítes
-tests/extensao.spec.mjs       testes da página de aulas
-tests/ava.spec.mjs            testes do AVA (página inicial)
-tests/ava-disciplina.spec.mjs testes da barra nas páginas de disciplina
-tests/ava-cache.spec.mjs      testes do cache entre páginas (fixture `fundo` = service worker)
-tools/dev.mjs                 npm run dev (cópia em .dev-build/ com recarregador)
-tools/build.mjs               zip da loja + bloco para colar no Elementor
-tools/verificar-manifest.mjs  trava regras que afetam a revisão da loja
-store/                        imagens da listagem (ícone, promo 440×280, marquee)
-GUIA-PUBLICACAO.md            passo a passo do painel da Chrome Web Store
+manifest.json                  MV3, permissions só ["storage"]; 2 content_scripts (escola, AVA)
+src/core.js                    EAAPlus.add() / EAAPlus.periods() — SEMPRE o 1º js
+src/background.js              service worker: só libera storage.session aos content scripts
+src/ava-data.js                EAAPlus.ava: dados, regras e cache do AVA (ÚNICO arquivo com fetch)
+src/features/<name>.js|.css    uma melhoria por arquivo
+src/features/period-filter.*   página de aulas: abas de filtro por período
+src/features/next-class.*      página de aulas: card da próxima aula
+src/features/ava-progress.*    página inicial do AVA: progresso nos cards + resumo do prazo
+src/features/ava-course.*      páginas de disciplina: barra na faixa azul + painel
+tests/generate-fixtures.mjs    gera páginas-réplica (datas relativas ao AGORA)
+tests/ava-fixtures.mjs         réplica do AVA (shadow DOM) + respostas da API inventadas
+tests/server.mjs               servidor das réplicas; /d2l/api/* vem de api.json
+tests/browser.mjs              Chromium com a extensão, compartilhado pelas suítes
+tests/extension.spec.mjs       testes da página de aulas
+tests/ava.spec.mjs             testes do AVA (página inicial)
+tests/ava-course.spec.mjs      testes da barra nas páginas de disciplina
+tests/ava-cache.spec.mjs       testes do cache entre páginas (fixture `background` = service worker)
+tools/dev.mjs                  npm run dev (cópia em .dev-build/ com recarregador)
+tools/build.mjs                zip da loja + bloco para colar no Elementor
+tools/check-manifest.mjs       trava regras que afetam a revisão da loja
+tools/policy.mjs               npm run policy (página da política de privacidade)
+store/                         imagens da listagem (ícone, promo 440×280, marquee)
+GUIA-PUBLICACAO.md             passo a passo do painel da Chrome Web Store
 ```
 
 ## Invariantes — não quebrar sem conversar com o usuário
 
 Cada uma destas mudaria o que precisa ser declarado na aba de Privacidade do
-painel e/ou atrasaria a revisão do Google. `verificar-manifest.mjs` cobra várias.
+painel e/ou atrasaria a revisão do Google. `check-manifest.mjs` cobra várias.
 
 - `matches` restrito a dois lugares: a página de aulas síncronas da escola e
   `https://batistas.brightspace.com/d2l/*` (ampliado de `/d2l/home` em
@@ -75,11 +84,11 @@ painel e/ou atrasaria a revisão do Google. `verificar-manifest.mjs` cobra vári
 - `permissions` só `["storage"]` (2026-09-23, a pedido do usuário, para o
   cache do AVA; não gera aviso na instalação). Nenhuma `host_permissions`.
   APIs do Chrome no código: só `chrome.storage.session` e os eventos
-  `runtime.onInstalled/onStartup` do `fundo.js` — o verificador cobra.
+  `runtime.onInstalled/onStartup` do `background.js` — o verificador cobra.
   Nada de `storage.local`/`sync` (gravaria notas no disco).
 - Zero código remoto: nada de script externo, `eval`, CDN.
 - `fetch` só para rotas do próprio `batistas.brightspace.com` (caminho
-  relativo, passando por `mesmaOrigem()`), só GET, com a sessão do aluno.
+  relativo, passando por `sameOrigin()`), só GET, com a sessão do aluno.
   Nenhum dado sai do navegador. HTML lido com `DOMParser` (não executa nada).
   (Decidido com o usuário em 2026-09-23; ampliado de `/d2l/api/` para
   qualquer rota do AVA no mesmo dia.)
@@ -99,10 +108,10 @@ painel e/ou atrasaria a revisão do Google. `verificar-manifest.mjs` cobra vári
 
 ```js
 EAAPlus.add({
-  id: "nome-da-melhoria",
+  id: "feature-name",
   init: function () {
-    var alvo = document.querySelector(".algo");
-    if (!alvo) return false; // núcleo observa o DOM por 15s e tenta de novo
+    var target = document.querySelector(".something");
+    if (!target) return false; // núcleo observa o DOM por 15s e tenta de novo
     // ...
     return true;
   }
@@ -110,8 +119,8 @@ EAAPlus.add({
 ```
 
 Registrar em `manifest.json` (depois de `src/core.js`, no bloco do site
-certo), escrever o teste em `tests/extensao.spec.mjs` ou `tests/ava.spec.mjs` e,
-se precisar, uma réplica em `gerar-fixtures.mjs` / `fixtures-ava.mjs`.
+certo), escrever o teste em `tests/extension.spec.mjs` ou `tests/ava.spec.mjs` e,
+se precisar, uma réplica em `generate-fixtures.mjs` / `ava-fixtures.mjs`.
 Uma melhoria que lança erro é isolada pelo núcleo (loga `[EAA+] melhoria "x" falhou`).
 
 ## Contrato com o DOM da página de aulas
@@ -199,22 +208,22 @@ e recarrega a página inteira a cada clique. Sem cache, voltar à página inicia
   cache ao entrar e no `pagehide` (o aluno pode ter enviado algo ali; o
   questionário pode abrir dentro do Conteúdo sem trocar de URL). O id vem
   da URL (`/d2l/home/{ou}`, `/d2l/le/*/{ou}`, `?ou=`) e do link "Início do Curso".
-- Guarda os dados **crus e enxutos** (`enxugar()`: só os campos que
-  `classificar`/`resumir` usam; o caminho sem cache passa pelo mesmo corte).
+- Guarda os dados **crus e enxutos** (`slim()`: só os campos que
+  `classify`/`summarize` usam; o caminho sem cache passa pelo mesmo corte).
   Prazo vencido etc. é recalculado na hora.
-- Só guarda leitura **completa** (`baixar()` devolve `completo`).
+- Só guarda leitura **completa** (`download()` devolve `complete`).
 - Chave com o id do aluno: `html[data-global-context]` → `userId` (DOM
   normal, sem pedido extra). Sem id = sem cache. Id diferente = apaga tudo.
 - Resumo mostra "Atualizado às HH:MM" (dado mais antigo) + botão Atualizar:
-  esvazia memória e cache (`A.recomecar()`) e lê tudo de novo **sem
+  esvazia memória e cache (`A.restart()`) e lê tudo de novo **sem
   recarregar a página** (a pedido do aluno). Resumo volta ao carregamento;
-  os blocos dos cards ficam com o dado antigo até o novo chegar (`geracao`
+  os blocos dos cards ficam com o dado antigo até o novo chegar (`generation`
   descarta respostas velhas). A leitura do cache espera a limpeza terminar.
 - Acesso ao storage sempre por `noStorage()`: área buscada na hora, erro
   síncrono e assíncrono viram "sem cache" + um `console.warn` por página.
-- Nos testes, o cache é limpo antes de cada teste (`navegador.mjs`).
+- Nos testes, o cache é limpo antes de cada teste (`browser.mjs`).
 - `npm run dev`: o manifest de dev tem um service worker só, que faz
-  `importScripts("src/fundo.js")` antes do recarregador. **Reinicie o
+  `importScripts("src/background.js")` antes do recarregador. **Reinicie o
   `npm run dev` depois de mexer em `tools/dev.mjs`** (o processo antigo
   continua gerando o manifest velho).
 
@@ -278,7 +287,7 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
 
 3. **Não dá para falsificar o relógio.** Content script roda em mundo isolado;
    sobrescrever `Date` pela página não afeta a extensão. Teste de horário =
-   gerar datas relativas ao agora (é o que `gerar-fixtures.mjs` faz).
+   gerar datas relativas ao agora (é o que `generate-fixtures.mjs` faz).
 
 4. **Fuso.** Horários da página são de Brasília. A conversão usa
    `Intl` com `America/Sao_Paulo`, nunca o fuso do computador do aluno.
@@ -319,7 +328,7 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
   `manifest.json` e do mesmo lado em `package.json`.
 - Política de privacidade publicada em <https://eaa-plus-privacidade.vercel.app/>
   (Vercel, conta `dihsantanna`, projeto `eaa-plus-privacidade`; gerada de
-  `POLITICA-DE-PRIVACIDADE.md` por `npm run politica`). Contato público:
+  `POLITICA-DE-PRIVACIDADE.md` por `npm run policy`). Contato público:
   diogosantanna08@gmail.com.
 - Textos da listagem e das 4 respostas obrigatórias da aba Privacidade estão em
   `GUIA-PUBLICACAO.md`, seção 5. **A justificativa de host é obrigatória** mesmo
