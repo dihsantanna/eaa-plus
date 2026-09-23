@@ -20,7 +20,7 @@ algo sobre a página, a loja ou o Chrome, verifique — não chute.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 52 testes E2E com a extensão carregada de verdade
+npm test                           # 54 testes E2E com a extensão carregada de verdade
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
 npm run check                      # sintaxe + regras do manifest + regra do fetch
 npm run build                      # dist/eaa-plus-vX.Y.Z.zip + dist/colar-no-elementor.html

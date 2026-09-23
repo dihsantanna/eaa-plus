@@ -152,6 +152,30 @@
   transform: rotate(180deg);
 }
 
+/* Carregando: blocos neutros com a altura exata de uma linha de texto
+   (12px + 2px acima e abaixo = 16px), para o resultado entrar sem pular. */
+#eaa-disc .eaa-d-vazio {
+  display: inline-block;
+  height: 12px;
+  margin: 2px 0;
+  vertical-align: top;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#eaa-disc .eaa-d-botao:disabled {
+  cursor: progress;
+}
+
+#eaa-disc .eaa-d-botao:disabled:hover {
+  background: transparent;
+}
+
+#eaa-disc .eaa-d-botao:disabled .eaa-d-nome {
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.78);
+}
+
 /* Janela estreita: fica só o nome do fechamento e a barra, com as colunas
    encolhendo por igual. O ⚠ continua (a data sai, o alerta não). */
 #eaa-disc.compacto .eaa-d-nota,

@@ -20,7 +20,7 @@ const test = base.extend({
     page.abrir = async (rota, largura = 1400) => {
       await page.setViewportSize({ width: largura, height: 800 });
       await page.goto(baseURL + rota);
-      await expect(page.locator("#eaa-disc .eaa-d-botao")).toBeAttached({ timeout: 8000 });
+      await expect(page.locator("#eaa-disc")).toHaveAttribute("aria-busy", "false", { timeout: 8000 });
     };
     await use(page);
   },
@@ -167,6 +167,32 @@ test.describe("barra da disciplina", () => {
     await botao(page).click();
     await expect(painel(page).locator(".eaa-d-gcab > :first-child")).toHaveText(["Av1 · Primeiro Fechamento", "Av2", "Av3 · Recuperação"]);
     await expect(painel(page).locator(".eaa-d-sit")).toHaveText("Av3 (recuperação) · 4,5");
+  });
+
+  test("carregando: aparece na hora, desativada, e o resultado entra sem mudar de lugar", async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1400, height: 800 });
+    /* 50010 responde com 2,5s de atraso na réplica */
+    await page.goto(baseURL + "/d2l/home/50010");
+    await expect(caixa(page)).toHaveAttribute("aria-busy", "true", { timeout: 8000 });
+    await expect(botao(page)).toBeDisabled();
+    await expect(colunas(page)).toHaveCount(2);
+    await expect(colunas(page).first().locator(".eaa-d-nome")).toHaveText("carregando…");
+    await expect(caixa(page).locator(".eaa-d-val")).not.toContainText(/\d/);
+    await botao(page).click({ force: true });
+    await expect(painel(page)).toHaveCount(0);
+    const antes = await caixa(page).evaluate((e) => {
+      const r = e.getBoundingClientRect();
+      return { x: Math.round(r.x), w: Math.round(r.width), h: Math.round(r.height), y: Math.round(r.y) };
+    });
+
+    await expect(caixa(page)).toHaveAttribute("aria-busy", "false", { timeout: 8000 });
+    await expect(botao(page)).toBeEnabled();
+    await expect(colunas(page).locator(".eaa-d-nome")).toHaveText(["2º Fechamento", "Av2"]);
+    const depois = await caixa(page).evaluate((e) => {
+      const r = e.getBoundingClientRect();
+      return { x: Math.round(r.x), w: Math.round(r.width), h: Math.round(r.height), y: Math.round(r.y) };
+    });
+    expect(depois, "mesma posição e tamanho").toEqual(antes);
   });
 
   test("não aparece na página inicial geral", async ({ page, baseURL }) => {

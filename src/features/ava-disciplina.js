@@ -200,69 +200,118 @@ EAAPlus.add({
     }
 
     /* ---------------------------------------------------------------
-     * Abrir e fechar o painel
+     * Carregando: mesma largura e mesmas colunas do resultado, com blocos
+     * neutros no lugar do texto. O botão fica desativado até os dados chegarem.
+     * ------------------------------------------------------------- */
+    function vazio(largura) {
+      return '<span class="eaa-d-vazio" style="width:' + largura + 'px"></span>';
+    }
+
+    function htmlCarregando() {
+      var col =
+        '<span class="eaa-d-col">' +
+        '<span class="eaa-d-par"><span class="eaa-d-nome">%NOME%</span>' + vazio(32) + "</span>" +
+        '<div class="eaa-seg" aria-hidden="true"><i></i></div>' +
+        '<span class="eaa-d-par eaa-d-leg">' + vazio(88) + vazio(32) + "</span>" +
+        "</span>";
+      return (
+        '<button type="button" class="eaa-d-botao" disabled aria-label="Carregando o progresso das avaliações">' +
+        '<span class="eaa-d-nota">' + vazio(24) + '<span class="eaa-d-val">' + vazio(56) + "</span></span>" +
+        col.replace("%NOME%", "carregando…") +
+        col.replace("%NOME%", vazio(80)) +
+        '<span class="eaa-d-seta">' + CHEVRON + "</span>" +
+        "</button>"
+      );
+    }
+
+    /* ---------------------------------------------------------------
+     * Abrir e fechar o painel (eventos delegados: o conteúdo é trocado)
      * ------------------------------------------------------------- */
     function fechar(caixa) {
-      var botao = caixa.querySelector(".eaa-d-botao");
-      var p = caixa.querySelector(".eaa-d-painel");
+      var botao = caixa && caixa.querySelector(".eaa-d-botao");
+      var p = caixa && caixa.querySelector(".eaa-d-painel");
       if (!botao || !p || p.hidden) return;
       p.hidden = true;
       botao.setAttribute("aria-expanded", "false");
     }
 
-    function ligar(caixa) {
+    function alternar(caixa) {
       var botao = caixa.querySelector(".eaa-d-botao");
       var p = caixa.querySelector(".eaa-d-painel");
-      botao.addEventListener("click", function () {
-        var abrir = p.hidden;
-        p.hidden = !abrir;
-        botao.setAttribute("aria-expanded", String(abrir));
-      });
-      document.addEventListener("click", function (ev) {
-        if (!caixa.contains(ev.target)) fechar(caixa);
-      });
-      document.addEventListener("keydown", function (ev) {
-        if (ev.key === "Escape" && !p.hidden) {
-          fechar(caixa);
-          botao.focus();
-        }
-      });
+      if (!botao || !p || botao.disabled) return;
+      var abrir = p.hidden;
+      p.hidden = !abrir;
+      botao.setAttribute("aria-expanded", String(abrir));
     }
+
+    document.addEventListener("click", function (ev) {
+      var caixa = document.getElementById(ID);
+      if (!caixa) return;
+      if (!caixa.contains(ev.target)) return fechar(caixa);
+      if (ev.target.closest && ev.target.closest(".eaa-d-botao")) alternar(caixa);
+    });
+    document.addEventListener("keydown", function (ev) {
+      var caixa = document.getElementById(ID);
+      var p = caixa && caixa.querySelector(".eaa-d-painel");
+      if (ev.key === "Escape" && p && !p.hidden) {
+        fechar(caixa);
+        caixa.querySelector(".eaa-d-botao").focus();
+      }
+    });
 
     /* ---------------------------------------------------------------
      * Montagem
      * ------------------------------------------------------------- */
-    var conteudo = null;
+    var conteudo = htmlCarregando();
+    var carregando = true;
+    var relogio = null;
 
     function garantir() {
-      if (!conteudo) return;
       var caixa = document.getElementById(ID);
+      if (!conteudo) {
+        if (caixa) caixa.remove();
+        return;
+      }
       if (!caixa || !nav.contains(caixa)) {
         if (caixa) caixa.remove();
         caixa = document.createElement("div");
         caixa.id = ID;
-        caixa.innerHTML = conteudo;
         nav.appendChild(caixa);
-        ligar(caixa);
       }
+      if (caixa.getAttribute("data-conteudo") !== conteudo) {
+        caixa.setAttribute("data-conteudo", conteudo);
+        caixa.innerHTML = conteudo;
+      }
+      caixa.setAttribute("aria-busy", carregando ? "true" : "false");
       posicionar(caixa);
     }
 
+    function parar() {
+      conteudo = null;
+      garantir();
+      clearInterval(relogio);
+      window.removeEventListener("resize", garantir);
+    }
+
+    garantir();
+    relogio = setInterval(function () {
+      /* a faixa pode ser redesenhada pelo AVA (ex.: navegação interna do
+         Conteúdo); a varredura recoloca e realinha */
+      var atual = document.querySelector("nav.d2l-navigation-s");
+      if (atual && atual !== nav) nav = atual;
+      garantir();
+    }, VARREDURA_MS);
+    window.addEventListener("resize", garantir);
+
     A.dados(ou).then(
       function (r) {
-        if (!r.total) return;
+        if (!r.total) return parar();
+        carregando = false;
         conteudo = html(r);
         garantir();
-        setInterval(function () {
-          /* a faixa pode ser redesenhada pelo AVA (ex.: navegação interna do
-             Conteúdo); a varredura recoloca e realinha */
-          var atual = document.querySelector("nav.d2l-navigation-s");
-          if (atual && atual !== nav) nav = atual;
-          garantir();
-        }, VARREDURA_MS);
-        window.addEventListener("resize", garantir);
       },
       function (erro) {
+        parar();
         if (window.console && console.warn) console.warn("[EAA+] barra da disciplina " + ou + ":", erro);
       }
     );
