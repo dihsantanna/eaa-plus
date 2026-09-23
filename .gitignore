@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.test-build/
+test-results/
+playwright-report/
+.dev-build/
+.policy/
+tools/generate-images.py
+build/

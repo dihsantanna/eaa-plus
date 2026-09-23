@@ -1,0 +1,332 @@
+/* EAA+ · barra de progresso da disciplina, na faixa azul de navegação.
+ *
+ * Mesma gramática dos cards da página inicial (rótulo | valor, barra com um
+ * bloco por atividade), em versão clara sobre o azul da faixa. Grade de 4px;
+ * todas as colunas com a mesma largura e as barras com a mesma altura.
+ *
+ * Tudo com #eaa-course na frente e padding/margem explícitos: o AVA estiliza
+ * <button>, <h3> e <ul> de formas diferentes em cada rota. */
+
+#eaa-course {
+  position: absolute;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  font: 400 12px/16px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color: var(--eaa-white);
+}
+
+#eaa-course * {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+#eaa-course.no-room {
+  display: none;
+}
+
+/* ---------- a barra (um botão só) ---------- */
+
+#eaa-course .eaa-d-button {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+#eaa-course .eaa-d-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+#eaa-course .eaa-d-button[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+#eaa-course .eaa-d-button:focus-visible {
+  outline: 2px solid var(--eaa-white);
+  outline-offset: 2px;
+}
+
+#eaa-course .eaa-d-grade,
+#eaa-course .eaa-d-col {
+  display: grid;
+  gap: 4px;
+  align-content: center;
+}
+
+#eaa-course .eaa-d-grade {
+  width: 64px;
+}
+
+#eaa-course .eaa-d-col {
+  width: 144px;
+}
+
+#eaa-course .eaa-d-label {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+#eaa-course .eaa-d-val {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+#eaa-course .eaa-d-pair {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+#eaa-course .eaa-d-name {
+  font-weight: 700;
+}
+
+#eaa-course .eaa-d-date,
+#eaa-course .eaa-d-caption {
+  color: rgba(255, 255, 255, 0.78);
+  font-variant-numeric: tabular-nums;
+}
+
+#eaa-course .eaa-d-col.urgent .eaa-d-days {
+  color: var(--eaa-missed-on-dark);
+  font-weight: 700;
+}
+
+#eaa-course .eaa-d-alert {
+  margin-right: 4px;
+  color: var(--eaa-started-on-dark);
+  font-weight: 700;
+}
+
+#eaa-course .eaa-d-col.closed {
+  opacity: 0.72;
+}
+
+#eaa-course .eaa-seg {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+}
+
+#eaa-course .eaa-seg i {
+  flex: 1 1 0;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+#eaa-course .eaa-seg .graded { background: var(--eaa-graded); }
+#eaa-course .eaa-seg .awaiting { background: var(--eaa-awaiting); }
+#eaa-course .eaa-seg .started { background: var(--eaa-started); }
+#eaa-course .eaa-seg .missed { background: var(--eaa-missed); }
+
+#eaa-course .eaa-d-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+#eaa-course .eaa-d-arrow {
+  display: flex;
+  color: rgba(255, 255, 255, 0.78);
+  transition: transform 0.15s ease;
+}
+
+#eaa-course .eaa-d-button[aria-expanded="true"] .eaa-d-arrow {
+  transform: rotate(180deg);
+}
+
+/* Carregando: blocos neutros com a altura exata de uma linha de texto
+   (12px + 2px acima e abaixo = 16px), para o resultado entrar sem pular. */
+#eaa-course .eaa-d-empty {
+  display: inline-block;
+  height: 12px;
+  margin: 2px 0;
+  vertical-align: top;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#eaa-course .eaa-d-button:disabled {
+  cursor: progress;
+}
+
+#eaa-course .eaa-d-button:disabled:hover {
+  background: transparent;
+}
+
+#eaa-course .eaa-d-button:disabled .eaa-d-name {
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* Janela estreita: fica só o nome do fechamento e a barra, com as colunas
+   encolhendo por igual. O ⚠ continua (a data sai, o alerta não). */
+#eaa-course.compact .eaa-d-grade,
+#eaa-course.compact .eaa-d-caption {
+  display: none;
+}
+
+#eaa-course.compact .eaa-d-date {
+  font-size: 0;
+}
+
+#eaa-course.compact .eaa-d-alert {
+  margin: 0;
+  font-size: 12px;
+}
+
+#eaa-course.compact .eaa-d-col {
+  width: 112px;
+}
+
+/* ---------- o painel de detalhes ---------- */
+
+#eaa-course .eaa-d-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  display: grid;
+  gap: 16px;
+  width: 400px;
+  max-height: 70vh;
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--eaa-border);
+  border-radius: 6px;
+  background: var(--eaa-white);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  color: var(--eaa-ink);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+}
+
+#eaa-course .eaa-d-panel[hidden] {
+  display: none;
+}
+
+#eaa-course .eaa-d-phead,
+#eaa-course .eaa-d-ghead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+
+#eaa-course .eaa-d-phead {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#eaa-course .eaa-d-pgrade {
+  font-variant-numeric: tabular-nums;
+}
+
+#eaa-course .eaa-d-group {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--eaa-track);
+}
+
+#eaa-course .eaa-d-ghead {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 16px;
+  color: var(--eaa-ink);
+}
+
+#eaa-course .eaa-d-ghead > :last-child {
+  font-weight: 400;
+  color: var(--eaa-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+#eaa-course .eaa-d-group ul {
+  display: grid;
+  gap: 4px;
+  padding: 0;
+  list-style: none;
+}
+
+#eaa-course .eaa-d-group li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0;
+  font-size: 13px;
+}
+
+#eaa-course .eaa-d-group li i {
+  width: 16px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--eaa-track);
+}
+
+#eaa-course .eaa-d-group li.graded i { background: var(--eaa-graded); }
+#eaa-course .eaa-d-group li.awaiting i { background: var(--eaa-awaiting); }
+#eaa-course .eaa-d-group li.started i { background: var(--eaa-started); }
+#eaa-course .eaa-d-group li.missed i { background: var(--eaa-missed); }
+
+#eaa-course .eaa-d-iname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--eaa-ink);
+  text-decoration: none;
+}
+
+#eaa-course a.eaa-d-iname {
+  color: var(--eaa-link);
+}
+
+#eaa-course a.eaa-d-iname:hover,
+#eaa-course a.eaa-d-iname:focus-visible {
+  text-decoration: underline;
+}
+
+#eaa-course .eaa-d-state {
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--eaa-muted);
+}
+
+#eaa-course li.graded .eaa-d-state { color: var(--eaa-graded-text); }
+#eaa-course li.awaiting .eaa-d-state { color: var(--eaa-awaiting-text); }
+#eaa-course li.started .eaa-d-state { color: var(--eaa-started-text); font-weight: 700; }
+#eaa-course li.missed .eaa-d-state { color: var(--eaa-missed); font-weight: 700; }
+
+#eaa-course .eaa-d-standing {
+  height: 28px;
+  line-height: 28px;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 700;
+  background: var(--eaa-neutral-bg);
+}
+
+#eaa-course .eaa-d-standing.passed { background: var(--eaa-passed-bg); color: var(--eaa-graded-text); }
+#eaa-course .eaa-d-standing.recovery { background: var(--eaa-recovery-bg); color: var(--eaa-awaiting-text); }
+#eaa-course .eaa-d-standing.failed { background: var(--eaa-failed-bg); color: var(--eaa-failed-text); }

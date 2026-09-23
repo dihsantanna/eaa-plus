@@ -1,0 +1,22 @@
+{
+  // Só checagem de tipos (npm run typecheck): quem gera o JS é o esbuild
+  // (tools/bundle.mjs). As opções de "sintaxe apagável" deixam o Node rodar
+  // os .ts direto nos testes unitários (node --test, sem compilar).
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["chrome", "node"],
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedSideEffectImports": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "tests/unit"]
+}
