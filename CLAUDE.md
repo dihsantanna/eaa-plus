@@ -24,6 +24,8 @@ npm test                           # 66 testes E2E com a extensão carregada de 
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
 npm run check                      # sintaxe + regras do manifest + regra do fetch
 npm run build                      # dist/eaa-plus-vX.Y.Z.zip + dist/colar-no-elementor.html
+npm run politica                   # POLITICA-DE-PRIVACIDADE.md → .politica/eaa-plus-privacidade/index.html
+npx vercel deploy .politica/eaa-plus-privacidade --prod   # publica a política (Vercel)
 ```
 
 Rode `npm test` antes de qualquer `npm run build`. O build roda `check` sozinho.
@@ -313,6 +315,10 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
 - Visibilidade: **não listado** (só instala quem tem o link).
 - Versão publicada: **1.0.0**. Em desenvolvimento: **1.1.0** (branch `v1.1.0`). Toda atualização precisa de `version` maior no
   `manifest.json` e do mesmo lado em `package.json`.
+- Política de privacidade publicada em <https://eaa-plus-privacidade.vercel.app/>
+  (Vercel, conta `dihsantanna`, projeto `eaa-plus-privacidade`; gerada de
+  `POLITICA-DE-PRIVACIDADE.md` por `npm run politica`). Contato público:
+  diogosantanna08@gmail.com.
 - Textos da listagem e das 4 respostas obrigatórias da aba Privacidade estão em
   `GUIA-PUBLICACAO.md`, seção 5. **A justificativa de host é obrigatória** mesmo
   sem a chave `permissions` — o `matches` conta.

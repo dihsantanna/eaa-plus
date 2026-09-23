@@ -152,6 +152,11 @@ próprio Brightspace, com a sua sessão, apenas para montar a barra de
 progresso. Para não repetir as consultas a cada página, guarda o que
 leu por até 10 minutos, só na memória do navegador (some ao fechá-lo).
 Não há servidor da extensão e não há coleta.
+
+CONFIRA SEMPRE NO AVA
+A extensão só reorganiza o que o AVA informa e não é fonte oficial.
+Em caso de diferença, vale o que está no AVA: confira prazos, entregas
+e notas lá antes de tomar qualquer decisão.
 ```
 
 **Categoria:** Educação
@@ -263,10 +268,23 @@ As três são verdadeiras neste caso.
 
 ### 5.5 Política de privacidade (obrigatória a partir da 1.1.0)
 
-O painel pede uma **URL pública**. O texto está pronto em
-`POLITICA-DE-PRIVACIDADE.md`. Falta decidir **onde publicar**: qualquer
-página pública e estável serve (Google Sites, GitHub Pages, Notion
-público...). Cole a URL no campo *Privacy policy* da aba.
+O painel pede uma **URL pública**. O texto vive em
+`POLITICA-DE-PRIVACIDADE.md` e vira página com `npm run politica`,
+publicada na **Vercel** (projeto `eaa-plus-privacidade`):
+
+```
+npm run politica
+npx vercel deploy .politica/eaa-plus-privacidade --prod
+```
+
+**URL publicada (cole no campo *Privacy policy* da aba):**
+
+```
+https://eaa-plus-privacidade.vercel.app/
+```
+
+Mudou o texto da política? Rode os dois comandos de novo — a URL continua
+a mesma. (Publicada em 23/09/2026, conta Vercel `dihsantanna`.)
 
 > **Depois de preencher, clique em "Salvar rascunho" antes de tentar enviar.**
 > O botão "Enviar para análise" só libera quando os quatro itens estão salvos.

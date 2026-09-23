@@ -72,6 +72,14 @@ o que leu no `chrome.storage.session` do Chrome:
 - Não usa os dados para publicidade, análise de crédito ou qualquer finalidade
   além de mostrar o progresso para você.
 
+## Confira sempre no AVA
+
+A extensão só reorganiza o que o próprio AVA informa; ela não é uma fonte
+oficial. Se a escola mudar a forma como o AVA mostra as avaliações, a
+extensão pode interpretar algo errado até ser corrigida. **Em caso de
+diferença, vale o que está no AVA** — confira prazos, entregas e notas lá
+antes de tomar qualquer decisão.
+
 ## Permissões
 
 A extensão pede uma única permissão, `storage`, usada só para o
@@ -81,4 +89,4 @@ onde ela roda (`content_scripts`).
 
 ## Contato
 
-Dúvidas ou problemas: [PREENCHER — e-mail de contato que você quer tornar público]
+Dúvidas ou problemas: <diogosantanna08@gmail.com>
