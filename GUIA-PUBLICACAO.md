@@ -26,8 +26,9 @@
 
 | Arquivo | Função |
 |---|---|
-| `manifest.json` | Manifest V3, **sem nenhuma permissão declarada** |
+| `manifest.json` | Manifest V3, **uma permissão só: `storage`** (sem aviso na instalação) |
 | `src/core.js` | Núcleo: registra as melhorias e isola falhas entre elas |
+| `src/fundo.js` | Service worker: só libera o `chrome.storage.session` para o cache do AVA |
 | `src/features/filtro-periodos.*` | Melhoria 1 — abas de filtro por período |
 | `src/features/proxima-aula.*` | Melhoria 2 — card da próxima aula |
 | `src/ava-dados.js` | Leitura das notas e entregas no AVA (único arquivo com acesso à rede) |
@@ -42,7 +43,7 @@ https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/*
 https://batistas.brightspace.com/d2l/*         (página inicial + páginas de disciplina)
 ```
 
-Em qualquer outra página ela não carrega, não observa nada e não existe. Escopo estreito assim é o maior acelerador de revisão que existe — mas atenção: mesmo sem a chave `permissions`, o Google trata esse `matches` como permissão de host e **exige justificativa** (seção 5.2).
+Em qualquer outra página ela não carrega, não observa nada e não existe. Escopo estreito assim é o maior acelerador de revisão que existe — mas atenção: mesmo sem `host_permissions`, o Google trata esse `matches` como permissão de host e **exige justificativa** (seção 5.2). A permissão `storage` também pede a sua (seção 5.2.1).
 
 ---
 
@@ -148,8 +149,9 @@ PRIVACIDADE
 Nada sai do seu navegador. Na página de aulas, a extensão só lê o que
 já está na tela. No AVA, ela consulta as suas notas e entregas no
 próprio Brightspace, com a sua sessão, apenas para montar a barra de
-progresso — os dados ficam na memória da aba e somem ao fechá-la. Não
-há servidor da extensão, não há coleta, não há armazenamento.
+progresso. Para não repetir as consultas a cada página, guarda o que
+leu por até 10 minutos, só na memória do navegador (some ao fechá-lo).
+Não há servidor da extensão e não há coleta.
 ```
 
 **Categoria:** Educação
@@ -215,12 +217,24 @@ A extensão atua em apenas duas páginas da instituição:
    isso consulta, com a sessão do próprio aluno e apenas por leitura
    (GET), a API e páginas do Brightspace no mesmo domínio: boletim,
    tarefas, questionários, conclusão de conteúdo e a lista de
-   questionários da disciplina. Os dados ficam na memória da aba e
-   não são enviados a nenhum outro lugar.
+   questionários da disciplina. Os dados não são enviados a nenhum
+   outro lugar.
 
 Os padrões de correspondência estão restritos a esses dois sites. A
 extensão não roda em nenhum outro site, não tem servidor próprio e não
 transmite dados do usuário para fora do navegador.
+```
+
+### 5.2.1 Justificativa da permissão `storage`
+
+```
+Usada só com chrome.storage.session (memória, nunca disco) como cache
+de curta duração das leituras do AVA: ao voltar à página inicial, a
+extensão reaproveita o que leu há menos de 10 minutos em vez de
+consultar de novo o servidor da instituição para cada disciplina. Os
+dados de uma disciplina são apagados quando o aluno entra nela, e tudo
+é apagado ao fechar o navegador. Não usa storage.local nem
+storage.sync e nada é enviado para fora do navegador.
 ```
 
 ### 5.3 Uso de código remoto
@@ -234,7 +248,10 @@ Não é um campo de texto: é uma escolha. Marque **"Não estou usando código r
 1. Na pergunta sobre coleta, marque **"Conteúdo do site"** (a extensão lê
    notas, entregas e prazos exibidos/servidos pelo AVA). Não marque as
    outras: ela não lê nome, matrícula, senha, mensagens, histórico nem
-   localização. Se o painel pedir, descreva: *"Notas e prazos das
+   localização. (Ela lê o **número interno do usuário** que o AVA põe na
+   página, só como chave local do cache, para não misturar contas no mesmo
+   navegador; nunca sai do navegador. Se preferir ser mais conservador,
+   marque também "Informações de identificação pessoal".) Se o painel pedir, descreva: *"Notas e prazos das
    avaliações do próprio aluno, lidos do AVA da instituição e usados só
    para exibir o progresso na tela; nada é enviado para fora do navegador."*
 2. Marque as **três caixas de certificação** no fim da aba:
@@ -276,7 +293,7 @@ Países: pode deixar só o Brasil.
 
 Prazo: a documentação do Google diz que a maioria é revisada **em poucos dias, podendo chegar a algumas semanas**. A própria página de revisão registrou (abril/2026) um volume alto de submissões alongando os prazos. Passou de três semanas sem resposta, aí sim vale abrir suporte.
 
-A seu favor na fila: extensão pequena, **zero permissões**, código não ofuscado, duas páginas bem delimitadas, só leitura.
+A seu favor na fila: extensão pequena, **uma permissão só (`storage`, sem aviso)**, código não ofuscado, duas páginas bem delimitadas, só leitura.
 
 ---
 

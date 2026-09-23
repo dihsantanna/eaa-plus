@@ -38,6 +38,9 @@ EAAPlus.add({
     if (!ou) return false;
 
     var A = EAAPlus.ava;
+    /* Nesta página o aluno pode enviar algo: a barra lê do servidor e a
+       disciplina sai do cache (entrando e saindo) — ver ava-dados.js. */
+    A.esquecer(ou);
     var esc = A.esc;
     var ID = "eaa-disc";
     var VARREDURA_MS = 1000;

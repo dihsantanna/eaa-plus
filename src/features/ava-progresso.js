@@ -129,10 +129,12 @@ EAAPlus.add({
       });
       if (!alvo) return null;
 
-      var res = { prazo: 0, longo: "", itens: [], disciplinas: [], iniciadas: 0 };
+      var res = { prazo: 0, longo: "", itens: [], disciplinas: [], iniciadas: 0, lidoEm: null };
       visiveis.forEach(function (ou) {
         var p = prontos[ou];
         if (!p) return;
+        /* o dado mais antigo na tela (cache de até 10 min) */
+        if (p.r.lidoEm && (!res.lidoEm || p.r.lidoEm < res.lidoEm)) res.lidoEm = p.r.lidoEm;
         p.r.prazos.forEach(function (g) {
           if (!g.prazo || A.diaDe(g.prazo) !== alvo) return;
           res.prazo = Math.max(res.prazo, g.prazo);
@@ -163,6 +165,17 @@ EAAPlus.add({
       );
     }
 
+    /* Os dados podem vir do cache (até 10 min): a idade fica à vista e o
+       aluno força uma leitura nova com um clique. Mesma linha no
+       carregamento, para a altura não pular. */
+    function rodape(lidoEm) {
+      return (
+        '<div class="eaa-r-par eaa-r-rodape"><span>' + (lidoEm ? "Atualizado às " + A.hora(lidoEm) : "&nbsp;") + "</span>" +
+        '<button type="button" class="eaa-r-atualizar" title="Ler de novo notas e entregas de todas as disciplinas"' +
+        (lidoEm ? "" : " disabled") + ">Atualizar</button></div>"
+      );
+    }
+
     function htmlDoResumo(res) {
       var urgente = res.c.pendentes && A.diasAte(res.prazo) <= 1;
       var tudo = !res.c.pendentes;
@@ -187,7 +200,8 @@ EAAPlus.add({
         '<div class="eaa-r-par eaa-r-leg"><span>' + res.c.entregues + " de " + res.c.itens.length +
         " atividades entregues</span>" + direita + "</div>" +
         (fichas ? '<div class="eaa-r-fichas">' + fichas + "</div>" : "") +
-        legenda()
+        legenda() +
+        rodape(res.lidoEm)
       );
     }
 
@@ -212,7 +226,8 @@ EAAPlus.add({
         '<span class="eaa-r-ficha eaa-r-vazia" style="width:128px"></span>' +
         '<span class="eaa-r-ficha eaa-r-vazia" style="width:96px"></span>' +
         '<span class="eaa-r-ficha eaa-r-vazia" style="width:152px"></span></div>' +
-        legenda()
+        legenda() +
+        rodape(null)
       );
     }
 
@@ -245,6 +260,15 @@ EAAPlus.add({
         caixa = document.createElement("section");
         caixa.id = RESUMO_ID;
         caixa.setAttribute("aria-label", "Próximo prazo das disciplinas");
+        caixa.addEventListener("click", function (ev) {
+          var b = ev.target.closest && ev.target.closest(".eaa-r-atualizar");
+          if (!b || b.disabled) return;
+          b.disabled = true;
+          b.textContent = "Atualizando…";
+          A.esquecerTudo().then(function () {
+            location.reload();
+          });
+        });
       }
       caixa.setAttribute("aria-busy", carregando ? "true" : "false");
       if (caixa.nextSibling !== alvo) alvo.parentNode.insertBefore(caixa, alvo);

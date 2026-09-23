@@ -229,6 +229,10 @@ function paginaListaQ(d) {
  * O CSS hostil imita o que o AVA aplica fora da faixa em algumas rotas
  * (botões, títulos e listas com margens próprias): o painel precisa resistir.
  * ------------------------------------------------------------- */
+/* Como no AVA real: <html data-global-context> traz o id do aluno logado
+   (a extensão usa na chave do cache). */
+const CONTEXTO = JSON.stringify({ orgUnitId: "6606", orgId: "6606", userId: "1001" });
+
 const HOSTIL = `button{padding:11px 25px;background:#e3e9f1;border:2px solid #999;font-size:19px}
 h3{margin:20px 0;font-size:24px}ul{margin:16px 0;padding-left:40px}li{margin:6px 0}`;
 
@@ -245,7 +249,7 @@ function paginaDisciplina(d, titulo, corpo, opcoes = {}) {
     .map(([href, t]) => (href ? `<a href="${href}">${t}</a>` : `<button type="button" class="d2l-nav-dropdown">${t}</button>`))
     .join("");
   return `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><title>${titulo} - ${d.nome} - Batistas</title>
+<html lang="pt-BR" data-global-context='${CONTEXTO}'><head><meta charset="utf-8"><title>${titulo} - ${d.nome} - Batistas</title>
 <style>
 body{margin:0;background:#f9fbff;font-family:Lato,sans-serif}
 nav.d2l-navigation-s{position:relative;display:block}
@@ -325,8 +329,10 @@ function rotas() {
       api[`${b}dropbox/folders/${id}/submissions/mysubmissions/`] = ok(envios);
     if (d.pastas && d.pastas.length)
       api[`/d2l/lms/dropbox/user/folders_list.d2l?ou=${d.ou}&isprv=0`] = { status: 200, html: paginaTarefas(d) };
-    if (d.listaQ)
-      api[`/d2l/lms/quizzing/user/quizzes_list.d2l?ou=${d.ou}`] = { status: 200, html: paginaListaQ(d) };
+    /* No AVA real a página existe sempre que há questionário (e um 404 aqui
+       conta como leitura incompleta, que não vai para o cache). */
+    if (d.listaQ || (d.quizzes && d.quizzes.length))
+      api[`/d2l/lms/quizzing/user/quizzes_list.d2l?ou=${d.ou}`] = { status: 200, html: paginaListaQ({ ...d, listaQ: d.listaQ || [] }) };
   }
   /* nomes de todas as disciplinas numa leitura só */
   api["/d2l/api/lp/1.63/enrollments/myenrollments/?orgUnitTypeId=3"] = ok({
@@ -353,8 +359,15 @@ function pagina() {
   const todos = [...semestre, SO_EM_TODOS.ou];
 
   return `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><title>Página Inicial - Batistas</title>
+<html lang="pt-BR" data-global-context='${CONTEXTO}'><head><meta charset="utf-8"><title>Página Inicial - Batistas</title>
+<script>
+/* ?usuario=N simula outro aluno logado no mesmo navegador */
+const usuarioDaUrl = new URLSearchParams(location.search).get("usuario");
+if (usuarioDaUrl) document.documentElement.setAttribute("data-global-context",
+  JSON.stringify({ ...JSON.parse(document.documentElement.getAttribute("data-global-context")), userId: usuarioDaUrl }));
+</script>
 <style>body{margin:0;background:#f9fbff;font-family:Lato,sans-serif}.d2l-widget-content-padding{max-width:760px;margin:24px auto}
+${HOSTIL}
 #abas button{font:inherit;padding:6px 12px;margin-right:6px}</style></head>
 <body>
 <div class="d2l-widget-content-padding"><d2l-my-courses-v2></d2l-my-courses-v2></div>

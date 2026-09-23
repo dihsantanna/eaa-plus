@@ -203,6 +203,44 @@
 #eaa-resumo .eaa-r-legenda .iniciada { background: #e87511; }
 #eaa-resumo .eaa-r-legenda .perdida { background: #cd2026; }
 
+/* Rodapé: idade dos dados | Atualizar. Mesma tipografia da legenda. */
+#eaa-resumo .eaa-r-rodape {
+  font-size: 12px;
+  line-height: 16px;
+  color: #6e7477;
+}
+
+#eaa-resumo .eaa-r-atualizar {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0; /* o tema pode dar padding a todo <button> */
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  box-shadow: none;
+  font: 700 12px/16px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color: #006fbf;
+  cursor: pointer;
+}
+
+#eaa-resumo .eaa-r-atualizar:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+#eaa-resumo .eaa-r-atualizar:focus-visible {
+  outline: 2px solid #006fbf;
+  outline-offset: 2px;
+}
+
+#eaa-resumo .eaa-r-atualizar:disabled {
+  color: #6e7477;
+  cursor: default;
+}
+
 #eaa-resumo .eaa-r-ficha.iniciada {
   border-color: #e87511;
 }

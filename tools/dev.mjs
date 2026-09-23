@@ -11,7 +11,7 @@
  *    e recarrega as abas do AVA e da página de aulas.
  *
  * O recarregador precisa de "tabs" e de localhost — permissões que existem
- * SÓ nesta cópia. O manifest.json publicado não muda, e o build nunca olha
+ * SÓ nesta cópia (somadas ao "storage" da extensão). O manifest.json publicado não muda, e o build nunca olha
  * para .dev-build/. Enquanto desenvolve, desative a versão da loja para as
  * duas não rodarem juntas na página de aulas.
  */
@@ -86,13 +86,18 @@ function espelhar(origem, destino) {
 function montar() {
   espelhar("src", `${SAIDA}/src`);
   espelhar("icons", `${SAIDA}/icons`);
-  writeFileSync(`${SAIDA}/dev-recarregador.js`, RECARREGADOR);
   writeFileSync(`${SAIDA}/dev-pulso.js`, PULSO);
 
   const m = JSON.parse(readFileSync("manifest.json", "utf8"));
   m.name = "EAA+ (dev)";
+  /* Só cabe um service worker: o recarregador carrega o da extensão junto. */
+  const fundo = m.background && m.background.service_worker;
+  writeFileSync(
+    `${SAIDA}/dev-recarregador.js`,
+    (fundo ? `importScripts(${JSON.stringify(fundo)});\n` : "") + RECARREGADOR
+  );
   m.background = { service_worker: "dev-recarregador.js" };
-  m.permissions = ["tabs"];
+  m.permissions = [...new Set([...(m.permissions || []), "tabs"])];
   m.host_permissions = [`http://localhost:${PORTA}/*`];
   for (const cs of m.content_scripts) cs.js.push("dev-pulso.js");
   writeFileSync(`${SAIDA}/manifest.json`, JSON.stringify(m, null, 2));

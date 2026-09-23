@@ -17,10 +17,21 @@ const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 if (pkg.version !== m.version)
   erros.push(`versão diferente: manifest ${m.version}, package.json ${pkg.version}`);
 
-if (m.permissions && m.permissions.length)
-  erros.push(`"permissions" não deveria existir: ${JSON.stringify(m.permissions)}`);
+/* Única permissão: "storage", para o cache entre páginas do AVA em
+   chrome.storage.session (decidido com o usuário em 2026-09-23). Não gera
+   aviso na instalação. Qualquer outra muda a aba Privacidade do painel. */
+const PERMITIDAS = ["storage"];
+for (const p of m.permissions || [])
+  if (!PERMITIDAS.includes(p)) erros.push(`permissão não combinada: "${p}" (só ${PERMITIDAS.join(", ")})`);
 if (m.host_permissions && m.host_permissions.length)
   erros.push(`"host_permissions" não deveria existir: ${JSON.stringify(m.host_permissions)}`);
+if (m.optional_permissions || m.optional_host_permissions)
+  erros.push("permissões opcionais não foram combinadas");
+
+/* Service worker: só libera o storage.session para os content scripts. */
+const FUNDO = "src/fundo.js";
+if (m.background && (m.background.service_worker !== FUNDO || Object.keys(m.background).length !== 1))
+  erros.push(`background deveria ser só { "service_worker": "${FUNDO}" }`);
 
 /* Cada site tem o seu bloco. O do AVA cobre as páginas /d2l/ do Brightspace da
    escola (página inicial + todas as páginas de disciplina) e nada além. */
@@ -55,8 +66,9 @@ const js = readdirSync("src", { recursive: true })
   .map((f) => "src/" + String(f).replace(/\\/g, "/"))
   .filter((f) => f.endsWith(".js"))
   .sort();
+const arquivoDeFundo = m.background ? m.background.service_worker : null;
 for (const f of js)
-  if (!arquivosDoAva.has(f) && !arquivosDaEscola.has(f))
+  if (!arquivosDoAva.has(f) && !arquivosDaEscola.has(f) && f !== arquivoDeFundo)
     erros.push(`${f} existe em src/ mas não está em nenhum bloco do manifest`);
 
 for (const f of js) {
@@ -76,6 +88,12 @@ for (const f of js) {
     erros.push(`${f}: código remoto/dinâmico não é permitido (eval, Function, import(), <script>)`);
   if (/XMLHttpRequest|WebSocket|sendBeacon|EventSource/.test(src))
     erros.push(`${f}: só fetch é permitido para rede, e só no AVA`);
+  /* APIs do Chrome: só o storage.session (memória, some ao fechar) e os
+     eventos do service worker que o liberam. Nada de storage.local/sync. */
+  const apis = (src.replace(/\/\*[^]*?\*\//g, "").match(/\bchrome\.[\w.]+/g) || []).filter(
+    (a) => !/^chrome\.storage(\.session(\.(get|set|remove|setAccessLevel))?)?$|^chrome\.runtime\.on(Installed|Startup)\.addListener$/.test(a)
+  );
+  if (apis.length) erros.push(`${f}: API do Chrome não combinada: ${[...new Set(apis)].join(", ")}`);
 
   const fetches = src.match(/\bfetch\s*\(/g) || [];
   if (!fetches.length) continue;

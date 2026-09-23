@@ -5,9 +5,11 @@
  * inicial e as páginas de disciplina contarem as atividades da mesma forma.
  *
  * De onde vêm os dados: rotas do próprio Brightspace, no mesmo domínio, com a
- * sessão do aluno. Só GET. Nada é gravado nem enviado para fora — os dados
- * ficam na memória da aba enquanto ela está aberta. Este é o ÚNICO arquivo com
- * acesso à rede; verificar-manifest.mjs cobra.
+ * sessão do aluno. Só GET. Nada é enviado para fora. Este é o ÚNICO arquivo
+ * com acesso à rede; verificar-manifest.mjs cobra.
+ *
+ * Cache entre páginas (chrome.storage.session: só memória, só a extensão
+ * enxerga, some ao fechar o navegador) — ver "Cache entre páginas" abaixo.
  *
  * Boletim → o que já foi corrigido. Tarefas e questionários → prazos, ligados
  * ao boletim pelo GradeItemId. Para saber se o aluno fez algo que ainda não
@@ -73,14 +75,6 @@ EAAPlus.ava = (function () {
   function lista(o) {
     if (Array.isArray(o)) return o;
     return (o && o.Objects) || [];
-  }
-
-  function vazio() {
-    return [];
-  }
-
-  function nada() {
-    return null;
   }
 
   /* ---------------------------------------------------------------
@@ -153,19 +147,205 @@ EAAPlus.ava = (function () {
   }
 
   /* ---------------------------------------------------------------
+   * Cache entre páginas
+   *
+   * O AVA responde "no-store" e recarrega a página inteira a cada clique,
+   * então sem isto a página inicial relê as 9 disciplinas toda vez que o
+   * aluno volta a ela. Regras (combinadas com o aluno em 2026-09-23):
+   *   1. Validade de 10 minutos.
+   *   2. Página de uma disciplina SEMPRE lê do servidor, e apaga a
+   *      disciplina do cache ao entrar e ao sair: o aluno pode ter enviado
+   *      algo ali. De volta à página inicial, só ela é lida de novo.
+   *   3. Guarda os dados crus (enxutos), nunca o resultado: prazo vencido,
+   *      "falta 2 dias" etc. são recalculados na hora, com o relógio atual.
+   *   4. Só guarda leitura completa. Qualquer falha = nada guardado.
+   *   5. Chave com o id do aluno (data-global-context da página) e o
+   *      formato. Sem id, sem cache.
+   * Qualquer erro do storage = segue sem cache, como antes.
+   * ------------------------------------------------------------- */
+  var VALIDADE = 10 * 60 * 1000;
+  var FORMATO = 1;
+  var PREFIXO = "ava:";
+  var naoGuardar = {};
+  var avisado = false;
+
+  /* Uma vez por página: sem cache a extensão funciona igual, só lê mais. */
+  function semCache(erro) {
+    if (avisado || !window.console || !console.warn) return;
+    avisado = true;
+    console.warn("[EAA+] cache entre páginas indisponível:", erro);
+  }
+
+  /* Toda operação passa por aqui: a área é buscada na hora (o service
+     worker pode liberar o acesso depois que esta página carregou) e erro
+     síncrono vira promessa rejeitada, como o assíncrono. */
+  function noStorage(fazer) {
+    try {
+      var area = chrome.storage && chrome.storage.session;
+      if (!area) throw new Error("chrome.storage.session não disponível aqui");
+      return Promise.resolve(fazer(area)).then(null, function (e) {
+        semCache(e);
+        throw e;
+      });
+    } catch (e) {
+      semCache(e);
+      return Promise.reject(e);
+    }
+  }
+
+  function ignorar() {}
+
+  function usuario() {
+    try {
+      var c = JSON.parse(document.documentElement.getAttribute("data-global-context") || "{}");
+      return c && c.userId ? String(c.userId) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function lerGuardado(chave) {
+    var eu = usuario();
+    if (!eu) return Promise.resolve(null);
+    return noStorage(function (area) {
+      return area.get(PREFIXO + chave);
+    }).then(
+      function (o) {
+        var e = o && o[PREFIXO + chave];
+        if (!e || e.formato !== FORMATO) return null;
+        /* outro aluno usou este navegador: nada do que está lá serve */
+        if (e.usuario !== eu) {
+          esquecerTudo();
+          return null;
+        }
+        var idade = Date.now() - e.lidoEm;
+        if (!(idade >= 0 && idade < VALIDADE)) {
+          noStorage(function (area) {
+            return area.remove(PREFIXO + chave);
+          }).then(null, ignorar);
+          return null;
+        }
+        return e;
+      },
+      function () {
+        return null;
+      }
+    );
+  }
+
+  function guardar(chave, valor, lidoEm) {
+    var eu = usuario();
+    if (!eu || naoGuardar[chave]) return;
+    var o = {};
+    o[PREFIXO + chave] = { formato: FORMATO, usuario: eu, lidoEm: lidoEm, valor: valor };
+    noStorage(function (area) {
+      return area.set(o);
+    }).then(null, ignorar);
+  }
+
+  /* Disciplina desta página: não lê nem grava o cache dela, e apaga o que
+     houver agora e de novo ao sair (outra aba pode ter guardado no meio). */
+  function esquecer(ou) {
+    ou = String(ou);
+    naoGuardar[ou] = true;
+    noStorage(function (area) {
+      return area.remove(PREFIXO + ou);
+    }).then(null, ignorar);
+  }
+
+  function esquecerTudo() {
+    return noStorage(function (area) {
+      return area.get(null).then(function (tudo) {
+        var chaves = Object.keys(tudo || {}).filter(function (k) {
+          return k.indexOf(PREFIXO) === 0;
+        });
+        return chaves.length ? area.remove(chaves) : null;
+      });
+    }).then(null, ignorar);
+  }
+
+  /* Pela URL, antes de qualquer leitura: /d2l/home/{ou}, /d2l/le/lessons/{ou}/…
+     e as páginas ?ou={ou}. A barra da disciplina confirma pelo link
+     "Início do Curso" (esquecer() de novo, se a URL não tiver o id). */
+  var ouDaPagina = (location.search.match(/[?&]ou=(\d+)/) ||
+    location.pathname.match(/^\/d2l\/(?:home|le\/[a-z]+)\/(\d+)(?:\/|$)/) || [])[1];
+  if (ouDaPagina) esquecer(ouDaPagina);
+  window.addEventListener("pagehide", function () {
+    Object.keys(naoGuardar).forEach(esquecer);
+  });
+
+  /* Só os campos que classificar()/resumir() usam. O caminho sem cache passa
+     pelo MESMO corte, então dado guardado e dado fresco desenham igual — e
+     textos longos (instruções, descrições) nunca vão para o cache. */
+  function so(o, campos) {
+    var saida = {};
+    campos.forEach(function (c) {
+      if (o && o[c] !== undefined) saida[c] = o[c];
+    });
+    return saida;
+  }
+
+  function enxugarToc(m) {
+    return {
+      Topics: (m.Topics || []).map(function (t) {
+        return so(t, ["TopicId", "GradeItemId", "EndDateTime"]);
+      }),
+      Modules: (m.Modules || []).map(enxugarToc)
+    };
+  }
+
+  function enxugar(b) {
+    return {
+      gi: b.gi.map(function (g) {
+        return so(g, ["Id", "Name", "GradeType", "IsHidden", "MaxPoints"]);
+      }),
+      valores: b.valores.map(function (v) {
+        return so(v, ["GradeObjectIdentifier", "GradeObjectName", "PointsNumerator", "PointsDenominator"]);
+      }),
+      pastas: b.pastas.map(function (p) {
+        var r = so(p, ["Id", "Name", "GradeItemId", "IsHidden", "DueDate"]);
+        if (p.Availability) r.Availability = so(p.Availability, ["EndDate"]);
+        return r;
+      }),
+      questionarios: b.questionarios.map(function (q) {
+        return so(q, ["QuizId", "Name", "GradeItemId", "IsActive", "DueDate", "EndDate"]);
+      }),
+      toc: b.toc ? { Modules: (b.toc.Modules || []).map(enxugarToc) } : null,
+      meusItens: b.meusItens.map(function (i) {
+        return so(i, ["ItemId", "DateCompleted", "DueDate", "EndDate"]);
+      }),
+      listaQ: b.listaQ,
+      envios: b.envios
+    };
+  }
+
+  /* ---------------------------------------------------------------
    * Dados de uma disciplina
    * ------------------------------------------------------------- */
   var cache = {};
   var boletins = {};
+  var guardados = {};
+
+  function guardadoDe(ou) {
+    ou = String(ou);
+    if (!guardados[ou]) guardados[ou] = naoGuardar[ou] ? Promise.resolve(null) : lerGuardado(ou);
+    return guardados[ou];
+  }
 
   /* O boletim é a primeira leitura da fila e já diz o formato da disciplina:
      com "Nota AV1" (curso de Música) a barra terá 2 colunas; sem, 1 só.
-     previa() usa a MESMA requisição de dados(), não faz outra. */
-  /* Erros também ficam guardados: nada de tentar de novo sozinho (a
-     varredura roda a cada segundo — uma disciplina com erro viraria leitura
-     sem fim). Tenta de novo quando o aluno recarrega a página. */
+     previa() usa a MESMA requisição de dados(), não faz outra — nem nenhuma,
+     se a disciplina estiver no cache. */
+  /* Erros também ficam guardados (na memória da página, nunca no cache):
+     nada de tentar de novo sozinho (a varredura roda a cada segundo — uma
+     disciplina com erro viraria leitura sem fim). Tenta de novo quando o
+     aluno recarrega a página. */
   function boletim(ou) {
-    if (!boletins[ou]) boletins[ou] = pegar(API + ou + "/grades/");
+    if (!boletins[ou]) {
+      boletins[ou] = guardadoDe(ou).then(function (e) {
+        return e ? e.valor.gi : pegar(API + ou + "/grades/");
+      });
+    }
     return boletins[ou];
   }
 
@@ -179,8 +359,26 @@ EAAPlus.ava = (function () {
   }
 
   function dados(ou) {
-    if (!cache[ou]) cache[ou] = baixar(ou);
+    if (!cache[ou]) {
+      cache[ou] = guardadoDe(ou).then(function (e) {
+        if (e) return montar(ou, e.valor, e.lidoEm);
+        var inicio = Date.now(); /* a idade conta do começo da leitura */
+        return baixar(ou).then(function (b) {
+          var bruto = enxugar(b.bruto);
+          if (b.completo) guardar(String(ou), bruto, inicio);
+          return montar(ou, bruto, inicio);
+        });
+      });
+    }
     return cache[ou];
+  }
+
+  /* Sempre a partir dos dados crus: o relógio de agora decide o que venceu. */
+  function montar(ou, b, lidoEm) {
+    var itens = classificar(ou, b.gi, b.valores, b.pastas, b.questionarios, b.toc, b.meusItens, b.listaQ, b.envios);
+    var r = resumir(itens, b.valores);
+    r.lidoEm = lidoEm;
+    return r;
   }
 
   /* Poucas leituras, em duas levas. A 1ª é o que toda disciplina precisa:
@@ -191,14 +389,25 @@ EAAPlus.ava = (function () {
    *   - sumário do conteúdo + itens concluídos: só se houver atividade
    *     avaliada que não é tarefa nem questionário (não existe hoje no curso
    *     de Música, mas o AVA permite).
-   * O nome da disciplina vem de uma leitura só para todas (nomes()). */
+   * O nome da disciplina vem de uma leitura só para todas (nomes()).
+   *
+   * Devolve { bruto, completo }. Uma leitura que falhou vira lista vazia
+   * (a disciplina ainda aparece, com o que deu para ler), mas aí completo =
+   * false e nada disso vai para o cache. */
   function baixar(ou) {
     var base = API + ou + "/";
+    var completo = true;
+    function falhou(valor) {
+      return function () {
+        completo = false;
+        return valor;
+      };
+    }
     return Promise.all([
       boletim(ou),
       pegar(base + "grades/values/myGradeValues/"),
-      pegar(base + "dropbox/folders/").then(lista, vazio),
-      pegar(base + "quizzes/").then(lista, vazio)
+      pegar(base + "dropbox/folders/").then(lista, falhou([])),
+      pegar(base + "quizzes/").then(lista, falhou([]))
     ]).then(function (r) {
       var gi = r[0] || [];
       var valores = r[1] || [];
@@ -230,17 +439,25 @@ EAAPlus.ava = (function () {
       });
 
       return Promise.all([
-        temQuestionario
-          ? pegar(LISTA_QUESTIONARIOS + ou, true).then(lerListaDeQuestionarios, function () {
-              return {};
-            })
-          : {},
-        semLigacao ? pegar(base + "content/toc").then(null, nada) : null,
-        semLigacao ? pegar(base + "content/myItems/").then(lista, vazio) : [],
-        paraConferir.length ? conferirEnvios(ou, paraConferir) : { enviadas: {}, secoes: {} }
+        temQuestionario ? pegar(LISTA_QUESTIONARIOS + ou, true).then(lerListaDeQuestionarios, falhou({})) : {},
+        semLigacao ? pegar(base + "content/toc").then(null, falhou(null)) : null,
+        semLigacao ? pegar(base + "content/myItems/").then(lista, falhou([])) : [],
+        paraConferir.length ? conferirEnvios(ou, paraConferir) : { enviadas: {}, secoes: {}, completo: true }
       ]).then(function (s) {
-        var itens = classificar(ou, gi, valores, pastas, questionarios, s[1], s[2], s[0], s[3]);
-        return resumir(itens, valores);
+        if (!s[3].completo) completo = false;
+        return {
+          completo: completo,
+          bruto: {
+            gi: gi,
+            valores: valores,
+            pastas: pastas,
+            questionarios: questionarios,
+            toc: s[1],
+            meusItens: s[2],
+            listaQ: s[0],
+            envios: { enviadas: s[3].enviadas, secoes: s[3].secoes }
+          }
+        };
       });
     });
   }
@@ -248,14 +465,15 @@ EAAPlus.ava = (function () {
   /* Envios das tarefas: a página "Atividades com Anexo" traz o status de
    * todas numa leitura só ("Não Enviado" / "1 envio, 2 arquivos" — conferido
    * contra a API em 15 tarefas reais, 100% de acordo). Se a página falhar ou
-   * uma tarefa não aparecer nela, pergunta à API de envios só por aquela. */
+   * uma tarefa não aparecer nela, pergunta à API de envios só por aquela.
+   * Se essa pergunta falhar, a resposta sai com completo = false. */
   function conferirEnvios(ou, pastas) {
     return pegar(LISTA_TAREFAS + ou + "&isprv=0", true)
       .then(lerListaDeTarefas, function () {
         return {};
       })
       .then(function (pagina) {
-        var r = { enviadas: {}, secoes: {} };
+        var r = { enviadas: {}, secoes: {}, completo: true };
         var faltam = pastas.filter(function (p) {
           var l = pagina[String(p.Id)];
           if (!l) return true;
@@ -271,7 +489,9 @@ EAAPlus.ava = (function () {
                   return x.Submissions && x.Submissions.length;
                 })) r.enviadas[p.Id] = true;
               },
-              function () {}
+              function () {
+                r.completo = false;
+              }
             );
           })
         ).then(function () {
@@ -313,18 +533,23 @@ EAAPlus.ava = (function () {
 
   function nomes() {
     if (!nomesPromessa) {
-      nomesPromessa = pegar("/d2l/api/lp/1.63/enrollments/myenrollments/?orgUnitTypeId=3").then(
-        function (m) {
-          var mapa = {};
-          ((m && m.Items) || []).forEach(function (i) {
-            if (i.OrgUnit) mapa[i.OrgUnit.Id] = i.OrgUnit.Name;
-          });
-          return mapa;
-        },
-        function () {
-          return {}; /* sem nomes: as fichas dizem "Disciplina" */
-        }
-      );
+      nomesPromessa = lerGuardado("nomes").then(function (e) {
+        if (e) return e.valor;
+        var inicio = Date.now();
+        return pegar("/d2l/api/lp/1.63/enrollments/myenrollments/?orgUnitTypeId=3").then(
+          function (m) {
+            var mapa = {};
+            ((m && m.Items) || []).forEach(function (i) {
+              if (i.OrgUnit) mapa[i.OrgUnit.Id] = i.OrgUnit.Name;
+            });
+            guardar("nomes", mapa, inicio);
+            return mapa;
+          },
+          function () {
+            return {}; /* sem nomes: as fichas dizem "Disciplina" */
+          }
+        );
+      });
     }
     return nomesPromessa;
   }
@@ -705,6 +930,8 @@ EAAPlus.ava = (function () {
     dados: dados,
     previa: previa,
     nome: nome,
+    esquecer: esquecer,
+    esquecerTudo: esquecerTudo,
     diaDe: diaDe,
     diasAte: diasAte,
     data: data,

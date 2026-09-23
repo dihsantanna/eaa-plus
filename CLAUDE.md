@@ -20,7 +20,7 @@ algo sobre a página, a loja ou o Chrome, verifique — não chute.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 56 testes E2E com a extensão carregada de verdade
+npm test                           # 66 testes E2E com a extensão carregada de verdade
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
 npm run check                      # sintaxe + regras do manifest + regra do fetch
 npm run build                      # dist/eaa-plus-vX.Y.Z.zip + dist/colar-no-elementor.html
@@ -37,9 +37,10 @@ passe na linha de comando.
 ## Estrutura
 
 ```
-manifest.json                 MV3, sem "permissions"; 2 content_scripts (escola, AVA)
+manifest.json                 MV3, permissions só ["storage"]; 2 content_scripts (escola, AVA)
 src/core.js                   EAAPlus.add() / EAAPlus.periodos() — SEMPRE o 1º js
-src/ava-dados.js              EAAPlus.ava: dados e regras do AVA (ÚNICO arquivo com fetch)
+src/fundo.js                  service worker: só libera storage.session aos content scripts
+src/ava-dados.js              EAAPlus.ava: dados, regras e cache do AVA (ÚNICO arquivo com fetch)
 src/features/<nome>.js|.css   uma melhoria por arquivo
 src/features/ava-progresso.*  página inicial do AVA: progresso nos cards + resumo do prazo
 src/features/ava-disciplina.* páginas de disciplina: barra na faixa azul + painel
@@ -50,6 +51,7 @@ tests/navegador.mjs           Chromium com a extensão, compartilhado pelas suí
 tests/extensao.spec.mjs       testes da página de aulas
 tests/ava.spec.mjs            testes do AVA (página inicial)
 tests/ava-disciplina.spec.mjs testes da barra nas páginas de disciplina
+tests/ava-cache.spec.mjs      testes do cache entre páginas (fixture `fundo` = service worker)
 tools/dev.mjs                 npm run dev (cópia em .dev-build/ com recarregador)
 tools/build.mjs               zip da loja + bloco para colar no Elementor
 tools/verificar-manifest.mjs  trava regras que afetam a revisão da loja
@@ -68,7 +70,11 @@ painel e/ou atrasaria a revisão do Google. `verificar-manifest.mjs` cobra vári
   Um bloco por site, nunca misturados. Cada melhoria do AVA confere se está
   na página certa (`/d2l/home` exato para os cards; link "Início do Curso"
   na faixa para a barra da disciplina).
-- Nenhuma chave `permissions` / `host_permissions`.
+- `permissions` só `["storage"]` (2026-09-23, a pedido do usuário, para o
+  cache do AVA; não gera aviso na instalação). Nenhuma `host_permissions`.
+  APIs do Chrome no código: só `chrome.storage.session` e os eventos
+  `runtime.onInstalled/onStartup` do `fundo.js` — o verificador cobra.
+  Nada de `storage.local`/`sync` (gravaria notas no disco).
 - Zero código remoto: nada de script externo, `eval`, CDN.
 - `fetch` só para rotas do próprio `batistas.brightspace.com` (caminho
   relativo, passando por `mesmaOrigem()`), só GET, com a sessão do aluno.
@@ -78,8 +84,9 @@ painel e/ou atrasaria a revisão do Google. `verificar-manifest.mjs` cobra vári
 - Ler dado da página **conta como "handling"** para a loja, mesmo só local
   (FAQ do User Data Policy, pergunta 3): declarar "Conteúdo do site" na aba
   Privacidade e ter URL de política de privacidade.
-- Zero coleta de dados. Se um dia precisar guardar preferência do aluno,
-  `chrome.storage.local` exige declarar a permissão `storage` — avise antes.
+- Zero coleta de dados. O único armazenamento é o cache do AVA (ver
+  "Cache entre páginas"). Guardar preferência do aluno em `storage.local`
+  seria gravar no disco e muda a política — avise antes.
 - Toda melhoria nova precisa caber no **propósito único** declarado na loja.
   Até a v1.0.0: *"Melhorar a usabilidade da página de aulas síncronas da EAA
   para os alunos."* A partir da v1.1.0 precisa ser reescrito para cobrir o AVA
@@ -177,6 +184,34 @@ API (`le` 1.99; o servidor aceita 1.0–1.99), tudo GET com a sessão:
   → `OrgUnit.Name`). O atributo `text` do `d2l-card` já veio "Nome, código,
   semestre" e, no mesmo dia, passou a vir só **"Fechada"** — não usar.
   (`/d2l/api/lp/1.63/courses/{ou}` dá 403 para aluno.)
+
+### Cache entre páginas — decidido e conferido no AVA real em 2026-09-23
+
+O AVA responde `cache-control: no-store` (nem `cache: "force-cache"` reaproveita)
+e recarrega a página inteira a cada clique. Sem cache, voltar à página inicial
+= 49 leituras de novo. Com cache: 0, ou só a disciplina visitada (5–6).
+
+- `chrome.storage.session` (memória, só a extensão enxerga), chave
+  `ava:{ou}` e `ava:nomes`, validade **10 min**.
+- **Página de disciplina sempre lê do servidor** e apaga a disciplina do
+  cache ao entrar e no `pagehide` (o aluno pode ter enviado algo ali; o
+  questionário pode abrir dentro do Conteúdo sem trocar de URL). O id vem
+  da URL (`/d2l/home/{ou}`, `/d2l/le/*/{ou}`, `?ou=`) e do link "Início do Curso".
+- Guarda os dados **crus e enxutos** (`enxugar()`: só os campos que
+  `classificar`/`resumir` usam; o caminho sem cache passa pelo mesmo corte).
+  Prazo vencido etc. é recalculado na hora.
+- Só guarda leitura **completa** (`baixar()` devolve `completo`).
+- Chave com o id do aluno: `html[data-global-context]` → `userId` (DOM
+  normal, sem pedido extra). Sem id = sem cache. Id diferente = apaga tudo.
+- Resumo mostra "Atualizado às HH:MM" (dado mais antigo) + botão Atualizar
+  (esvazia o cache e recarrega).
+- Acesso ao storage sempre por `noStorage()`: área buscada na hora, erro
+  síncrono e assíncrono viram "sem cache" + um `console.warn` por página.
+- Nos testes, o cache é limpo antes de cada teste (`navegador.mjs`).
+- `npm run dev`: o manifest de dev tem um service worker só, que faz
+  `importScripts("src/fundo.js")` antes do recarregador. **Reinicie o
+  `npm run dev` depois de mexer em `tools/dev.mjs`** (o processo antigo
+  continua gerando o manifest velho).
 
 ### Av2 e Av3 — conferido em 2026-09-23
 
@@ -279,8 +314,9 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
   `GUIA-PUBLICACAO.md`, seção 5. **A justificativa de host é obrigatória** mesmo
   sem a chave `permissions` — o `matches` conta.
 - Ampliar `matches` para outra página = nova revisão do Google. A 1.1.0 amplia
-  (AVA, `/d2l/*`) e passa a **ler dados do aluno**: precisa de política de
-  privacidade publicada e de "Conteúdo do site" marcado na aba Privacidade.
+  (AVA, `/d2l/*`), passa a **ler dados do aluno** e declara `storage`:
+  precisa de política de privacidade publicada, de "Conteúdo do site" marcado
+  na aba Privacidade e da justificativa de `storage` (GUIA, seção 5.2.1).
 - Extensão **não funciona no celular** (Chrome Android/iOS não roda extensão).
   A saída é a escola colar `dist/colar-no-elementor.html` no widget 7dfc076.
 
