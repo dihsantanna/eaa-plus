@@ -257,7 +257,12 @@ EAAPlus.add({
     /* ---------------------------------------------------------------
      * Cards
      * ------------------------------------------------------------- */
+    /* Disciplina sem atividades ou com erro: não volta a montar o bloco a
+       cada varredura (evita piscar "Carregando…" e ler de novo). */
+    var semBloco = {};
+
     function processar(card, ou) {
+      if (semBloco[ou]) return;
       var sombra = card.shadowRoot;
       var cartao = sombra && sombra.querySelector("d2l-card");
       if (!cartao) return;
@@ -284,15 +289,21 @@ EAAPlus.add({
       cartao.appendChild(fantasma);
       cartao.appendChild(bloco);
 
-      A.dados(ou).then(
-        function (r) {
+      /* nome: uma leitura só para todas as disciplinas (EAAPlus.ava.nome) */
+      Promise.all([A.dados(ou), A.nome(ou)]).then(
+        function (par) {
+          var r = par[0];
           resolvidos[ou] = true;
-          if (!r.total) return remover();
-          prontos[ou] = { r: r, nome: r.nome || "Disciplina" };
+          if (!r.total) {
+            semBloco[ou] = true;
+            return remover();
+          }
+          prontos[ou] = { r: r, nome: par[1] || "Disciplina" };
           escrever(html(r));
         },
         function (erro) {
           resolvidos[ou] = true;
+          semBloco[ou] = true;
           remover();
           if (window.console && console.warn) console.warn("[EAA+] progresso da disciplina " + ou + ":", erro);
         }

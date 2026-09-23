@@ -90,12 +90,15 @@ export const DISCIPLINAS = [
       numerico(204, "Atividade 4", 1), numerico(205, "Atividade 5", 1),
     ],
     valores: [...av(0.9, 0), valor(201, "Atividade 1", 0.9, 1)],
-    quizzes: [quiz(8201, 201, -1), quiz(8202, 202, -1), quiz(8203, 203, -1), quiz(8205, 205, -1)],
+    /* 203 não é tarefa nem questionário: é um tópico avaliado do conteúdo */
+    quizzes: [quiz(8201, 201, -1), quiz(8202, 202, -1), quiz(8205, 205, -1)],
     pastas: [pasta(7204, 204, -1)],
     envios: { 7204: [{ Status: 1, Submissions: [{ Id: 1 }] }] },
-    /* 203: questionário que é tópico de conteúdo e foi concluído */
-    toc: { Modules: [{ Topics: [{ TopicId: 9203, GradeItemId: 203 }], Modules: [{ Topics: [{ TopicId: 9202, GradeItemId: 202 }], Modules: [] }] }] },
-    meusItens: [{ ItemId: 9203, DateCompleted: iso(-1) }, { ItemId: 9202, DateCompleted: null }],
+    /* 7204 não aparece na página de tarefas: a extensão cai para a API de envios */
+    foraDaPagina: [7204],
+    /* 203: tópico avaliado concluído — só o conteúdo sabe (e dá o prazo) */
+    toc: { Modules: [{ Topics: [{ TopicId: 9203, GradeItemId: 203 }], Modules: [] }] },
+    meusItens: [{ ItemId: 9203, DateCompleted: iso(-1), DueDate: null, EndDate: iso(-1) }],
     /* 205: só a Lista de questionários sabe (caso real da DMEM) */
     /* 8205 enviado e sem nota, com o link de feedback enganoso: continua "aguardando" */
     listaQ: [[SEC1, [[8201, 1], [8202, 0], [8205, 1, "feedback"]]]],
@@ -272,6 +275,33 @@ customElements.define("d2l-labs-navigation-main-footer", class extends HTMLEleme
 </body></html>`;
 }
 
+/* Página "Atividades com Anexo" (mesma estrutura da real, 2026-09-23):
+ * linha de seção tr.d_ggl2 e uma linha por tarefa com ?db={id} e a coluna
+ * "Status de Conclusão" ("Não Enviado" ou "1 envio, 1 arquivo"). */
+function paginaTarefas(d) {
+  const fora = new Set(d.foraDaPagina || []);
+  const secao = (p) => (/\bAv\s*2\b/i.test(p.Name) ? "Avaliação 2 (Av2)" : /\bAv\s*3\b/i.test(p.Name) ? "Avaliação 3 (Av3)" : "Av1 - Primeiro Fechamento");
+  let atual = null;
+  const linhas = d.pastas
+    .filter((p) => !fora.has(p.Id))
+    .map((p) => {
+      const enviou = ((d.envios || {})[p.Id] || []).some((x) => x.Submissions && x.Submissions.length);
+      const s = secao(p);
+      const cab = s !== atual ? `<tr class="d_ggl2 d_dbo"><th colspan="4">${(atual = s)}</th></tr>` : "";
+      return (
+        cab +
+        `<tr><th><a href="/d2l/lms/dropbox/user/folder_submit_files.d2l?db=${p.Id}&grpid=0&isprv=0&bp=0&ou=${d.ou}">${p.Name}</a><br>Disponível até …</th>` +
+        `<td>${enviou ? "1 envio, 1 arquivo" : "Não Enviado"}</td><td>- / 1 -</td><td></td></tr>`
+      );
+    })
+    .join("");
+  return paginaDisciplina(
+    d,
+    "Atividades",
+    `<table class="d2l-table d2l-grid"><tr class="d_gh"><th>Atividade</th><th>Status de Conclusão</th><th>Pontuação</th><th>Status da avaliação</th></tr>${linhas}</table>`
+  );
+}
+
 function rotas() {
   const api = {};
   const ok = (corpo) => ({ status: 200, corpo });
@@ -282,20 +312,27 @@ function rotas() {
       continue;
     }
     api[b + "grades/"] = ok(d.grades);
-    api[`/d2l/api/lp/1.63/enrollments/myenrollments/${d.ou}`] = ok({ OrgUnit: { Id: d.ou, Name: d.nome }, Access: {}, PinDate: null });
+
     api[b + "grades/values/myGradeValues/"] = ok(d.valores);
     api[b + "dropbox/folders/"] = ok(d.pastas || []);
-    api[b + "quizzes/"] = ok({ Objects: d.quizzes || [], Next: null });
-    /* o atraso fica numa rota do meio: o boletim (prévia) responde rápido e o
-       resto demora, como no AVA real */
-    const meus = ok({ Objects: d.meusItens || [], Next: null });
-    api[b + "content/myItems/"] = d.atraso ? { ...meus, atraso: d.atraso } : meus;
+    /* o atraso fica numa leitura da 1ª leva que não é o boletim: a prévia
+       responde rápido e o resto demora, como no AVA real */
+    const qz = ok({ Objects: d.quizzes || [], Next: null });
+    api[b + "quizzes/"] = d.atraso ? { ...qz, atraso: d.atraso } : qz;
+    api[b + "content/myItems/"] = ok({ Objects: d.meusItens || [], Next: null });
     if (d.toc) api[b + "content/toc"] = ok(d.toc);
     for (const [id, envios] of Object.entries(d.envios || {}))
       api[`${b}dropbox/folders/${id}/submissions/mysubmissions/`] = ok(envios);
+    if (d.pastas && d.pastas.length)
+      api[`/d2l/lms/dropbox/user/folders_list.d2l?ou=${d.ou}&isprv=0`] = { status: 200, html: paginaTarefas(d) };
     if (d.listaQ)
       api[`/d2l/lms/quizzing/user/quizzes_list.d2l?ou=${d.ou}`] = { status: 200, html: paginaListaQ(d) };
   }
+  /* nomes de todas as disciplinas numa leitura só */
+  api["/d2l/api/lp/1.63/enrollments/myenrollments/?orgUnitTypeId=3"] = ok({
+    PagingInfo: { Bookmark: "", HasMoreItems: false },
+    Items: [...DISCIPLINAS, SO_EM_TODOS].map((d) => ({ OrgUnit: { Id: d.ou, Name: d.nome }, Access: {}, PinDate: null })),
+  });
   return api;
 }
 

@@ -68,6 +68,10 @@ for (const f of js) {
   }
 
   const src = readFileSync(f, "utf8");
+  /* já aconteceu: \b de uma regex virar o caractere backspace ao editar */
+  const controle = src.match(/[\x00-\x08\x0b\x0c\x0e-\x1f]/);
+  if (controle)
+    erros.push(`${f}: caractere de controle (código ${controle[0].charCodeAt(0)}) — provável regex corrompida`);
   if (/\beval\s*\(|new\s+Function\s*\(|\bimport\s*\(|importScripts|createElement\(\s*["']script/.test(src))
     erros.push(`${f}: código remoto/dinâmico não é permitido (eval, Function, import(), <script>)`);
   if (/XMLHttpRequest|WebSocket|sendBeacon|EventSource/.test(src))

@@ -262,10 +262,34 @@ test.describe("regras de rede e de página", () => {
     for (const r of page.pedidos) {
       expect(r.metodo).toBe("GET");
       expect(r.caminho).toMatch(
-        /^\/d2l\/(api\/le\/1\.99\/\d+\/|api\/lp\/1\.63\/enrollments\/myenrollments\/\d+$|lms\/quizzing\/user\/quizzes_list\.d2l\?ou=\d+$)/
+        /^\/d2l\/(api\/le\/1\.99\/\d+\/|api\/lp\/1\.63\/enrollments\/myenrollments\/\?orgUnitTypeId=3$|lms\/quizzing\/user\/quizzes_list\.d2l\?ou=\d+$|lms\/dropbox\/user\/folders_list\.d2l\?ou=\d+&isprv=0$)/
       );
     }
     expect(page.pedidos.some((r) => r.caminho.includes("50099")), "card da aba escondida").toBe(false);
+  });
+
+  test("poucas leituras: só o que cada disciplina precisa", async ({ page }) => {
+    await page.abrir();
+    await expect(resumo(page)).toHaveAttribute("aria-busy", "false", { timeout: 8000 });
+    const de = (trecho) => page.pedidos.filter((r) => r.caminho.includes(trecho));
+    /* nome: uma leitura para todas */
+    expect(de("/enrollments/myenrollments/").length).toBe(1);
+    /* sumário do conteúdo: só onde há atividade avaliada fora de tarefa/questionário (50002) */
+    expect(de("/content/toc").map((r) => r.caminho)).toEqual(["/d2l/api/le/1.99/50002/content/toc"]);
+    expect(de("/content/myItems/").length).toBe(1);
+    /* Lista de questionários: nunca em disciplina sem questionário (50009) */
+    expect(de("quizzes_list.d2l?ou=50009").length).toBe(0);
+    /* envios: uma página de tarefas por disciplina que tem tarefa sem nota
+       (50001, 50002, 50009 — a 7901 já corrigida não conta) */
+    expect(de("folders_list.d2l").map((r) => r.caminho.match(/ou=(\d+)/)[1]).sort()).toEqual(["50001", "50002", "50009"]);
+    /* API de envios só para a tarefa que não apareceu na página */
+    expect(de("/submissions/mysubmissions/").map((r) => r.caminho)).toEqual([
+      "/d2l/api/le/1.99/50002/dropbox/folders/7204/submissions/mysubmissions/",
+    ]);
+    /* nenhuma leitura repetida */
+    const caminhos = page.pedidos.map((r) => r.caminho);
+    const repetidos = caminhos.filter((c, i) => caminhos.indexOf(c) !== i);
+    expect(repetidos, "sem repetição").toEqual([]);
   });
 
   test("trocar de aba recria os cards e o progresso volta sem pedir de novo", async ({ page }) => {

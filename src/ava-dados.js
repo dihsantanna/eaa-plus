@@ -28,6 +28,7 @@ EAAPlus.ava = (function () {
 
   var API = "/d2l/api/le/1.99/";
   var LISTA_QUESTIONARIOS = "/d2l/lms/quizzing/user/quizzes_list.d2l?ou=";
+  var LISTA_TAREFAS = "/d2l/lms/dropbox/user/folders_list.d2l?ou=";
   var APROVA = 6;
   var RECUPERA = 4;
   var PARALELO = 4;
@@ -160,13 +161,11 @@ EAAPlus.ava = (function () {
   /* O boletim é a primeira leitura da fila e já diz o formato da disciplina:
      com "Nota AV1" (curso de Música) a barra terá 2 colunas; sem, 1 só.
      previa() usa a MESMA requisição de dados(), não faz outra. */
+  /* Erros também ficam guardados: nada de tentar de novo sozinho (a
+     varredura roda a cada segundo — uma disciplina com erro viraria leitura
+     sem fim). Tenta de novo quando o aluno recarrega a página. */
   function boletim(ou) {
-    if (!boletins[ou]) {
-      boletins[ou] = pegar(API + ou + "/grades/").catch(function (erro) {
-        delete boletins[ou];
-        throw erro;
-      });
-    }
+    if (!boletins[ou]) boletins[ou] = pegar(API + ou + "/grades/");
     return boletins[ou];
   }
 
@@ -180,55 +179,159 @@ EAAPlus.ava = (function () {
   }
 
   function dados(ou) {
-    if (!cache[ou]) {
-      cache[ou] = baixar(ou).catch(function (erro) {
-        delete cache[ou]; /* deixa tentar de novo na próxima vez */
-        throw erro;
-      });
-    }
+    if (!cache[ou]) cache[ou] = baixar(ou);
     return cache[ou];
   }
 
+  /* Poucas leituras, em duas levas. A 1ª é o que toda disciplina precisa:
+   * boletim, notas liberadas, tarefas e questionários. A 2ª só pede o que
+   * AQUELA disciplina exige:
+   *   - Lista de questionários: só se houver questionário;
+   *   - envios da tarefa: só das que contam e ainda não têm nota;
+   *   - sumário do conteúdo + itens concluídos: só se houver atividade
+   *     avaliada que não é tarefa nem questionário (não existe hoje no curso
+   *     de Música, mas o AVA permite).
+   * O nome da disciplina vem de uma leitura só para todas (nomes()). */
   function baixar(ou) {
     var base = API + ou + "/";
     return Promise.all([
       boletim(ou),
       pegar(base + "grades/values/myGradeValues/"),
       pegar(base + "dropbox/folders/").then(lista, vazio),
-      pegar(base + "quizzes/").then(lista, vazio),
-      pegar(base + "content/toc").then(null, nada),
-      pegar(base + "content/myItems/").then(lista, vazio),
-      pegar(LISTA_QUESTIONARIOS + ou, true).then(lerListaDeQuestionarios, function () {
-        return {};
-      }),
-      /* Nome oficial da disciplina. O atributo text do card não serve: já
-         veio "Nome, código, semestre" e depois só "Fechada". */
-      pegar("/d2l/api/lp/1.63/enrollments/myenrollments/" + ou).then(function (m) {
-        return (m && m.OrgUnit && m.OrgUnit.Name) || "";
-      }, function () {
-        return "";
-      })
+      pegar(base + "quizzes/").then(lista, vazio)
     ]).then(function (r) {
-      var itens = classificar(ou, r[0], r[1], r[2], r[3], r[4], r[5], r[6]);
-      var envios = itens
-        .filter(function (it) {
-          return it.estado === null && it.tarefa && !it.enviado;
-        })
-        .map(function (it) {
-          return pegar(base + "dropbox/folders/" + it.tarefa + "/submissions/mysubmissions/").then(
-            function (e) {
-              it.enviado = lista(e).some(function (x) {
-                return x.Submissions && x.Submissions.length;
-              });
-            },
-            function () {}
-          );
-        });
-      return Promise.all(envios).then(function () {
-        var resumo = resumir(itens, r[1]);
-        resumo.nome = r[7];
-        return resumo;
+      var gi = r[0] || [];
+      var valores = r[1] || [];
+      var pastas = r[2];
+      var questionarios = r[3];
+
+      var numericos = {};
+      gi.forEach(function (g) {
+        if (ehAtividade(g)) numericos[g.Id] = true;
       });
+      var comNota = {};
+      valores.forEach(function (v) {
+        if (v.PointsNumerator !== null && v.PointsNumerator !== undefined) comNota[String(v.GradeObjectIdentifier)] = true;
+      });
+      var ligados = {};
+      pastas.concat(questionarios).forEach(function (a) {
+        if (a.GradeItemId) ligados[a.GradeItemId] = true;
+      });
+
+      var temQuestionario = questionarios.some(function (q) {
+        return q.IsActive !== false;
+      });
+      var semLigacao = Object.keys(numericos).some(function (id) {
+        return !ligados[id] && !comNota[id];
+      });
+      var paraConferir = pastas.filter(function (p) {
+        if (p.IsHidden || comNota[String(p.GradeItemId)]) return false;
+        return numericos[p.GradeItemId] || qualAv("", p.Name);
+      });
+
+      return Promise.all([
+        temQuestionario
+          ? pegar(LISTA_QUESTIONARIOS + ou, true).then(lerListaDeQuestionarios, function () {
+              return {};
+            })
+          : {},
+        semLigacao ? pegar(base + "content/toc").then(null, nada) : null,
+        semLigacao ? pegar(base + "content/myItems/").then(lista, vazio) : [],
+        paraConferir.length ? conferirEnvios(ou, paraConferir) : { enviadas: {}, secoes: {} }
+      ]).then(function (s) {
+        var itens = classificar(ou, gi, valores, pastas, questionarios, s[1], s[2], s[0], s[3]);
+        return resumir(itens, valores);
+      });
+    });
+  }
+
+  /* Envios das tarefas: a página "Atividades com Anexo" traz o status de
+   * todas numa leitura só ("Não Enviado" / "1 envio, 2 arquivos" — conferido
+   * contra a API em 15 tarefas reais, 100% de acordo). Se a página falhar ou
+   * uma tarefa não aparecer nela, pergunta à API de envios só por aquela. */
+  function conferirEnvios(ou, pastas) {
+    return pegar(LISTA_TAREFAS + ou + "&isprv=0", true)
+      .then(lerListaDeTarefas, function () {
+        return {};
+      })
+      .then(function (pagina) {
+        var r = { enviadas: {}, secoes: {} };
+        var faltam = pastas.filter(function (p) {
+          var l = pagina[String(p.Id)];
+          if (!l) return true;
+          if (l.enviado) r.enviadas[p.Id] = true;
+          if (l.secao) r.secoes[p.Id] = l.secao;
+          return false;
+        });
+        return Promise.all(
+          faltam.map(function (p) {
+            return pegar(API + ou + "/dropbox/folders/" + p.Id + "/submissions/mysubmissions/").then(
+              function (e) {
+                if (lista(e).some(function (x) {
+                  return x.Submissions && x.Submissions.length;
+                })) r.enviadas[p.Id] = true;
+              },
+              function () {}
+            );
+          })
+        ).then(function () {
+          return r;
+        });
+      });
+  }
+
+  /* Página "Atividades com Anexo": tabela com linhas de seção
+   * (tr.d_ggl2, "Av1 - Primeiro Fechamento") e uma linha por tarefa, com o
+   * link ?db={id} e a coluna "Status de Conclusão". */
+  function lerListaDeTarefas(html) {
+    var mapa = {};
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    var secao = "";
+    var linhas = doc.querySelectorAll("table tr");
+    for (var i = 0; i < linhas.length; i++) {
+      var tr = linhas[i];
+      if (/\bd_ggl2\b/.test(tr.className)) {
+        secao = texto(tr);
+        continue;
+      }
+      var db = null;
+      var links = tr.querySelectorAll("a[href]");
+      for (var j = 0; j < links.length && !db; j++) db = (links[j].getAttribute("href").match(/[?&]db=(\d+)/) || [])[1];
+      if (!db || tr.children.length < 2) continue;
+      mapa[db] = { secao: secao, enviado: /\d+\s*envio/i.test(texto(tr.children[1])) };
+    }
+    return mapa;
+  }
+
+  function ehAtividade(g) {
+    return g.GradeType === "Numeric" && !g.IsHidden && g.MaxPoints > 0;
+  }
+
+  /* Nome oficial das disciplinas, numa leitura só. O atributo text do card não
+     serve: já veio "Nome, código, semestre" e depois só "Fechada". */
+  var nomesPromessa = null;
+
+  function nomes() {
+    if (!nomesPromessa) {
+      nomesPromessa = pegar("/d2l/api/lp/1.63/enrollments/myenrollments/?orgUnitTypeId=3").then(
+        function (m) {
+          var mapa = {};
+          ((m && m.Items) || []).forEach(function (i) {
+            if (i.OrgUnit) mapa[i.OrgUnit.Id] = i.OrgUnit.Name;
+          });
+          return mapa;
+        },
+        function () {
+          return {}; /* sem nomes: as fichas dizem "Disciplina" */
+        }
+      );
+    }
+    return nomesPromessa;
+  }
+
+  function nome(ou) {
+    return nomes().then(function (mapa) {
+      return mapa[ou] || "";
     });
   }
 
@@ -297,36 +400,47 @@ EAAPlus.ava = (function () {
     return "/d2l/lms/quizzing/user/quiz_summary.d2l?ou=" + ou + "&qi=" + id + "&cfql=1";
   }
 
-  function classificar(ou, boletim, valores, pastas, questionarios, toc, meusItens, listaQ) {
+  function classificar(ou, boletim, valores, pastas, questionarios, toc, meusItens, listaQ, envios) {
     var nota = {};
     valores.forEach(function (v) {
       nota[String(v.GradeObjectIdentifier)] = v;
     });
 
-    var concluido = {};
+    /* Atividade avaliada que é tópico de conteúdo (e não tarefa/questionário):
+       o conteúdo diz se foi concluída e qual o prazo. */
+    var meu = {};
     meusItens.forEach(function (i) {
-      if (i.DateCompleted) concluido[i.ItemId] = true;
+      meu[i.ItemId] = i;
     });
-    var feitoPeloConteudo = {};
+    var peloConteudo = {};
     topicos(toc).forEach(function (t) {
-      if (t.GradeItemId && concluido[t.TopicId]) feitoPeloConteudo[t.GradeItemId] = true;
+      if (!t.GradeItemId) return;
+      var i = meu[t.TopicId] || {};
+      peloConteudo[t.GradeItemId] = {
+        feito: !!i.DateCompleted,
+        prazo: ts(i.DueDate) || ts(i.EndDate) || ts(t.EndDateTime)
+      };
     });
 
     var noBoletim = {};
     var itens = boletim
-      .filter(function (g) {
-        return g.GradeType === "Numeric" && !g.IsHidden && g.MaxPoints > 0;
-      })
+      .filter(ehAtividade)
       .map(function (g) {
         noBoletim[g.Id] = true;
         var it = novoItem(g.Name, g.MaxPoints, 1);
-        it.enviado = !!feitoPeloConteudo[g.Id];
+        var c = peloConteudo[g.Id];
+        if (c) {
+          it.enviado = c.feito;
+          it.prazo = c.prazo;
+        }
 
         pastas.forEach(function (p) {
           if (p.GradeItemId !== g.Id || p.IsHidden) return;
           it.tarefa = p.Id;
           it.prazo = ts(p.DueDate) || ts((p.Availability || {}).EndDate);
           it.link = linkDaTarefa(ou, p.Id);
+          if (envios.enviadas[p.Id]) it.enviado = true;
+          if (envios.secoes[p.Id]) it.secao = envios.secoes[p.Id];
         });
         questionarios.forEach(function (q) {
           if (q.GradeItemId !== g.Id || q.IsActive === false) return;
@@ -358,12 +472,14 @@ EAAPlus.ava = (function () {
     });
     pastas.forEach(function (p) {
       if (p.IsHidden || noBoletim[p.GradeItemId]) return;
-      var av = qualAv("", p.Name);
+      var av = qualAv(envios.secoes[p.Id], p.Name);
       if (!av) return;
       var it = novoItem(p.Name, 0, av);
       it.tarefa = p.Id;
       it.prazo = ts(p.DueDate) || ts((p.Availability || {}).EndDate);
       it.link = linkDaTarefa(ou, p.Id);
+      it.enviado = !!envios.enviadas[p.Id];
+      it.secao = envios.secoes[p.Id] || "";
       itens.push(it);
     });
     return itens;
@@ -406,7 +522,7 @@ EAAPlus.ava = (function () {
   function nomesDoPrazo(secao, ordem) {
     var partes = secao.split(/\s[-–]\s/);
     var fim = partes.length > 1 ? partes[partes.length - 1] : "";
-    var av = (secao.match(/\((Av\s*\d)\)/i) || [])[1];
+    var av = (secao.match(/\((Av\s*\d)\)|^\s*(Av\s*\d)\b/i) || []).slice(1).filter(Boolean)[0];
     if (!fim) return null;
     return {
       curto: ordem + "º " + fim.split(/\s+/).pop(),
@@ -588,6 +704,7 @@ EAAPlus.ava = (function () {
   return {
     dados: dados,
     previa: previa,
+    nome: nome,
     diaDe: diaDe,
     diasAte: diasAte,
     data: data,

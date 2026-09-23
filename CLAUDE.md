@@ -20,7 +20,7 @@ algo sobre a página, a loja ou o Chrome, verifique — não chute.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 55 testes E2E com a extensão carregada de verdade
+npm test                           # 56 testes E2E com a extensão carregada de verdade
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
 npm run check                      # sintaxe + regras do manifest + regra do fetch
 npm run build                      # dist/eaa-plus-vX.Y.Z.zip + dist/colar-no-elementor.html
@@ -150,8 +150,18 @@ API (`le` 1.99; o servidor aceita 1.0–1.99), tudo GET com a sessão:
 | `{ou}/quizzes/` | questionários: `GradeItemId`, prazo = `DueDate` ou `EndDate` |
 | `{ou}/content/toc` + `{ou}/content/myItems/` | tópico (`GradeItemId`) + `DateCompleted` = feito |
 | `{ou}/quizzes/{id}/attempts/` | **403 para aluno** — não usar |
+| `/d2l/lms/dropbox/user/folders_list.d2l?ou={ou}&isprv=0` (HTML) | envios de TODAS as tarefas numa leitura: linha de seção `tr.d_ggl2`, link `?db={id}`, 2ª coluna "Não Enviado" / "1 envio, 2 arquivos" (conferido contra a API em 15 tarefas reais) |
+| `/d2l/api/lp/1.63/enrollments/myenrollments/?orgUnitTypeId=3` | nomes de todas as disciplinas numa leitura |
 | `/d2l/lms/quizzing/user/quizzes_list.d2l?ou={ou}` (HTML) | única fonte de "fiz o questionário": tabela `table.d2l-table`, cabeçalho `tr.d_gh` = seção ("Avaliação 1 (Av1) - Primeiro Fechamento"), linha com `onclick="GoToQuiz(id, …)"`, última célula "usadas / permitidas" |
 
+- **Poucas leituras** (medido em 2026-09-23: página inicial de 86 → 49).
+  Toda disciplina: boletim, notas, tarefas, questionários (4). Só se precisar:
+  Lista de questionários (se houver questionário), página de tarefas (se houver
+  tarefa sem nota), `toc`+`myItems` (se houver atividade avaliada que não é
+  tarefa nem questionário), API de envios (só tarefa que não apareceu na
+  página). **Erro fica guardado até recarregar** — nunca tentar de novo sozinho:
+  a varredura roda a cada segundo e isso já virou 4 leituras/s numa disciplina
+  com erro.
 - A Av1 do curso de Música fecha em **duas datas** (2026.2: 28/09 e 26/10,
   23:59), iguais em todas as disciplinas. O card agrupa as atividades por dia
   de prazo e o resumo acima dos cards mostra o fechamento mais próximo.
