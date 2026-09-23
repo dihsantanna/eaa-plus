@@ -12,21 +12,27 @@ O autor é **aluno** da Licenciatura em Música, não funcionário. **Não tem a
 ao WordPress da escola** — por isso isto é uma extensão e não uma edição do site.
 Projeto independente, sem vínculo oficial com a escola.
 
-Converse em **português**, com respostas **curtas e diretas**.
+Converse em **português**, com respostas **curtas e diretas**. Antes de afirmar
+algo sobre a página, a loja ou o Chrome, verifique — não chute.
 
 **Código em inglês** (variáveis, funções, classes CSS, ids, `data-*`, chaves,
 nomes de arquivo, scripts npm). **Comentários, texto de tela, títulos de teste e
 mensagens do terminal em português.** Termos do domínio ficam como são: `ou`
 (org unit da D2L), `av1`/`av2`/`av3`, `ava`. Convertido em 2026-09-23 a pedido
-do usuário. Antes de afirmar
-algo sobre a página, a loja ou o Chrome, verifique — não chute.
+do usuário.
+
+**Onde mexer:** regra (o que conta como "perdida", "Precisa de X na Av2"…) →
+`ava-rules.js` + teste em `tests/unit/`. Leitura do AVA mudou de formato →
+`ava-network.js`. Cor → `ava-theme.css`. Desenho de uma tela → o arquivo dela
+em `src/features/`.
 
 ## Comandos
 
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 66 testes E2E com a extensão carregada de verdade
+npm test                           # 31 unitários (regras, <1s) + 67 E2E com a extensão carregada de verdade
+npm run test:unit                  # só os unitários das regras (tests/unit/)
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
 npm run check                      # sintaxe + regras do manifest + regra do fetch
 npm run build                      # dist/eaa-plus-vX.Y.Z.zip + dist/colar-no-elementor.html
@@ -48,7 +54,11 @@ passe na linha de comando.
 manifest.json                  MV3, permissions só ["storage"]; 2 content_scripts (escola, AVA)
 src/core.js                    EAAPlus.add() / EAAPlus.periods() — SEMPRE o 1º js
 src/background.js              service worker: só libera storage.session aos content scripts
-src/ava-data.js                EAAPlus.ava: dados, regras e cache do AVA (ÚNICO arquivo com fetch)
+src/ava-rules.js               EAAPlus.avaRules: regras PURAS (estados, prazos, Av1/Av2/Av3, textos) — testáveis em Node
+src/ava-network.js             EAAPlus.avaNet: fetch (ÚNICO arquivo com rede) + leitura das páginas HTML do AVA
+src/ava-cache.js               EAAPlus.avaCache: chrome.storage.session (cache entre páginas)
+src/ava-data.js                EAAPlus.ava: junta rede + cache + regras; é o que as features usam
+src/ava-theme.css              TODAS as cores do AVA como variáveis --eaa-* (atravessam o shadow DOM)
 src/features/<name>.js|.css    uma melhoria por arquivo
 src/features/period-filter.*   página de aulas: abas de filtro por período
 src/features/next-class.*      página de aulas: card da próxima aula
@@ -62,6 +72,7 @@ tests/extension.spec.mjs       testes da página de aulas
 tests/ava.spec.mjs             testes do AVA (página inicial)
 tests/ava-course.spec.mjs      testes da barra nas páginas de disciplina
 tests/ava-cache.spec.mjs       testes do cache entre páginas (fixture `background` = service worker)
+tests/unit/ava-rules.test.mjs  unitários das regras (node:test, hora fixa)
 tools/dev.mjs                  npm run dev (cópia em .dev-build/ com recarregador)
 tools/build.mjs                zip da loja + bloco para colar no Elementor
 tools/check-manifest.mjs       trava regras que afetam a revisão da loja
@@ -208,10 +219,10 @@ e recarrega a página inteira a cada clique. Sem cache, voltar à página inicia
   cache ao entrar e no `pagehide` (o aluno pode ter enviado algo ali; o
   questionário pode abrir dentro do Conteúdo sem trocar de URL). O id vem
   da URL (`/d2l/home/{ou}`, `/d2l/le/*/{ou}`, `?ou=`) e do link "Início do Curso".
-- Guarda os dados **crus e enxutos** (`slim()`: só os campos que
+- Guarda os dados **crus e enxutos** (`slim()` em ava-cache.js: só os campos que
   `classify`/`summarize` usam; o caminho sem cache passa pelo mesmo corte).
   Prazo vencido etc. é recalculado na hora.
-- Só guarda leitura **completa** (`download()` devolve `complete`).
+- Só guarda leitura **completa** (`download()` em ava-data.js devolve `complete`).
 - Chave com o id do aluno: `html[data-global-context]` → `userId` (DOM
   normal, sem pedido extra). Sem id = sem cache. Id diferente = apaga tudo.
 - Resumo mostra "Atualizado às HH:MM" (dado mais antigo) + botão Atualizar:

@@ -5,7 +5,8 @@
   "description": "EAA+ — extensão do Chrome com melhorias de usabilidade para alunos da Escola de Adoração e Arte: aulas síncronas e AVA (Brightspace).",
   "type": "module",
   "scripts": {
-    "test": "playwright test",
+    "test": "node --test \"tests/unit/*.test.mjs\" && playwright test",
+    "test:unit": "node --test \"tests/unit/*.test.mjs\"",
     "build": "node tools/build.mjs",
     "check": "node tools/check-manifest.mjs",
     "dev": "node tools/dev.mjs",

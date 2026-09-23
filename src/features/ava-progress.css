@@ -11,11 +11,11 @@
   gap: 8px;
   margin: 0 0 16px;
   padding: 16px;
-  border: 1px solid #cdd5dc;
+  border: 1px solid var(--eaa-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--eaa-white);
   font: 400 14px/20px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
-  color: #494c4e;
+  color: var(--eaa-text);
 }
 
 #eaa-summary * {
@@ -41,16 +41,16 @@
 #eaa-summary .eaa-r-title {
   font-size: 16px;
   font-weight: 700;
-  color: #202122;
+  color: var(--eaa-ink);
 }
 
 #eaa-summary .eaa-r-when {
   font-weight: 700;
-  color: #202122;
+  color: var(--eaa-ink);
 }
 
 #eaa-summary .eaa-r-when.urgent {
-  color: #cd2026;
+  color: var(--eaa-missed);
 }
 
 #eaa-summary .eaa-seg {
@@ -62,13 +62,13 @@
 #eaa-summary .eaa-seg i {
   flex: 1 1 0;
   border-radius: 4px;
-  background: #e3e9f1;
+  background: var(--eaa-track);
 }
 
-#eaa-summary .eaa-seg .graded { background: #46a661; }
-#eaa-summary .eaa-seg .awaiting { background: #ffba59; }
-#eaa-summary .eaa-seg .started { background: #e87511; }
-#eaa-summary .eaa-seg .missed { background: #cd2026; }
+#eaa-summary .eaa-seg .graded { background: var(--eaa-graded); }
+#eaa-summary .eaa-seg .awaiting { background: var(--eaa-awaiting); }
+#eaa-summary .eaa-seg .started { background: var(--eaa-started); }
+#eaa-summary .eaa-seg .missed { background: var(--eaa-missed); }
 
 #eaa-summary .eaa-r-caption {
   font-size: 13px;
@@ -76,11 +76,11 @@
 
 #eaa-summary .eaa-r-tag {
   font-weight: 700;
-  color: #202122;
+  color: var(--eaa-ink);
 }
 
-#eaa-summary .eaa-r-tag.started { color: #b34f00; }
-#eaa-summary .eaa-r-tag.graded { color: #2c7a43; }
+#eaa-summary .eaa-r-tag.started { color: var(--eaa-started-text); }
+#eaa-summary .eaa-r-tag.graded { color: var(--eaa-graded-text); }
 
 #eaa-summary .eaa-r-chips {
   display: flex;
@@ -95,22 +95,22 @@
   gap: 8px;
   height: 28px;
   padding: 0 4px 0 12px;
-  border: 1px solid #cdd5dc;
+  border: 1px solid var(--eaa-border);
   border-radius: 14px;
-  background: #f9fbff;
-  color: #202122;
+  background: var(--eaa-surface);
+  color: var(--eaa-ink);
   font-size: 13px;
   text-decoration: none;
 }
 
 #eaa-summary .eaa-r-chip:hover,
 #eaa-summary .eaa-r-chip:focus-visible {
-  border-color: #006fbf;
-  color: #006fbf;
+  border-color: var(--eaa-link);
+  color: var(--eaa-link);
 }
 
 #eaa-summary .eaa-r-chip:focus-visible {
-  outline: 2px solid #006fbf;
+  outline: 2px solid var(--eaa-link);
   outline-offset: 2px;
 }
 
@@ -129,7 +129,7 @@
   height: 20px;
   padding: 0 6px;
   border-radius: 10px;
-  background: #e3e9f1;
+  background: var(--eaa-track);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -138,27 +138,27 @@
    conforme as disciplinas respondem; as fichas vazias guardam o lugar. */
 #eaa-summary .eaa-r-status {
   font-weight: 400;
-  color: #6e7477;
+  color: var(--eaa-muted);
 }
 
 #eaa-summary .eaa-r-progress {
   height: 8px;
   border-radius: 4px;
   overflow: hidden;
-  background: #e3e9f1;
+  background: var(--eaa-track);
 }
 
 #eaa-summary .eaa-r-progress i {
   display: block;
   height: 100%;
   border-radius: 4px;
-  background: #006fbf;
+  background: var(--eaa-link);
   transition: width 0.2s ease;
 }
 
 #eaa-summary .eaa-r-chip.eaa-r-empty {
   border-color: transparent;
-  background: #f1f5fb;
+  background: var(--eaa-neutral-bg);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -176,11 +176,11 @@
   gap: 8px 16px;
   margin-top: 4px;
   padding-top: 12px;
-  border-top: 1px solid #e3e9f1;
+  border-top: 1px solid var(--eaa-track);
   list-style: none;
   font-size: 12px;
   line-height: 16px;
-  color: #6e7477;
+  color: var(--eaa-muted);
 }
 
 #eaa-summary .eaa-r-legend li {
@@ -195,19 +195,19 @@
   width: 16px;
   height: 8px;
   border-radius: 4px;
-  background: #e3e9f1;
+  background: var(--eaa-track);
 }
 
-#eaa-summary .eaa-r-legend .graded { background: #46a661; }
-#eaa-summary .eaa-r-legend .awaiting { background: #ffba59; }
-#eaa-summary .eaa-r-legend .started { background: #e87511; }
-#eaa-summary .eaa-r-legend .missed { background: #cd2026; }
+#eaa-summary .eaa-r-legend .graded { background: var(--eaa-graded); }
+#eaa-summary .eaa-r-legend .awaiting { background: var(--eaa-awaiting); }
+#eaa-summary .eaa-r-legend .started { background: var(--eaa-started); }
+#eaa-summary .eaa-r-legend .missed { background: var(--eaa-missed); }
 
 /* Rodapé: idade dos dados | Atualizar. Mesma tipografia da legenda. */
 #eaa-summary .eaa-r-footer {
   font-size: 12px;
   line-height: 16px;
-  color: #6e7477;
+  color: var(--eaa-muted);
 }
 
 #eaa-summary .eaa-r-refresh {
@@ -223,7 +223,7 @@
   background: none;
   box-shadow: none;
   font: 700 12px/16px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
-  color: #006fbf;
+  color: var(--eaa-link);
   cursor: pointer;
 }
 
@@ -232,20 +232,20 @@
 }
 
 #eaa-summary .eaa-r-refresh:focus-visible {
-  outline: 2px solid #006fbf;
+  outline: 2px solid var(--eaa-link);
   outline-offset: 2px;
 }
 
 #eaa-summary .eaa-r-refresh:disabled {
-  color: #6e7477;
+  color: var(--eaa-muted);
   cursor: default;
 }
 
 #eaa-summary .eaa-r-chip.started {
-  border-color: #e87511;
+  border-color: var(--eaa-started);
 }
 
 #eaa-summary .eaa-r-chip.started .eaa-r-cnum {
-  background: #e87511;
-  color: #fff;
+  background: var(--eaa-started);
+  color: var(--eaa-white);
 }

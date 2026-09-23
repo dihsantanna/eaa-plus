@@ -1,0 +1,42 @@
+/* EAA+ · cores do AVA — o ÚNICO lugar onde elas são definidas.
+ *
+ * Usadas por ava-progress.css, ava-course.css e pelo CSS que ava-progress.js
+ * põe dentro do shadow DOM dos cards. Variáveis CSS são herdadas através do
+ * shadow DOM, então o :root da página alcança os cards também.
+ *
+ * Paleta da própria D2L (Brightspace), para a extensão parecer parte do AVA.
+ */
+
+:root {
+  /* estados das atividades: preenchimento das barras e da legenda */
+  --eaa-graded: #46a661;        /* corrigida */
+  --eaa-awaiting: #ffba59;      /* aguardando correção */
+  --eaa-started: #e87511;       /* iniciada, não enviada */
+  --eaa-missed: #cd2026;        /* prazo perdido; também o vermelho de "urgente" */
+  --eaa-track: #e3e9f1;         /* a fazer / fundo da barra */
+
+  /* estados como texto (mais escuros, para contraste sobre branco) */
+  --eaa-graded-text: #2c7a43;
+  --eaa-awaiting-text: #8a5300;
+  --eaa-started-text: #b34f00;
+  --eaa-failed-text: #a3181e;
+
+  /* estados sobre a faixa azul da disciplina (mais claros) */
+  --eaa-missed-on-dark: #ffb3b3;
+  --eaa-started-on-dark: #ffa55c;
+
+  /* fundo da situação (aprovado, recuperação, reprovado, neutra) */
+  --eaa-passed-bg: #e8f5ec;
+  --eaa-recovery-bg: #fff4e0;
+  --eaa-failed-bg: #fdecec;
+  --eaa-neutral-bg: #f1f5fb;
+
+  /* neutros da D2L */
+  --eaa-ink: #202122;           /* títulos */
+  --eaa-text: #494c4e;          /* texto */
+  --eaa-muted: #6e7477;         /* texto secundário */
+  --eaa-border: #cdd5dc;
+  --eaa-link: #006fbf;
+  --eaa-surface: #f9fbff;
+  --eaa-white: #fff;
+}

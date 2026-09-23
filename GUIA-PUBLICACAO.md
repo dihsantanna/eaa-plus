@@ -31,7 +31,11 @@
 | `src/background.js` | Service worker: só libera o `chrome.storage.session` para o cache do AVA |
 | `src/features/period-filter.*` | Melhoria 1 — abas de filtro por período |
 | `src/features/next-class.*` | Melhoria 2 — card da próxima aula |
-| `src/ava-data.js` | Leitura das notas e entregas no AVA (único arquivo com acesso à rede) |
+| `src/ava-rules.js` | Regras: estado de cada atividade, prazos, situação pela regra do manual |
+| `src/ava-network.js` | Leitura das notas e entregas no AVA (único arquivo com acesso à rede, só GET) |
+| `src/ava-cache.js` | Cache de 10 min em `chrome.storage.session` (memória) |
+| `src/ava-data.js` | Junta rede, cache e regras para as melhorias do AVA |
+| `src/ava-theme.css` | Cores do AVA |
 | `src/features/ava-progress.*` | Melhoria 3 — progresso nos cards da página inicial do AVA |
 | `src/features/ava-course.*` | Melhoria 4 — barra de progresso nas páginas de cada disciplina |
 | `icons/16, 48, 128` | Ícones (o de 128 já com o padding de 16px exigido pela loja) |

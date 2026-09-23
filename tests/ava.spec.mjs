@@ -226,6 +226,17 @@ test.describe("resumo do próximo prazo", () => {
     expect(new Set(heights).size, "fichas com a mesma altura").toBe(1);
   });
 
+  test("cores do tema (ava-theme.css) chegam ao resumo e ao shadow DOM dos cards", async ({ page }) => {
+    await page.open();
+    const GRADED = "rgb(70, 166, 97)"; /* --eaa-graded: #46a661 */
+    const AWAITING = "rgb(255, 186, 89)"; /* --eaa-awaiting: #ffba59 */
+    await expect(summary(page).locator(".eaa-r-legend i.graded")).toHaveCSS("background-color", GRADED);
+    /* 50001: corrigida, aguardando, a fazer — dentro de 4 shadow roots */
+    const segments = deadline(page, 50001, 0).locator(".eaa-seg i");
+    await expect(segments.nth(0)).toHaveCSS("background-color", GRADED);
+    await expect(segments.nth(1)).toHaveCSS("background-color", AWAITING);
+  });
+
   test("legenda com os cinco estados, de borda a borda e espaços iguais", async ({ page }) => {
     await page.open();
     const legendList = summary(page).locator(".eaa-r-legend");

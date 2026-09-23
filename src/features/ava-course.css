@@ -14,7 +14,7 @@
   align-items: center;
   box-sizing: border-box;
   font: 400 12px/16px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
-  color: #fff;
+  color: var(--eaa-white);
 }
 
 #eaa-course * {
@@ -55,7 +55,7 @@
 }
 
 #eaa-course .eaa-d-button:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--eaa-white);
   outline-offset: 2px;
 }
 
@@ -102,13 +102,13 @@
 }
 
 #eaa-course .eaa-d-col.urgent .eaa-d-days {
-  color: #ffb3b3;
+  color: var(--eaa-missed-on-dark);
   font-weight: 700;
 }
 
 #eaa-course .eaa-d-alert {
   margin-right: 4px;
-  color: #ffa55c;
+  color: var(--eaa-started-on-dark);
   font-weight: 700;
 }
 
@@ -128,10 +128,10 @@
   background: rgba(255, 255, 255, 0.24);
 }
 
-#eaa-course .eaa-seg .graded { background: #46a661; }
-#eaa-course .eaa-seg .awaiting { background: #ffba59; }
-#eaa-course .eaa-seg .started { background: #e87511; }
-#eaa-course .eaa-seg .missed { background: #cd2026; }
+#eaa-course .eaa-seg .graded { background: var(--eaa-graded); }
+#eaa-course .eaa-seg .awaiting { background: var(--eaa-awaiting); }
+#eaa-course .eaa-seg .started { background: var(--eaa-started); }
+#eaa-course .eaa-seg .missed { background: var(--eaa-missed); }
 
 #eaa-course .eaa-d-hidden {
   position: absolute;
@@ -208,11 +208,11 @@
   max-height: 70vh;
   overflow: auto;
   padding: 16px;
-  border: 1px solid #cdd5dc;
+  border: 1px solid var(--eaa-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--eaa-white);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  color: #202122;
+  color: var(--eaa-ink);
   font-size: 14px;
   line-height: 20px;
   text-align: left;
@@ -243,7 +243,7 @@
   display: grid;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid #e3e9f1;
+  border-top: 1px solid var(--eaa-track);
 }
 
 #eaa-course .eaa-d-ghead {
@@ -251,12 +251,12 @@
   font-size: 13px;
   font-weight: 700;
   line-height: 16px;
-  color: #202122;
+  color: var(--eaa-ink);
 }
 
 #eaa-course .eaa-d-ghead > :last-child {
   font-weight: 400;
-  color: #6e7477;
+  color: var(--eaa-muted);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -282,24 +282,24 @@
   width: 16px;
   height: 8px;
   border-radius: 4px;
-  background: #e3e9f1;
+  background: var(--eaa-track);
 }
 
-#eaa-course .eaa-d-group li.graded i { background: #46a661; }
-#eaa-course .eaa-d-group li.awaiting i { background: #ffba59; }
-#eaa-course .eaa-d-group li.started i { background: #e87511; }
-#eaa-course .eaa-d-group li.missed i { background: #cd2026; }
+#eaa-course .eaa-d-group li.graded i { background: var(--eaa-graded); }
+#eaa-course .eaa-d-group li.awaiting i { background: var(--eaa-awaiting); }
+#eaa-course .eaa-d-group li.started i { background: var(--eaa-started); }
+#eaa-course .eaa-d-group li.missed i { background: var(--eaa-missed); }
 
 #eaa-course .eaa-d-iname {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #202122;
+  color: var(--eaa-ink);
   text-decoration: none;
 }
 
 #eaa-course a.eaa-d-iname {
-  color: #006fbf;
+  color: var(--eaa-link);
 }
 
 #eaa-course a.eaa-d-iname:hover,
@@ -310,13 +310,13 @@
 #eaa-course .eaa-d-state {
   white-space: nowrap;
   font-size: 12px;
-  color: #6e7477;
+  color: var(--eaa-muted);
 }
 
-#eaa-course li.graded .eaa-d-state { color: #2c7a43; }
-#eaa-course li.awaiting .eaa-d-state { color: #8a5300; }
-#eaa-course li.started .eaa-d-state { color: #b34f00; font-weight: 700; }
-#eaa-course li.missed .eaa-d-state { color: #cd2026; font-weight: 700; }
+#eaa-course li.graded .eaa-d-state { color: var(--eaa-graded-text); }
+#eaa-course li.awaiting .eaa-d-state { color: var(--eaa-awaiting-text); }
+#eaa-course li.started .eaa-d-state { color: var(--eaa-started-text); font-weight: 700; }
+#eaa-course li.missed .eaa-d-state { color: var(--eaa-missed); font-weight: 700; }
 
 #eaa-course .eaa-d-standing {
   height: 28px;
@@ -324,9 +324,9 @@
   border-radius: 4px;
   text-align: center;
   font-weight: 700;
-  background: #f1f5fb;
+  background: var(--eaa-neutral-bg);
 }
 
-#eaa-course .eaa-d-standing.passed { background: #e8f5ec; color: #2c7a43; }
-#eaa-course .eaa-d-standing.recovery { background: #fff4e0; color: #8a5300; }
-#eaa-course .eaa-d-standing.failed { background: #fdecec; color: #a3181e; }
+#eaa-course .eaa-d-standing.passed { background: var(--eaa-passed-bg); color: var(--eaa-graded-text); }
+#eaa-course .eaa-d-standing.recovery { background: var(--eaa-recovery-bg); color: var(--eaa-awaiting-text); }
+#eaa-course .eaa-d-standing.failed { background: var(--eaa-failed-bg); color: var(--eaa-failed-text); }

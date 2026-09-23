@@ -36,12 +36,16 @@
       ],
       "js": [
         "src/core.js",
+        "src/ava-rules.js",
+        "src/ava-network.js",
+        "src/ava-cache.js",
         "src/ava-data.js",
         "src/features/ava-progress.js",
         "src/features/ava-course.js"
       ],
       "run_at": "document_idle",
       "css": [
+        "src/ava-theme.css",
         "src/features/ava-progress.css",
         "src/features/ava-course.css"
       ]

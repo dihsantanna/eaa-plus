@@ -24,7 +24,7 @@ guarda nada. Detalhes em [`POLITICA-DE-PRIVACIDADE.md`](POLITICA-DE-PRIVACIDADE.
 ```bash
 npm install
 npx playwright install chromium
-npm test          # testes com a extensão carregada num Chromium real
+npm test          # testes unitários das regras + testes com a extensão num Chromium real
 npm run build     # gera dist/ (zip da loja + bloco para o Elementor)
 ```
 
