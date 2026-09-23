@@ -204,33 +204,40 @@ EAAPlus.ava = (function () {
     }
   }
 
+  /* Enquanto o Atualizar esvazia o cache, ninguém lê o que está lá. */
+  var limpando = Promise.resolve();
+
   function lerGuardado(chave) {
     var eu = usuario();
     if (!eu) return Promise.resolve(null);
-    return noStorage(function (area) {
-      return area.get(PREFIXO + chave);
-    }).then(
-      function (o) {
-        var e = o && o[PREFIXO + chave];
-        if (!e || e.formato !== FORMATO) return null;
-        /* outro aluno usou este navegador: nada do que está lá serve */
-        if (e.usuario !== eu) {
-          esquecerTudo();
+    return limpando
+      .then(function () {
+        return noStorage(function (area) {
+          return area.get(PREFIXO + chave);
+        });
+      })
+      .then(
+        function (o) {
+          var e = o && o[PREFIXO + chave];
+          if (!e || e.formato !== FORMATO) return null;
+          /* outro aluno usou este navegador: nada do que está lá serve */
+          if (e.usuario !== eu) {
+            esquecerTudo();
+            return null;
+          }
+          var idade = Date.now() - e.lidoEm;
+          if (!(idade >= 0 && idade < VALIDADE)) {
+            noStorage(function (area) {
+              return area.remove(PREFIXO + chave);
+            }).then(null, ignorar);
+            return null;
+          }
+          return e;
+        },
+        function () {
           return null;
         }
-        var idade = Date.now() - e.lidoEm;
-        if (!(idade >= 0 && idade < VALIDADE)) {
-          noStorage(function (area) {
-            return area.remove(PREFIXO + chave);
-          }).then(null, ignorar);
-          return null;
-        }
-        return e;
-      },
-      function () {
-        return null;
-      }
-    );
+      );
   }
 
   function guardar(chave, valor, lidoEm) {
@@ -325,6 +332,17 @@ EAAPlus.ava = (function () {
   var cache = {};
   var boletins = {};
   var guardados = {};
+
+  /* Botão Atualizar: esquece tudo — memória desta página (inclusive erros)
+     e cache — para a próxima leitura de cada disciplina ir ao servidor. */
+  function recomecar() {
+    cache = {};
+    boletins = {};
+    guardados = {};
+    nomesPromessa = null;
+    limpando = esquecerTudo();
+    return limpando;
+  }
 
   function guardadoDe(ou) {
     ou = String(ou);
@@ -931,7 +949,7 @@ EAAPlus.ava = (function () {
     previa: previa,
     nome: nome,
     esquecer: esquecer,
-    esquecerTudo: esquecerTudo,
+    recomecar: recomecar,
     diaDe: diaDe,
     diasAte: diasAte,
     data: data,

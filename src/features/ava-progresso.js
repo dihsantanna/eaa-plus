@@ -262,12 +262,7 @@ EAAPlus.add({
         caixa.setAttribute("aria-label", "Próximo prazo das disciplinas");
         caixa.addEventListener("click", function (ev) {
           var b = ev.target.closest && ev.target.closest(".eaa-r-atualizar");
-          if (!b || b.disabled) return;
-          b.disabled = true;
-          b.textContent = "Atualizando…";
-          A.esquecerTudo().then(function () {
-            location.reload();
-          });
+          if (b && !b.disabled) atualizarTudo();
         });
       }
       caixa.setAttribute("aria-busy", carregando ? "true" : "false");
@@ -284,6 +279,9 @@ EAAPlus.add({
     /* Disciplina sem atividades ou com erro: não volta a montar o bloco a
        cada varredura (evita piscar "Carregando…" e ler de novo). */
     var semBloco = {};
+    /* Sobe a cada Atualizar: bloco de geração antiga é lido de novo, e
+       resposta que chega de uma geração antiga é descartada. */
+    var geracao = 0;
 
     function processar(card, ou) {
       if (semBloco[ou]) return;
@@ -292,16 +290,10 @@ EAAPlus.add({
       if (!cartao) return;
       var cabecalho = cartao.querySelector(".d2l-enrollment-card-content-flex");
       if (!cabecalho) return; /* ainda montando */
-      if (cartao.querySelector("." + MARCA)) return;
 
-      preparar(sombra);
-      var fantasma = document.createElement("div");
-      fantasma.className = MARCA + " fantasma";
-      fantasma.setAttribute("slot", "content");
-      fantasma.setAttribute("aria-hidden", "true");
-      var bloco = document.createElement("div");
-      bloco.className = MARCA + " real";
-      bloco.setAttribute("slot", "content");
+      var fantasma = cartao.querySelector("." + MARCA + ".fantasma");
+      var bloco = cartao.querySelector("." + MARCA + ".real");
+      if (fantasma && bloco && bloco.getAttribute("data-geracao") === String(geracao)) return;
       var escrever = function (conteudo) {
         fantasma.innerHTML = bloco.innerHTML = conteudo;
       };
@@ -309,13 +301,31 @@ EAAPlus.add({
         fantasma.remove();
         bloco.remove();
       };
-      escrever('<span class="eaa-carregando">Carregando progresso…</span>');
-      cartao.appendChild(fantasma);
-      cartao.appendChild(bloco);
+
+      /* Bloco que já existe (Atualizar): fica com o dado antigo até o novo
+         chegar, para o card não encolher e crescer de novo. */
+      if (!fantasma || !bloco) {
+        if (fantasma) fantasma.remove();
+        if (bloco) bloco.remove();
+        preparar(sombra);
+        fantasma = document.createElement("div");
+        fantasma.className = MARCA + " fantasma";
+        fantasma.setAttribute("slot", "content");
+        fantasma.setAttribute("aria-hidden", "true");
+        bloco = document.createElement("div");
+        bloco.className = MARCA + " real";
+        bloco.setAttribute("slot", "content");
+        escrever('<span class="eaa-carregando">Carregando progresso…</span>');
+        cartao.appendChild(fantasma);
+        cartao.appendChild(bloco);
+      }
+      var minha = geracao;
+      bloco.setAttribute("data-geracao", String(minha));
 
       /* nome: uma leitura só para todas as disciplinas (EAAPlus.ava.nome) */
       Promise.all([A.dados(ou), A.nome(ou)]).then(
         function (par) {
+          if (minha !== geracao) return;
           var r = par[0];
           resolvidos[ou] = true;
           if (!r.total) {
@@ -326,12 +336,26 @@ EAAPlus.add({
           escrever(html(r));
         },
         function (erro) {
+          if (minha !== geracao) return;
           resolvidos[ou] = true;
           semBloco[ou] = true;
           remover();
           if (window.console && console.warn) console.warn("[EAA+] progresso da disciplina " + ou + ":", erro);
         }
       );
+    }
+
+    /* Botão Atualizar: lê tudo de novo do servidor SEM recarregar a página
+       (o AVA pediria de novo ~250 arquivos). O resumo volta ao carregamento
+       — mesma altura — e os cards trocam o conteúdo quando o dado chega. */
+    function atualizarTudo() {
+      geracao++;
+      prontos = {};
+      resolvidos = {};
+      semBloco = {};
+      inicioDaCarga = null;
+      A.recomecar();
+      varrer();
     }
 
     function cards(no, saida) {

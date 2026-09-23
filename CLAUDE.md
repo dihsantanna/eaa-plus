@@ -203,8 +203,11 @@ e recarrega a página inteira a cada clique. Sem cache, voltar à página inicia
 - Só guarda leitura **completa** (`baixar()` devolve `completo`).
 - Chave com o id do aluno: `html[data-global-context]` → `userId` (DOM
   normal, sem pedido extra). Sem id = sem cache. Id diferente = apaga tudo.
-- Resumo mostra "Atualizado às HH:MM" (dado mais antigo) + botão Atualizar
-  (esvazia o cache e recarrega).
+- Resumo mostra "Atualizado às HH:MM" (dado mais antigo) + botão Atualizar:
+  esvazia memória e cache (`A.recomecar()`) e lê tudo de novo **sem
+  recarregar a página** (a pedido do aluno). Resumo volta ao carregamento;
+  os blocos dos cards ficam com o dado antigo até o novo chegar (`geracao`
+  descarta respostas velhas). A leitura do cache espera a limpeza terminar.
 - Acesso ao storage sempre por `noStorage()`: área buscada na hora, erro
   síncrono e assíncrono viram "sem cache" + um `console.warn` por página.
 - Nos testes, o cache é limpo antes de cada teste (`navegador.mjs`).

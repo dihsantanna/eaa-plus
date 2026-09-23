@@ -177,14 +177,38 @@ test.describe("cache entre páginas", () => {
     await expect(bloco(page, 50001).locator(".eaa-seg i.perdida").first()).toBeAttached();
   });
 
-  test("Atualizar esvazia o cache e lê tudo de novo", async ({ page, baseURL, fundo }) => {
+  test("Atualizar lê tudo de novo sem recarregar a página", async ({ page, baseURL, fundo }) => {
     await inicial(page, baseURL);
     await esperarCache(fundo);
+    const cab = bloco(page, 50001).locator(".eaa-cab");
+    await expect(cab).toHaveText("Av10,8 / 5,0");
+
+    /* o professor lançou nota nesse meio-tempo */
+    const nota = (id, nome, n, d) => ({ GradeObjectIdentifier: String(id), GradeObjectName: nome, PointsNumerator: n, PointsDenominator: d });
+    await page.route("**/d2l/api/le/1.99/50001/grades/values/myGradeValues/", (r) =>
+      r.fulfill({
+        json: [nota(900, "Nota AV1", 1.6, 5), nota(901, "Nota AV2", 0, 5), nota(101, "Atividade I.I", 0.8, 0.84), nota(102, "Atividade I.II", 0.8, 0.83)],
+      })
+    );
+
+    /* marcas que só sobrevivem se a página NÃO recarregar e o bloco do card
+       for o mesmo elemento (sem sumir e voltar) */
+    await page.evaluate(() => (window.__semRecarregar = true));
+    await bloco(page, 50001).evaluate((el) => (el.__mesmo = true));
+    let navegou = false;
+    page.on("framenavigated", (f) => f === page.mainFrame() && (navegou = true));
 
     page.pedidos.length = 0;
-    await Promise.all([page.waitForEvent("load"), resumo(page).locator(".eaa-r-atualizar").click()]);
+    await resumo(page).locator(".eaa-r-atualizar").click();
+    await expect(resumo(page)).toHaveAttribute("aria-busy", "true");
     await expect(resumo(page)).toHaveAttribute("aria-busy", "false", { timeout: 10000 });
-    expect(lidas(page)).toEqual([...VISIVEIS, "nomes"].sort());
+
+    expect(navegou, "não recarregou").toBe(false);
+    expect(await page.evaluate(() => window.__semRecarregar)).toBe(true);
+    expect(await bloco(page, 50001).evaluate((el) => el.__mesmo), "bloco reaproveitado").toBe(true);
+    expect(lidas(page), "tudo do servidor, nada do cache").toEqual([...VISIVEIS, "nomes"].sort());
+    await expect(cab).toHaveText("Av11,6 / 5,0");
+    await expect(resumo(page).locator(".eaa-r-atualizar")).toBeEnabled();
   });
 
   test("guarda só os campos usados, sem textos das atividades", async ({ page, baseURL, fundo }) => {
