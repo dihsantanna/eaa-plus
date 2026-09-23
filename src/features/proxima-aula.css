@@ -1,0 +1,252 @@
+/* EAA+ · melhoria: próxima aula */
+
+#eaa-next-class {
+  --accent-color: var(--burgundy, #6e1f26);
+  margin: 0 0 22px;
+  border-radius: 14px;
+  border-left: 5px solid var(--accent-color);
+  background: #fbf8ef;
+  box-shadow: var(--shadow, 0 10px 30px rgba(36, 30, 20, 0.1));
+  overflow: hidden;
+}
+
+#eaa-next-class .nc-inner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 20px;
+}
+
+#eaa-next-class .nc-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#eaa-next-class .nc-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 6px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-color);
+}
+
+#eaa-next-class .nc-title {
+  margin: 0 0 4px;
+  font-family: Fraunces, Georgia, serif;
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--ink, #241e14);
+}
+
+#eaa-next-class .nc-meta {
+  margin: 0;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-soft, #58503f);
+}
+
+#eaa-next-class .nc-side {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+#eaa-next-class .nc-action {
+  flex: 0 0 auto;
+}
+
+/* ---------- setas ---------- */
+
+#eaa-next-class .nc-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#eaa-next-class .nc-nav[hidden] {
+  display: none;
+}
+
+#eaa-next-class .nc-arrow {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  /* O tema do site aplica `button { padding: 11px 25px }`. Com box-sizing
+     border-box isso zerava a caixa de conteúdo do botão e o ícone sumia.
+     Zerar padding/margem aqui é obrigatório, não cosmético. */
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  line-height: 0;
+  flex: 0 0 28px;
+  color: var(--ink-soft, #58503f);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+#eaa-next-class .nc-arrow svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+#eaa-next-class .nc-arrow:hover:not(:disabled) {
+  background: rgba(36, 30, 20, 0.08);
+  color: var(--accent-color);
+}
+
+#eaa-next-class .nc-arrow:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+#eaa-next-class .nc-arrow:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+#eaa-next-class .nc-pos {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-soft, #58503f);
+  opacity: 0.7;
+  min-width: 30px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+#eaa-next-class .nc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  border-radius: 100px;
+  background: var(--accent-color);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: filter 0.18s ease, transform 0.18s ease;
+}
+
+#eaa-next-class .nc-btn:hover {
+  filter: brightness(1.12);
+}
+
+#eaa-next-class .nc-btn:active {
+  transform: translateY(1px);
+}
+
+#eaa-next-class .nc-btn:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 3px;
+}
+
+/* Sem link divulgado ainda: mesmo formato, sem prometer clique. */
+#eaa-next-class .nc-btn.is-disabled {
+  background: transparent;
+  color: var(--ink-soft, #58503f);
+  border: 1px dashed var(--line, rgba(36, 30, 20, 0.16));
+  font-weight: 500;
+  cursor: default;
+}
+
+/* ---------- acontecendo agora ---------- */
+
+#eaa-next-class.is-live {
+  border-left-color: var(--accent-color);
+  background: linear-gradient(
+    to right,
+    rgba(110, 31, 38, 0.06),
+    rgba(251, 248, 239, 0) 55%
+  );
+  background-color: #fbf8ef;
+}
+
+#eaa-next-class .nc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  box-shadow: 0 0 0 0 var(--accent-color);
+  animation: nc-pulse 2s infinite;
+}
+
+@keyframes nc-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(110, 31, 38, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(110, 31, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(110, 31, 38, 0);
+  }
+}
+
+/* ---------- sem aula futura ---------- */
+
+#eaa-next-class.is-empty {
+  background: transparent;
+  border: 1px dashed var(--line, rgba(36, 30, 20, 0.16));
+  border-left: 1px dashed var(--line, rgba(36, 30, 20, 0.16));
+  box-shadow: none;
+}
+
+#eaa-next-class.is-empty .nc-eyebrow {
+  color: var(--ink-soft, #58503f);
+}
+
+#eaa-next-class.is-empty .nc-title {
+  font-size: 17px;
+  color: var(--ink-soft, #58503f);
+}
+
+/* ---------- celular ---------- */
+
+@media (max-width: 640px) {
+  #eaa-next-class .nc-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 16px;
+  }
+  #eaa-next-class .nc-title {
+    font-size: 18px;
+  }
+  #eaa-next-class .nc-side {
+    justify-content: space-between;
+  }
+  #eaa-next-class .nc-action {
+    flex: 1 1 auto;
+  }
+  #eaa-next-class .nc-btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #eaa-next-class .nc-dot {
+    animation: none;
+  }
+  #eaa-next-class .nc-btn {
+    transition: none;
+  }
+}

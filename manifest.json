@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "EAA+ — Melhorias para alunos",
+  "version": "1.0.0",
+  "description": "Melhorias de usabilidade nas páginas da Escola de Adoração e Arte (FABAT): filtro por período e destaque da próxima aula.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://escoladeadoracaoearte.com.br/aulas-sincronas-graduacao-ead/*"
+      ],
+      "js": [
+        "src/core.js",
+        "src/features/filtro-periodos.js",
+        "src/features/proxima-aula.js"
+      ],
+      "css": [
+        "src/features/filtro-periodos.css",
+        "src/features/proxima-aula.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
