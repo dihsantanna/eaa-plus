@@ -114,9 +114,12 @@ test.describe("barra da disciplina", () => {
     await expect(painel(page)).toBeVisible();
 
     const grupos = painel(page).locator(".eaa-d-grupo");
-    await expect(grupos.locator(".eaa-d-gcab > :first-child")).toHaveText(["Av1 · Primeiro Fechamento", "Av1 · Último Fechamento"]);
+    await expect(grupos.locator(".eaa-d-gcab > :first-child")).toHaveText(["Av1 · Primeiro Fechamento", "Av1 · Último Fechamento", "Av2"]);
     await expect(grupos.nth(0).locator(".eaa-d-estado")).toHaveText(["corrigida", "aguardando correção", "a fazer"]);
     await expect(grupos.nth(1).locator(".eaa-d-estado")).toHaveText(["iniciada e não enviada", "a fazer"]);
+    /* Av2 com os links das duas partes (tarefa e questionário) */
+    await expect(grupos.nth(2).locator(".eaa-d-inome")).toHaveText(["📄 Atividade Av2 (Parte 2)", "📎Atividade Av2 (Parte 1)"]);
+    await expect(grupos.nth(2).locator("a").nth(1)).toHaveAttribute("href", /folder_submit_files\.d2l\?db=7099&/);
     await expect(grupos.nth(0).locator("a").nth(0)).toHaveAttribute("href", "/d2l/lms/quizzing/user/quiz_summary.d2l?ou=50001&qi=8001&cfql=1");
     await expect(grupos.nth(0).locator("a").nth(1)).toHaveAttribute("href", "/d2l/lms/dropbox/user/folder_submit_files.d2l?db=7001&grpid=0&isprv=0&bp=0&ou=50001");
 
@@ -147,6 +150,23 @@ test.describe("barra da disciplina", () => {
     await expect(caixa(page).locator(".eaa-d-rot")).toHaveText("Nota");
     await expect(colunas(page)).toHaveCount(1);
     await expect(colunas(page).locator(".eaa-d-nome")).toHaveText("Prazo");
+  });
+
+  test("período da Av2: a barra mostra o último fechamento e a Av2", async ({ page }) => {
+    await page.abrir("/d2l/home/50010");
+    await expect(colunas(page).locator(".eaa-d-nome")).toHaveText(["2º Fechamento", "Av2"]);
+    await expect(colunas(page).nth(0)).toHaveClass(/encerrado/);
+    await expect(colunas(page).nth(1).locator(".eaa-d-dias")).toHaveText("5 dias");
+    await botao(page).click();
+    await expect(painel(page).locator(".eaa-d-sit")).toHaveText("Precisa de 2,0 na Av2");
+  });
+
+  test("recuperação: a barra mostra Av2 e Av3, e o painel a situação", async ({ page }) => {
+    await page.abrir("/d2l/home/50011");
+    await expect(colunas(page).locator(".eaa-d-nome")).toHaveText(["Av2", "Av3"]);
+    await botao(page).click();
+    await expect(painel(page).locator(".eaa-d-gcab > :first-child")).toHaveText(["Av1 · Primeiro Fechamento", "Av2", "Av3 · Recuperação"]);
+    await expect(painel(page).locator(".eaa-d-sit")).toHaveText("Av3 (recuperação) · 4,5");
   });
 
   test("não aparece na página inicial geral", async ({ page, baseURL }) => {

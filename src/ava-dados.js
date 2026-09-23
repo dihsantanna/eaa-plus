@@ -177,6 +177,13 @@ EAAPlus.ava = (function () {
       pegar(base + "content/myItems/").then(lista, vazio),
       pegar(LISTA_QUESTIONARIOS + ou, true).then(lerListaDeQuestionarios, function () {
         return {};
+      }),
+      /* Nome oficial da disciplina. O atributo text do card não serve: já
+         veio "Nome, código, semestre" e depois só "Fechada". */
+      pegar("/d2l/api/lp/1.63/enrollments/myenrollments/" + ou).then(function (m) {
+        return (m && m.OrgUnit && m.OrgUnit.Name) || "";
+      }, function () {
+        return "";
       })
     ]).then(function (r) {
       var itens = classificar(ou, r[0], r[1], r[2], r[3], r[4], r[5], r[6]);
@@ -195,7 +202,9 @@ EAAPlus.ava = (function () {
           );
         });
       return Promise.all(envios).then(function () {
-        return resumir(itens, r[1]);
+        var resumo = resumir(itens, r[1]);
+        resumo.nome = r[7];
+        return resumo;
       });
     });
   }
@@ -245,6 +254,26 @@ EAAPlus.ava = (function () {
     return saida;
   }
 
+  /* Av2 e Av3: a nota das atividades fica oculta para o aluno até o
+     lançamento, então elas não aparecem no boletim. Reconhece pela seção da
+     Lista de questionários ("Avaliação 2 (Av2)") ou pelo nome. */
+  function qualAv(secao, nome) {
+    var m = (secao || "").match(/\(\s*Av\s*([23])\s*\)|Avalia[çc][ãa]o\s*([23])\b/i);
+    if (m) return +(m[1] || m[2]);
+    m = (nome || "").match(/\bAv\s*([23])\b/i);
+    if (m) return +m[1];
+    if (/recupera[çc][ãa]o/i.test((secao || "") + " " + (nome || ""))) return 3;
+    return null;
+  }
+
+  function linkDaTarefa(ou, id) {
+    return "/d2l/lms/dropbox/user/folder_submit_files.d2l?db=" + id + "&grpid=0&isprv=0&bp=0&ou=" + ou;
+  }
+
+  function linkDoQuestionario(ou, id) {
+    return "/d2l/lms/quizzing/user/quiz_summary.d2l?ou=" + ou + "&qi=" + id + "&cfql=1";
+  }
+
   function classificar(ou, boletim, valores, pastas, questionarios, toc, meusItens, listaQ) {
     var nota = {};
     valores.forEach(function (v) {
@@ -260,40 +289,27 @@ EAAPlus.ava = (function () {
       if (t.GradeItemId && concluido[t.TopicId]) feitoPeloConteudo[t.GradeItemId] = true;
     });
 
-    return boletim
+    var noBoletim = {};
+    var itens = boletim
       .filter(function (g) {
         return g.GradeType === "Numeric" && !g.IsHidden && g.MaxPoints > 0;
       })
       .map(function (g) {
-        var it = {
-          nome: g.Name,
-          max: g.MaxPoints,
-          pontos: null,
-          prazo: null,
-          tarefa: null,
-          link: "",
-          secao: "",
-          enviado: !!feitoPeloConteudo[g.Id],
-          andamento: false,
-          estado: null
-        };
+        noBoletim[g.Id] = true;
+        var it = novoItem(g.Name, g.MaxPoints, 1);
+        it.enviado = !!feitoPeloConteudo[g.Id];
 
         pastas.forEach(function (p) {
           if (p.GradeItemId !== g.Id || p.IsHidden) return;
           it.tarefa = p.Id;
           it.prazo = ts(p.DueDate) || ts((p.Availability || {}).EndDate);
-          it.link = "/d2l/lms/dropbox/user/folder_submit_files.d2l?db=" + p.Id + "&grpid=0&isprv=0&bp=0&ou=" + ou;
+          it.link = linkDaTarefa(ou, p.Id);
         });
         questionarios.forEach(function (q) {
           if (q.GradeItemId !== g.Id || q.IsActive === false) return;
           it.prazo = ts(q.DueDate) || ts(q.EndDate);
-          it.link = "/d2l/lms/quizzing/user/quiz_summary.d2l?ou=" + ou + "&qi=" + q.QuizId + "&cfql=1";
-          var l = listaQ[String(q.QuizId)];
-          if (l) {
-            it.secao = l.secao;
-            it.andamento = l.andamento;
-            if (l.usadas > 0 && !l.andamento) it.enviado = true;
-          }
+          it.link = linkDoQuestionario(ou, q.QuizId);
+          lerTentativas(it, listaQ[String(q.QuizId)]);
         });
 
         var v = nota[String(g.Id)];
@@ -303,6 +319,54 @@ EAAPlus.ava = (function () {
         }
         return it;
       });
+
+    /* Av2/Av3: atividades cuja nota está oculta (fora do boletim visível).
+       Entram sem pontos — só prazo, estado e link. */
+    questionarios.forEach(function (q) {
+      if (q.IsActive === false || noBoletim[q.GradeItemId]) return;
+      var l = listaQ[String(q.QuizId)];
+      var av = qualAv(l && l.secao, q.Name);
+      if (!av) return;
+      var it = novoItem(q.Name, 0, av);
+      it.prazo = ts(q.DueDate) || ts(q.EndDate);
+      it.link = linkDoQuestionario(ou, q.QuizId);
+      lerTentativas(it, l);
+      itens.push(it);
+    });
+    pastas.forEach(function (p) {
+      if (p.IsHidden || noBoletim[p.GradeItemId]) return;
+      var av = qualAv("", p.Name);
+      if (!av) return;
+      var it = novoItem(p.Name, 0, av);
+      it.tarefa = p.Id;
+      it.prazo = ts(p.DueDate) || ts((p.Availability || {}).EndDate);
+      it.link = linkDaTarefa(ou, p.Id);
+      itens.push(it);
+    });
+    return itens;
+  }
+
+  function novoItem(nome, max, av) {
+    return {
+      nome: nome,
+      max: max,
+      av: av,
+      pontos: null,
+      prazo: null,
+      tarefa: null,
+      link: "",
+      secao: "",
+      enviado: false,
+      andamento: false,
+      estado: null
+    };
+  }
+
+  function lerTentativas(it, l) {
+    if (!l) return;
+    it.secao = l.secao;
+    it.andamento = l.andamento;
+    if (l.usadas > 0 && !l.andamento) it.enviado = true;
   }
 
   function formula(valores, n) {
@@ -348,21 +412,41 @@ EAAPlus.ava = (function () {
 
   function resumir(itens, valores) {
     var agora = Date.now();
+    var f1 = formula(valores, 1);
+    var f2 = formula(valores, 2);
+    var f3 = formula(valores, 3);
+    /* A fórmula vale 0 até a prova ser lançada; 0 não é resultado. */
+    var lancada = { 2: !!(f2 && f2.PointsNumerator > 0), 3: !!(f3 && f3.PointsNumerator > 0) };
+
     itens.forEach(function (it) {
+      /* Nota da Av2/Av3 lançada: as atividades dela foram corrigidas. */
+      if (it.av > 1 && lancada[it.av]) it.estado = "corrigida";
       it.estado = estadoFinal(it, agora);
     });
 
-    var r = { total: 0, ok: 0, av1: 0, av1Max: 0, av2: null, comAv: false, prazos: [] };
+    var r = { total: 0, ok: 0, av1: 0, av1Max: 0, av2: null, av3: null, comAv: false, prazos: [] };
     itens.forEach(function (it) {
       r.total += it.max;
-      if (it.estado === "corrigida") r.ok += it.pontos;
+      if (it.estado === "corrigida" && it.pontos !== null) r.ok += it.pontos;
+    });
+    r.av1 = f1 && f1.PointsNumerator !== null ? f1.PointsNumerator : r.ok;
+
+    /* A Av3 é aberta para a turma toda, mas só serve para quem ficou em
+       recuperação (Av1 + Av2 entre 4 e 6). Sem isso ela sumiria da vista de
+       quem precisa e apareceria como pendência para quem já passou. Fica
+       também se o aluno já mexeu nela (iniciou, enviou ou tem nota). */
+    var soma = lancada[2] ? r.av1 + f2.PointsNumerator : null;
+    var emRecuperacao = !!f1 && soma !== null && soma >= RECUPERA && soma < APROVA;
+    itens = itens.filter(function (it) {
+      return it.av !== 3 || emRecuperacao || it.estado === "aguardando" || it.estado === "iniciada" || it.estado === "corrigida";
     });
 
-    /* Um grupo por dia de prazo (Brasília). O curso de Música tem dois. */
+    /* Av1: um grupo por dia de prazo (Brasília) — o curso de Música tem dois
+       fechamentos. Av2 e Av3: um grupo cada, com o nome delas. */
     var porDia = {};
     itens.forEach(function (it) {
-      var chave = it.prazo ? diaDe(it.prazo) : "sem";
-      if (!porDia[chave]) porDia[chave] = { dia: chave, prazo: it.prazo, itens: [], secao: "" };
+      var chave = it.av > 1 ? "av" + it.av : it.prazo ? diaDe(it.prazo) : "sem";
+      if (!porDia[chave]) porDia[chave] = { dia: chave, av: it.av > 1 ? it.av : 1, prazo: it.prazo, itens: [], secao: "" };
       var g = porDia[chave];
       g.itens.push(it);
       if (it.prazo && it.prazo > g.prazo) g.prazo = it.prazo;
@@ -377,10 +461,18 @@ EAAPlus.ava = (function () {
       })
       .slice(0, MAX_PRAZOS);
 
-    grupos.forEach(function (g, i) {
-      var nomes = nomesDoPrazo(g.secao, i + 1);
-      if (!g.prazo) nomes = { curto: "Sem prazo", longo: "Sem prazo" };
-      g.curto = nomes ? nomes.curto : grupos.length > 1 ? i + 1 + "º prazo" : "Prazo";
+    var ordem = 0;
+    grupos.forEach(function (g) {
+      var nomes;
+      if (g.av === 2) nomes = { curto: "Av2", longo: "Av2" };
+      else if (g.av === 3) nomes = { curto: "Av3", longo: "Av3 · Recuperação" };
+      else if (!g.prazo) nomes = { curto: "Sem prazo", longo: "Sem prazo" };
+      else nomes = nomesDoPrazo(g.secao, ++ordem);
+      g.nomeado = !!nomes;
+      var soAv1 = grupos.filter(function (x) {
+        return x.av === 1;
+      }).length;
+      g.curto = nomes ? nomes.curto : soAv1 > 1 ? ordem + "º prazo" : "Prazo";
       g.longo = nomes ? nomes.longo : "Próximo prazo";
       g.c = contar(g.itens);
     });
@@ -389,15 +481,18 @@ EAAPlus.ava = (function () {
     /* Disciplinas como Canto Coral e Atividades Extensionistas não têm
        Av1/Av2: é um item só, valendo 10. Ali a regra do manual não se
        aplica, então mostramos só a nota, sem situação. */
-    var f1 = formula(valores, 1);
-    var f2 = formula(valores, 2);
     r.comAv = !!f1;
     r.rotulo = r.comAv ? "Av1" : "Nota";
-    r.av1 = f1 && f1.PointsNumerator !== null ? f1.PointsNumerator : r.ok;
     r.av1Max = f1 && f1.PointsDenominator ? f1.PointsDenominator : r.total;
-    /* A fórmula da Av2 vale 0 até a prova ser lançada; 0 não é resultado. */
-    if (f2 && f2.PointsNumerator > 0) r.av2 = f2.PointsNumerator;
+    if (lancada[2]) r.av2 = f2.PointsNumerator;
+    if (lancada[3]) r.av3 = f3.PointsNumerator;
     r.c = contar(itens);
+    /* Só a Av1 decide se já dá para dizer quanto falta na Av2. */
+    r.c1 = contar(
+      itens.filter(function (it) {
+        return it.av === 1;
+      })
+    );
     return r;
   }
 
@@ -406,13 +501,15 @@ EAAPlus.ava = (function () {
    * ------------------------------------------------------------- */
   function situacao(r) {
     if (!r.comAv) return null;
+    /* O manual não diz como a Av3 entra na média final: só mostra a nota. */
+    if (r.av3 !== null) return ["", "Nota da Av3 · " + num(r.av3)];
     if (r.av2 !== null) {
       var soma = r.av1 + r.av2;
       if (soma >= APROVA) return ["aprovado", "Aprovado · " + num(soma)];
       if (soma >= RECUPERA) return ["recuperacao", "Av3 (recuperação) · " + num(soma)];
       return ["reprovado", "Reprovado · " + num(soma)];
     }
-    if (r.c.aguardando || r.c.pendentes) return null;
+    if (r.c1.aguardando || r.c1.pendentes) return null;
     var resta = Math.max(0, APROVA - r.av1);
     if (resta === 0) return ["aprovado", "Av1 já garante os " + num(APROVA)];
     return ["", "Precisa de " + num(resta) + " na Av2"];

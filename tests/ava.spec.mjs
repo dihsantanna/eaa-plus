@@ -17,7 +17,7 @@ const test = base.extend({
     });
     page.abrir = async () => {
       await page.goto(`${baseURL}/d2l/home`);
-      await expect(bloco(page, 50001).locator(".eaa-prazo")).toHaveCount(2, { timeout: 8000 });
+      await expect(bloco(page, 50001).locator(".eaa-prazo")).toHaveCount(3, { timeout: 8000 });
     };
     await use(page);
   },
@@ -52,6 +52,14 @@ test.describe("progresso nas disciplinas", () => {
     await expect(p2).not.toHaveClass(/urgente/);
     expect(await segs(p2)).toEqual(["iniciada", "afazer"]);
     await expect(p2.locator(".eaa-leg")).toHaveText("0 de 2 entregues⚠ 1 não enviada");
+
+    /* Av2 já criada no AVA, com a nota oculta: entra como linha própria */
+    const p3 = prazo(page, 50001, 2);
+    await expect(p3.locator(".eaa-nome")).toHaveText("Av2");
+    await expect(p3.locator(".eaa-quando")).toHaveText(/^\d{2}\/\d{2} · 60 dias$/);
+    expect(await segs(p3)).toEqual(["afazer", "afazer"]);
+    /* sem pontos: a Av1 continua 0,8 / 5,0 */
+    await expect(b.locator(".eaa-cab")).toHaveText("Av10,8 / 5,0");
   });
 
   test("entregue sem nota é 'aguardando' por qualquer uma das três fontes", async ({ page }) => {
@@ -107,7 +115,7 @@ test.describe("progresso nas disciplinas", () => {
   test("API com erro ou disciplina sem atividades: card fica como estava", async ({ page }) => {
     await page.abrir();
     await expect(bloco(page, 50005)).toBeVisible();
-    await expect(cartao(page, 50006).locator("d2l-card")).toHaveAttribute("text", /^Harmonia I,/);
+    await expect(cartao(page, 50006).locator("d2l-card")).toBeAttached();
     await expect(bloco(page, 50006)).toHaveCount(0);
     await expect(bloco(page, 50007)).toHaveCount(0);
   });
@@ -131,6 +139,50 @@ test.describe("progresso nas disciplinas", () => {
     await page.abrir();
     const tamanho = await bloco(page, 50001).evaluate((el) => getComputedStyle(el).fontSize);
     expect(tamanho).toBe("12px");
+  });
+});
+
+test.describe("Av2 e Av3", () => {
+  test("período da Av2: fechamentos encerrados, Av2 aberta e quanto falta nela", async ({ page }) => {
+    await page.abrir();
+    const b = bloco(page, 50010);
+    await expect(b.locator(".eaa-nome")).toHaveText(["1º Fechamento", "2º Fechamento", "Av2"]);
+    await expect(prazo(page, 50010, 0)).toHaveClass(/encerrado/);
+    await expect(prazo(page, 50010, 1)).toHaveClass(/encerrado/);
+    const av2 = prazo(page, 50010, 2);
+    await expect(av2).not.toHaveClass(/encerrado/);
+    await expect(av2.locator(".eaa-quando")).toHaveText(/^\d{2}\/\d{2} · 5 dias$/);
+    await expect(av2.locator(".eaa-leg")).toHaveText("0 de 1 entregues1 a fazer");
+    /* Av1 resolvida: a Av2 pendente não esconde quanto falta nela */
+    await expect(situacao(page, 50010)).toHaveText("Precisa de 2,0 na Av2");
+  });
+
+  test("recuperação: Av2 lançada vira corrigida e a Av3 aparece com prazo", async ({ page }) => {
+    await page.abrir();
+    const b = bloco(page, 50011);
+    await expect(b.locator(".eaa-nome")).toHaveText(["1º Fechamento", "Av2", "Av3"]);
+    await expect(prazo(page, 50011, 1).locator(".eaa-leg")).toHaveText("1 de 1 entreguescorrigido");
+    const av3 = prazo(page, 50011, 2);
+    await expect(av3.locator(".eaa-quando")).toHaveText(/^\d{2}\/\d{2} · 7 dias$/);
+    await expect(av3.locator(".eaa-leg")).toHaveText("0 de 1 entregues1 a fazer");
+    await expect(situacao(page, 50011)).toHaveText("Av3 (recuperação) · 4,5");
+  });
+
+  test("Av3 aberta para a turma não aparece para quem não está em recuperação", async ({ page }) => {
+    await page.abrir();
+    /* Av2 sem nota ainda */
+    await expect(bloco(page, 50010).locator(".eaa-nome")).toHaveText(["1º Fechamento", "2º Fechamento", "Av2"]);
+    /* aprovado */
+    await expect(bloco(page, 50003).locator(".eaa-nome")).toHaveText(["Prazo"]);
+    /* disciplina sem Av1/Av2 (como Atividades Extensionistas) */
+    await expect(bloco(page, 50009).locator(".eaa-nome")).toHaveText(["Prazo"]);
+  });
+
+  test("Av3 que o aluno já começou aparece, mesmo sem a recuperação definida", async ({ page }) => {
+    await page.abrir();
+    const b = bloco(page, 50008);
+    await expect(b.locator(".eaa-nome")).toHaveText(["1º Fechamento", "Av3"]);
+    await expect(prazo(page, 50008, 1).locator(".eaa-leg")).toHaveText("0 de 1 entregues⚠ 1 não enviada");
   });
 });
 
@@ -192,7 +244,9 @@ test.describe("regras de rede e de página", () => {
     expect(page.pedidos.length).toBeGreaterThan(0);
     for (const r of page.pedidos) {
       expect(r.metodo).toBe("GET");
-      expect(r.caminho).toMatch(/^\/d2l\/(api\/le\/1\.99\/\d+\/|lms\/quizzing\/user\/quizzes_list\.d2l\?ou=\d+$)/);
+      expect(r.caminho).toMatch(
+        /^\/d2l\/(api\/le\/1\.99\/\d+\/|api\/lp\/1\.63\/enrollments\/myenrollments\/\d+$|lms\/quizzing\/user\/quizzes_list\.d2l\?ou=\d+$)/
+      );
     }
     expect(page.pedidos.some((r) => r.caminho.includes("50099")), "card da aba escondida").toBe(false);
   });
@@ -206,7 +260,7 @@ test.describe("regras de rede e de página", () => {
     const antes = page.pedidos.filter((r) => r.caminho.includes("50001")).length;
 
     await aba(page, "semestre").click();
-    await expect(bloco(page, 50001).locator(".eaa-prazo")).toHaveCount(2);
+    await expect(bloco(page, 50001).locator(".eaa-prazo")).toHaveCount(3);
     expect(page.pedidos.filter((r) => r.caminho.includes("50001")).length, "usou o que já tinha").toBe(antes);
   });
 

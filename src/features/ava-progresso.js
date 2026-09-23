@@ -136,7 +136,7 @@ EAAPlus.add({
         p.r.prazos.forEach(function (g) {
           if (!g.prazo || A.diaDe(g.prazo) !== alvo) return;
           res.prazo = Math.max(res.prazo, g.prazo);
-          if (!res.longo && g.secao) res.longo = g.longo;
+          if (!res.longo && g.nomeado) res.longo = g.longo;
           res.itens = res.itens.concat(g.c.itens);
           res.iniciadas += g.c.iniciada;
           if (g.c.pendentes) res.disciplinas.push({ ou: ou, nome: p.nome, pendentes: g.c.pendentes, iniciada: g.c.iniciada });
@@ -243,14 +243,10 @@ EAAPlus.add({
       cartao.appendChild(fantasma);
       cartao.appendChild(bloco);
 
-      /* O nome visível fica em outro shadow root; o atributo text do d2l-card
-         traz "Técnica Vocal I, Mus_EAD_85284_2026_2_275, 2026.2". */
-      var nome = (cartao.getAttribute("text") || "").replace(/,\s*[^\s,]*_[^,]*(,.*)?$/, "").trim() || "Disciplina";
-
       A.dados(ou).then(
         function (r) {
           if (!r.total) return remover();
-          prontos[ou] = { r: r, nome: nome };
+          prontos[ou] = { r: r, nome: r.nome || "Disciplina" };
           escrever(html(r));
         },
         function (erro) {

@@ -65,9 +65,13 @@ export const DISCIPLINAS = [
       numerico(103, "Atividade II.I", 1.25), numerico(104, "Atividade II.II", 1.25),
     ],
     valores: [...av(0.8, 0), valor(101, "Atividade I.I", 0.8, 0.84)],
-    quizzes: [quiz(8001, 101, PRIMEIRO), quiz(8005, 105, PRIMEIRO), quiz(8003, 103, ULTIMO), quiz(8004, 104, ULTIMO)],
-    pastas: [pasta(7001, 102, PRIMEIRO)],
-    envios: { 7001: [{ Status: 1, Submissions: [{ Id: 1 }] }] },
+    quizzes: [
+      quiz(8001, 101, PRIMEIRO), quiz(8005, 105, PRIMEIRO), quiz(8003, 103, ULTIMO), quiz(8004, 104, ULTIMO),
+      /* Av2: o item de nota (1099) é oculto para o aluno, como no AVA real */
+      { ...quiz(8099, 1099, 60), Name: "📄 Atividade Av2 (Parte 2)" },
+    ],
+    pastas: [pasta(7001, 102, PRIMEIRO), { ...pasta(7099, 1098, 60), Name: "📎Atividade Av2 (Parte 1)" }],
+    envios: { 7001: [{ Status: 1, Submissions: [{ Id: 1 }] }], 7099: [] },
     listaQ: [
       /* 8001 corrigido, com o link de feedback enganoso */
       [SEC1, [[8001, 1, "feedback"], [8005, 0]]],
@@ -101,7 +105,9 @@ export const DISCIPLINAS = [
     nome: "Louvor e Adoração na Bíblia",
     grades: [...FORMULAS, numerico(301, "Atividade 1", 2.5), numerico(302, "Atividade 2", 2.5)],
     valores: [...av(4.0, 3.0), valor(301, "Atividade 1", 2.5, 2.5), valor(302, "Atividade 2", 1.5, 2.5)],
-    quizzes: [quiz(8301, 301, -5), quiz(8302, 302, -5)],
+    quizzes: [quiz(8301, 301, -5), quiz(8302, 302, -5), { ...quiz(8309, 9309, 10), Name: "📄 Avaliação de Recuperação" }],
+    /* aprovado: a Av3 da turma não é pendência dele */
+    listaQ: [["Avaliação 3 (Av3) - Recuperação", [[8309, 0]]]],
   },
   {
     ou: 50004,
@@ -124,7 +130,8 @@ export const DISCIPLINAS = [
     nome: "Canto Coral",
     grades: [numerico(1901, "Envio de Relatório", 10)],
     valores: [valor(1901, "Envio de Relatório", 8, 10)],
-    pastas: [pasta(7901, 1901, 60)],
+    pastas: [pasta(7901, 1901, 60), { ...pasta(7909, 9909, 70), Name: "Av3 - Envio de Relatório Final" }],
+    envios: { 7909: [] },
   },
   { ou: 50007, nome: "Atividades Extensionistas I", grades: [...FORMULAS], valores: av(0, 0) },
   {
@@ -132,8 +139,34 @@ export const DISCIPLINAS = [
     nome: "Percepção Musical I",
     grades: [...FORMULAS, numerico(801, "Atividade Relâmpago", 5)],
     valores: av(0, 0),
-    quizzes: [quiz(8801, 801, PRIMEIRO)],
-    listaQ: [[SEC1, [[8801, 0]]]],
+    quizzes: [quiz(8801, 801, PRIMEIRO), { ...quiz(8809, 9809, 40), Name: "📄 Avaliação de Recuperação" }],
+    /* o aluno abriu a Av3: aparece, mesmo sem a Av2 lançada */
+    listaQ: [[SEC1, [[8801, 0]]], ["Avaliação 3 (Av3) - Recuperação", [[8809, 1, "aberta"]]]],
+  },
+  {
+    /* Período da Av2: fechamentos encerrados e corrigidos, Av2 aberta. */
+    ou: 50010,
+    nome: "História da Educação",
+    grades: [...FORMULAS, numerico(1101, "Atividade Unidade I", 2.5), numerico(1102, "Atividade Unidade II", 2.5)],
+    valores: [...av(4.0, 0), valor(1101, "Atividade Unidade I", 2.0, 2.5), valor(1102, "Atividade Unidade II", 2.0, 2.5)],
+    quizzes: [
+      quiz(8101, 1101, -40), quiz(8102, 1102, -10), { ...quiz(8110, 9110, 5), Name: "📄 Atividade Av2" },
+      { ...quiz(8111, 9111, 12), Name: "📄 Avaliação de Recuperação" },
+    ],
+    listaQ: [[SEC1, [[8101, 1]]], [SEC2, [[8102, 1]]], ["Avaliação 2 (Av2)", [[8110, 0]]], ["Avaliação 3 (Av3) - Recuperação", [[8111, 0]]]],
+  },
+  {
+    /* Recuperação: Av1 2,5 + Av2 2,0 = 4,5 → Av3 aberta. */
+    ou: 50011,
+    nome: "Harmonia II",
+    grades: [...FORMULAS, numerico(1201, "Atividade única", 5)],
+    valores: [...av(2.5, 2.0), valor(1201, "Atividade única", 2.5, 5)],
+    quizzes: [
+      quiz(8601, 1201, -40),
+      { ...quiz(8602, 9602, -15), Name: "📄 Atividade Av2" },
+      { ...quiz(8603, 9603, 7), Name: "📄 Avaliação de Recuperação" },
+    ],
+    listaQ: [[SEC1, [[8601, 1]]], ["Avaliação 2 (Av2)", [[8602, 1]]], ["Avaliação 3 (Av3) - Recuperação", [[8603, 0]]]],
   },
 ];
 
@@ -245,6 +278,7 @@ function rotas() {
       continue;
     }
     api[b + "grades/"] = ok(d.grades);
+    api[`/d2l/api/lp/1.63/enrollments/myenrollments/${d.ou}`] = ok({ OrgUnit: { Id: d.ou, Name: d.nome }, Access: {}, PinDate: null });
     api[b + "grades/values/myGradeValues/"] = ok(d.valores);
     api[b + "dropbox/folders/"] = ok(d.pastas || []);
     api[b + "quizzes/"] = ok({ Objects: d.quizzes || [], Next: null });
@@ -305,7 +339,9 @@ customElements.define("d2l-my-courses-enrollment-card", class extends HTMLElemen
     /* Como o Polymer: o conteúdo chega depois do elemento entrar na página. */
     setTimeout(() => {
       sombra.innerHTML = '<style>${ESTILO_CARD}</style>' +
-        '<d2l-card href="/d2l/home/' + ou + '" text="' + NOMES[ou] + ', Mus_EAD_' + ou + '_2026_2_275, 2026.2">' +
+        /* O text do d2l-card já veio "Nome, código, semestre" e depois só
+           "Fechada" (AVA real, 2026-09-23): o nome tem que vir da API. */
+        '<d2l-card href="/d2l/home/' + ou + '" text="Fechada">' +
         '<div slot="header"></div>' +
         '<div slot="content" class="d2l-enrollment-card-content-flex"><div class="d2l-organization-name"></div>' +
         '<d2l-card-content-meta><div class="d2l-body-small">2026.2</div></d2l-card-content-meta></div>' +
@@ -384,6 +420,10 @@ function paginasDeDisciplina(raiz) {
   );
   escrever(`${site}/lms/grades/my_grades/main.d2l`, paginaDisciplina(tv, "Notas", "<table><tr><td>Boletim</td></tr></table>"));
   escrever(`${site}/home/50009.html`, paginaDisciplina(coral, "Página Inicial", "<p>Canto Coral</p>"));
+  for (const ou of [50010, 50011]) {
+    const d = DISCIPLINAS.find((x) => x.ou === ou);
+    escrever(`${site}/home/${ou}.html`, paginaDisciplina(d, "Página Inicial", `<p>${d.nome}</p>`));
+  }
 }
 
 export function gerarAva(raiz) {

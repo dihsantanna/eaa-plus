@@ -20,7 +20,7 @@ algo sobre a página, a loja ou o Chrome, verifique — não chute.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 46 testes E2E com a extensão carregada de verdade
+npm test                           # 52 testes E2E com a extensão carregada de verdade
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
 npm run check                      # sintaxe + regras do manifest + regra do fetch
 npm run build                      # dist/eaa-plus-vX.Y.Z.zip + dist/colar-no-elementor.html
@@ -163,9 +163,29 @@ API (`le` 1.99; o servidor aceita 1.0–1.99), tudo GET com a sessão:
   na linha do questionário (e aparece "1 / 1", igual a um enviado). A última
   linha da tabela (`td.d_gr`) é a legenda desse ícone. Confirmado com um caso
   real do aluno (Técnica Vocal, 2026-09-23).
-- Nome da disciplina: atributo `text` do `d2l-card`
-  ("Técnica Vocal I, Mus_EAD_85284_2026_2_275, 2026.2"); o texto visível
-  mora em outro shadow root.
+- **Nome da disciplina: só pela API** (`/d2l/api/lp/1.63/enrollments/myenrollments/{ou}`
+  → `OrgUnit.Name`). O atributo `text` do `d2l-card` já veio "Nome, código,
+  semestre" e, no mesmo dia, passou a vir só **"Fechada"** — não usar.
+  (`/d2l/api/lp/1.63/courses/{ou}` dá 403 para aluno.)
+
+### Av2 e Av3 — conferido em 2026-09-23
+
+- As atividades da **Av2 já existem** na maioria das disciplinas (questionário
+  e/ou tarefa, às vezes "Parte 1"/"Parte 2", prazos 23/11 ou 01/12). O **item
+  de nota delas é oculto** para o aluno: não vem em `{ou}/grades/`. Só a
+  fórmula "Nota AV2" é visível (0 até o lançamento).
+- A extensão reconhece Av2/Av3 pela seção da Lista de questionários
+  ("Avaliação 2 (Av2)", "… (Av3) …") ou pelo nome ("Av2", "Av3",
+  "recuperação") e as mostra **sem pontos**, num grupo próprio ("Av2", "Av3").
+  Nota da Av2/Av3 lançada → atividades dela viram "corrigida".
+- **Av3 é aberta para a turma toda** (ex.: Atividades Extensionistas tem
+  "Av3 - Envio de Relatório Final…"). Só aparece para quem está em
+  recuperação (Av1 + Av2 lançadas entre 4 e 6) ou para quem já mexeu nela.
+- "Precisa de X na Av2" depende só da Av1 estar resolvida.
+- O manual **não diz como a Av3 entra na média final**: a extensão só mostra
+  "Nota da Av3 · X", sem aprovar/reprovar.
+- O manual diz que a Av2 é **presencial**, mas o AVA tem "Atividade Av2"
+  online. Pergunta em aberto com o aluno.
 
 - "Nota AV2" vale **0** até a prova ser lançada: 0 não é resultado.
 - Canto Coral e Atividades Extensionistas **não têm Av1/Av2**: um item só
