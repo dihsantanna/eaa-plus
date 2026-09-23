@@ -313,7 +313,9 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
 
 - Chrome Web Store, conta do aluno, item `lmhfgcgecilhocmpfflgkocpgepcijpo`.
 - Visibilidade: **não listado** (só instala quem tem o link).
-- Versão publicada: **1.0.0**. Em desenvolvimento: **1.1.0** (branch `v1.1.0`). Toda atualização precisa de `version` maior no
+- Versão publicada: **1.0.0**. **1.1.0** na `main` (PR #1 mesclado em
+  2026-09-23; `dist/eaa-plus-v1.1.0.zip` gerado), aguardando o aluno subir
+  o pacote e a revisão da loja. Toda atualização precisa de `version` maior no
   `manifest.json` e do mesmo lado em `package.json`.
 - Política de privacidade publicada em <https://eaa-plus-privacidade.vercel.app/>
   (Vercel, conta `dihsantanna`, projeto `eaa-plus-privacidade`; gerada de
