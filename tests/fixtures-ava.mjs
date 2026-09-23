@@ -128,6 +128,8 @@ export const DISCIPLINAS = [
     /* Sem Av1/Av2: um item só valendo 10 (caso real de Canto Coral). */
     ou: 50009,
     nome: "Canto Coral",
+    /* responde devagar: a barra carrega com 1 coluna (sem Av1) */
+    atraso: 2500,
     grades: [numerico(1901, "Envio de Relatório", 10)],
     valores: [valor(1901, "Envio de Relatório", 8, 10)],
     pastas: [pasta(7901, 1901, 60), { ...pasta(7909, 9909, 70), Name: "Av3 - Envio de Relatório Final" }],
@@ -279,12 +281,15 @@ function rotas() {
       api[b + "grades/"] = { status: d.falha, corpo: { title: "erro" } };
       continue;
     }
-    api[b + "grades/"] = d.atraso ? { ...ok(d.grades), atraso: d.atraso } : ok(d.grades);
+    api[b + "grades/"] = ok(d.grades);
     api[`/d2l/api/lp/1.63/enrollments/myenrollments/${d.ou}`] = ok({ OrgUnit: { Id: d.ou, Name: d.nome }, Access: {}, PinDate: null });
     api[b + "grades/values/myGradeValues/"] = ok(d.valores);
     api[b + "dropbox/folders/"] = ok(d.pastas || []);
     api[b + "quizzes/"] = ok({ Objects: d.quizzes || [], Next: null });
-    api[b + "content/myItems/"] = ok({ Objects: d.meusItens || [], Next: null });
+    /* o atraso fica numa rota do meio: o boletim (prévia) responde rápido e o
+       resto demora, como no AVA real */
+    const meus = ok({ Objects: d.meusItens || [], Next: null });
+    api[b + "content/myItems/"] = d.atraso ? { ...meus, atraso: d.atraso } : meus;
     if (d.toc) api[b + "content/toc"] = ok(d.toc);
     for (const [id, envios] of Object.entries(d.envios || {}))
       api[`${b}dropbox/folders/${id}/submissions/mysubmissions/`] = ok(envios);

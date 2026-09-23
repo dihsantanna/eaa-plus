@@ -195,6 +195,21 @@ test.describe("barra da disciplina", () => {
     expect(depois, "mesma posição e tamanho").toEqual(antes);
   });
 
+  test("carregando com um prazo só: 1 coluna e 'Nota' desde o início", async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 1400, height: 800 });
+    /* 50009 (sem Av1/Av2) responde com 2,5s de atraso na réplica */
+    await page.goto(baseURL + "/d2l/home/50009");
+    await expect(caixa(page)).toHaveAttribute("aria-busy", "true", { timeout: 8000 });
+    await expect(colunas(page)).toHaveCount(1);
+    await expect(caixa(page).locator(".eaa-d-rot")).toHaveText("Nota");
+    const antes = await caixa(page).evaluate((e) => Math.round(e.getBoundingClientRect().width));
+
+    await expect(caixa(page)).toHaveAttribute("aria-busy", "false", { timeout: 8000 });
+    await expect(colunas(page).locator(".eaa-d-nome")).toHaveText(["Prazo"]);
+    const depois = await caixa(page).evaluate((e) => Math.round(e.getBoundingClientRect().width));
+    expect(depois, "mesma largura").toBe(antes);
+  });
+
   test("não aparece na página inicial geral", async ({ page, baseURL }) => {
     await page.setViewportSize({ width: 1400, height: 800 });
     await page.goto(baseURL + "/d2l/home");

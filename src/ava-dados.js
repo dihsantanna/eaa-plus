@@ -155,6 +155,29 @@ EAAPlus.ava = (function () {
    * Dados de uma disciplina
    * ------------------------------------------------------------- */
   var cache = {};
+  var boletins = {};
+
+  /* O boletim é a primeira leitura da fila e já diz o formato da disciplina:
+     com "Nota AV1" (curso de Música) a barra terá 2 colunas; sem, 1 só.
+     previa() usa a MESMA requisição de dados(), não faz outra. */
+  function boletim(ou) {
+    if (!boletins[ou]) {
+      boletins[ou] = pegar(API + ou + "/grades/").catch(function (erro) {
+        delete boletins[ou];
+        throw erro;
+      });
+    }
+    return boletins[ou];
+  }
+
+  function previa(ou) {
+    return boletim(ou).then(function (gi) {
+      var comAv = (gi || []).some(function (g) {
+        return /^\s*nota\s*av\s*1\b/i.test(g.Name);
+      });
+      return { comAv: comAv, rotulo: comAv ? "Av1" : "Nota", colunas: comAv ? 2 : 1 };
+    });
+  }
 
   function dados(ou) {
     if (!cache[ou]) {
@@ -169,7 +192,7 @@ EAAPlus.ava = (function () {
   function baixar(ou) {
     var base = API + ou + "/";
     return Promise.all([
-      pegar(base + "grades/"),
+      boletim(ou),
       pegar(base + "grades/values/myGradeValues/"),
       pegar(base + "dropbox/folders/").then(lista, vazio),
       pegar(base + "quizzes/").then(lista, vazio),
@@ -564,6 +587,7 @@ EAAPlus.ava = (function () {
 
   return {
     dados: dados,
+    previa: previa,
     diaDe: diaDe,
     diasAte: diasAte,
     data: data,

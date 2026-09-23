@@ -202,12 +202,15 @@ EAAPlus.add({
     /* ---------------------------------------------------------------
      * Carregando: mesma largura e mesmas colunas do resultado, com blocos
      * neutros no lugar do texto. O botão fica desativado até os dados chegarem.
+     * O número de colunas e o rótulo vêm da prévia (o boletim, primeira
+     * leitura da fila): com "Nota AV1" são 2 colunas, sem, 1 — assim o
+     * resultado entra sem mudar de largura.
      * ------------------------------------------------------------- */
     function vazio(largura) {
       return '<span class="eaa-d-vazio" style="width:' + largura + 'px"></span>';
     }
 
-    function htmlCarregando() {
+    function htmlCarregando(p) {
       var col =
         '<span class="eaa-d-col">' +
         '<span class="eaa-d-par"><span class="eaa-d-nome">%NOME%</span>' + vazio(32) + "</span>" +
@@ -216,9 +219,9 @@ EAAPlus.add({
         "</span>";
       return (
         '<button type="button" class="eaa-d-botao" disabled aria-label="Carregando o progresso das avaliações">' +
-        '<span class="eaa-d-nota">' + vazio(24) + '<span class="eaa-d-val">' + vazio(56) + "</span></span>" +
+        '<span class="eaa-d-nota"><span class="eaa-d-rot">' + p.rotulo + '</span><span class="eaa-d-val">' + vazio(56) + "</span></span>" +
         col.replace("%NOME%", "carregando…") +
-        col.replace("%NOME%", vazio(80)) +
+        (p.colunas > 1 ? col.replace("%NOME%", vazio(80)) : "") +
         '<span class="eaa-d-seta">' + CHEVRON + "</span>" +
         "</button>"
       );
@@ -262,7 +265,7 @@ EAAPlus.add({
     /* ---------------------------------------------------------------
      * Montagem
      * ------------------------------------------------------------- */
-    var conteudo = htmlCarregando();
+    var conteudo = null; /* nada até a prévia dizer quantas colunas */
     var carregando = true;
     var relogio = null;
 
@@ -287,6 +290,7 @@ EAAPlus.add({
     }
 
     function parar() {
+      carregando = false;
       conteudo = null;
       garantir();
       clearInterval(relogio);
@@ -302,6 +306,15 @@ EAAPlus.add({
       garantir();
     }, VARREDURA_MS);
     window.addEventListener("resize", garantir);
+
+    A.previa(ou).then(
+      function (p) {
+        if (!carregando) return; /* os dados completos chegaram antes */
+        conteudo = htmlCarregando(p);
+        garantir();
+      },
+      function () {}
+    );
 
     A.dados(ou).then(
       function (r) {
