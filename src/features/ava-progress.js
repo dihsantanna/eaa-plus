@@ -9,7 +9,7 @@
  * 2. Acima dos cards: o próximo prazo comum às disciplinas visíveis, quantas
  *    atividades já foram entregues e em quais disciplinas ainda falta algo.
  *
- * Os dados e as regras vêm de src/ava-dados.js (EAAPlus.ava).
+ * Os dados e as regras vêm de src/ava-data.js (EAAPlus.ava).
  *
  * Os cards ficam dentro de 4 camadas de shadow DOM e são recriados quando o
  * aluno troca de aba. Por isso a melhoria procura cards novos a cada segundo
@@ -18,147 +18,147 @@
  */
 
 EAAPlus.add({
-  id: "ava-progresso",
+  id: "ava-progress",
 
   init: function () {
     /* O bloco do AVA roda em todas as páginas /d2l/; esta é só a inicial. */
     if (!/^\/d2l\/home\/?$/.test(location.pathname)) return true;
-    var raiz = document.querySelector("d2l-my-courses-v2");
-    if (!raiz) return false;
+    var root = document.querySelector("d2l-my-courses-v2");
+    if (!root) return false;
 
     var A = EAAPlus.ava;
     var esc = A.esc;
-    var MARCA = "eaa-prog";
-    var RESUMO_ID = "eaa-resumo";
-    var VARREDURA_MS = 1000;
+    var MARK = "eaa-prog";
+    var SUMMARY_ID = "eaa-summary";
+    var SCAN_MS = 1000;
 
     /* Grade de 4px. Toda linha é "rótulo | valor" com as mesmas margens. */
     var CSS =
       ".eaa-prog{margin-top:12px;font:400 12px/16px Lato,'Lucida Sans Unicode',sans-serif;color:#494c4e;display:grid;gap:8px}" +
       ".eaa-prog *{box-sizing:border-box;margin:0;padding:0}" +
-      ".eaa-par{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}" +
-      ".eaa-par>:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
-      ".eaa-par>:last-child{flex:none;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}" +
-      ".eaa-cab{font-weight:700;color:#202122}" +
-      ".eaa-cab>:last-child{font-size:13px}" +
-      ".eaa-prazo{display:grid;gap:4px}" +
-      ".eaa-prazo .eaa-nome{font-weight:700;color:#202122}" +
-      ".eaa-prazo.urgente .eaa-quando{color:#cd2026;font-weight:700}" +
-      ".eaa-prazo.encerrado{opacity:.72}" +
+      ".eaa-pair{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}" +
+      ".eaa-pair>:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+      ".eaa-pair>:last-child{flex:none;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}" +
+      ".eaa-head{font-weight:700;color:#202122}" +
+      ".eaa-head>:last-child{font-size:13px}" +
+      ".eaa-deadline{display:grid;gap:4px}" +
+      ".eaa-deadline .eaa-name{font-weight:700;color:#202122}" +
+      ".eaa-deadline.urgent .eaa-when{color:#cd2026;font-weight:700}" +
+      ".eaa-deadline.closed{opacity:.72}" +
       ".eaa-seg{display:flex;gap:2px;height:6px}" +
       ".eaa-seg i{flex:1 1 0;border-radius:3px;background:#e3e9f1}" +
-      ".eaa-seg .corrigida{background:#46a661}" +
-      ".eaa-seg .aguardando{background:#ffba59}" +
-      ".eaa-seg .iniciada{background:#e87511}" +
-      ".eaa-seg .perdida{background:#cd2026}" +
-      ".eaa-leg{color:#6e7477}" +
+      ".eaa-seg .graded{background:#46a661}" +
+      ".eaa-seg .awaiting{background:#ffba59}" +
+      ".eaa-seg .started{background:#e87511}" +
+      ".eaa-seg .missed{background:#cd2026}" +
+      ".eaa-caption{color:#6e7477}" +
       ".eaa-tag{font-weight:700}" +
-      ".eaa-tag.corrigida{color:#2c7a43}" +
-      ".eaa-tag.aguardando{color:#8a5300}" +
-      ".eaa-tag.iniciada{color:#b34f00}" +
-      ".eaa-tag.perdida{color:#cd2026}" +
-      ".eaa-sit{height:24px;line-height:24px;border-radius:4px;text-align:center;font-weight:700;background:#f1f5fb;color:#202122}" +
-      ".eaa-sit.aprovado{background:#e8f5ec;color:#2c7a43}" +
-      ".eaa-sit.recuperacao{background:#fff4e0;color:#8a5300}" +
-      ".eaa-sit.reprovado{background:#fdecec;color:#a3181e}" +
-      ".eaa-carregando{color:#6e7477;font-style:italic}" +
+      ".eaa-tag.graded{color:#2c7a43}" +
+      ".eaa-tag.awaiting{color:#8a5300}" +
+      ".eaa-tag.started{color:#b34f00}" +
+      ".eaa-tag.missed{color:#cd2026}" +
+      ".eaa-standing{height:24px;line-height:24px;border-radius:4px;text-align:center;font-weight:700;background:#f1f5fb;color:#202122}" +
+      ".eaa-standing.passed{background:#e8f5ec;color:#2c7a43}" +
+      ".eaa-standing.recovery{background:#fff4e0;color:#8a5300}" +
+      ".eaa-standing.failed{background:#fdecec;color:#a3181e}" +
+      ".eaa-loading{color:#6e7477;font-style:italic}" +
       /* Simetria entre cards vizinhos: os títulos têm 1 a 3 linhas, então o
          bloco visível fica preso ao pé do card (o .d2l-card-container é
          position:relative) e uma cópia invisível reserva a altura. */
-      ".eaa-prog.fantasma{visibility:hidden}" +
+      ".eaa-prog.ghost{visibility:hidden}" +
       ".eaa-prog.real{position:absolute;left:16px;right:16px;bottom:24px;margin:0}";
 
     /* ---------------------------------------------------------------
      * Desenho dentro do card
      * ------------------------------------------------------------- */
-    function linhaDoPrazo(g) {
-      var d = A.destaque(g.c);
-      var quando = A.quando(g);
-      var encerrado = g.prazo && g.prazo < Date.now();
-      var leitura =
-        g.curto + ", " + quando + ": " +
-        g.c.itens
+    function deadlineRow(g) {
+      var d = A.highlight(g.c);
+      var when = A.when(g);
+      var closed = g.deadline && g.deadline < Date.now();
+      var ariaText =
+        g.shortLabel + ", " + when + ": " +
+        g.c.items
           .map(function (it) {
-            return it.nome + " " + A.ROTULO[it.estado];
+            return it.name + " " + A.STATE_LABEL[it.state];
           })
           .join("; ");
       return (
-        '<div class="eaa-prazo' + (encerrado ? " encerrado" : "") + (A.urgente(g) ? " urgente" : "") +
-        '" role="group" aria-label="' + esc(leitura) + '">' +
-        '<div class="eaa-par"><span class="eaa-nome">' + esc(g.curto) + '</span><span class="eaa-quando">' + esc(quando) + "</span></div>" +
-        A.segmentos(g.c.itens) +
-        '<div class="eaa-par eaa-leg"><span>' + g.c.entregues + " de " + g.c.itens.length + " entregues</span>" +
+        '<div class="eaa-deadline' + (closed ? " closed" : "") + (A.urgent(g) ? " urgent" : "") +
+        '" role="group" aria-label="' + esc(ariaText) + '">' +
+        '<div class="eaa-pair"><span class="eaa-name">' + esc(g.shortLabel) + '</span><span class="eaa-when">' + esc(when) + "</span></div>" +
+        A.segments(g.c.items) +
+        '<div class="eaa-pair eaa-caption"><span>' + g.c.delivered + " de " + g.c.items.length + " entregues</span>" +
         '<span class="eaa-tag ' + d[0] + '">' + d[1] + "</span></div>" +
         "</div>"
       );
     }
 
     function html(r) {
-      var saida =
-        '<div class="eaa-par eaa-cab"><span class="eaa-rot">' + r.rotulo + "</span>" +
-        '<span class="eaa-val">' + A.num(r.av1) + " / " + A.num(r.av1Max) + "</span></div>" +
-        r.prazos.map(linhaDoPrazo).join("");
-      var s = A.situacao(r);
-      if (s) saida += '<div class="eaa-sit ' + s[0] + '">' + s[1] + "</div>";
-      return saida;
+      var out =
+        '<div class="eaa-pair eaa-head"><span class="eaa-label">' + r.label + "</span>" +
+        '<span class="eaa-val">' + A.formatNum(r.av1) + " / " + A.formatNum(r.av1Max) + "</span></div>" +
+        r.deadlines.map(deadlineRow).join("");
+      var s = A.standing(r);
+      if (s) out += '<div class="eaa-standing ' + s[0] + '">' + s[1] + "</div>";
+      return out;
     }
 
-    function preparar(sombra) {
-      if (!sombra.querySelector("style[data-eaa]")) {
-        var estilo = document.createElement("style");
-        estilo.setAttribute("data-eaa", "");
-        estilo.textContent = CSS;
-        sombra.appendChild(estilo);
+    function prepare(shadow) {
+      if (!shadow.querySelector("style[data-eaa]")) {
+        var styleEl = document.createElement("style");
+        styleEl.setAttribute("data-eaa", "");
+        styleEl.textContent = CSS;
+        shadow.appendChild(styleEl);
       }
     }
 
     /* ---------------------------------------------------------------
      * Resumo acima dos cards: o próximo prazo de todas as visíveis
      * ------------------------------------------------------------- */
-    var prontos = {}; /* ou → { r, nome } */
+    var ready = {}; /* ou → { r, nome } */
 
-    function resumoGeral(visiveis) {
-      var agora = Date.now();
-      var alvo = null;
-      visiveis.forEach(function (ou) {
-        var p = prontos[ou];
+    function overallSummary(visible) {
+      var now = Date.now();
+      var target = null;
+      visible.forEach(function (ou) {
+        var p = ready[ou];
         if (!p) return;
-        p.r.prazos.forEach(function (g) {
-          if (g.prazo && g.prazo >= agora && (!alvo || A.diaDe(g.prazo) < alvo)) alvo = A.diaDe(g.prazo);
+        p.r.deadlines.forEach(function (g) {
+          if (g.deadline && g.deadline >= now && (!target || A.dayOf(g.deadline) < target)) target = A.dayOf(g.deadline);
         });
       });
-      if (!alvo) return null;
+      if (!target) return null;
 
-      var res = { prazo: 0, longo: "", itens: [], disciplinas: [], iniciadas: 0, lidoEm: null };
-      visiveis.forEach(function (ou) {
-        var p = prontos[ou];
+      var res = { deadline: 0, longLabel: "", items: [], courses: [], startedCount: 0, readAt: null };
+      visible.forEach(function (ou) {
+        var p = ready[ou];
         if (!p) return;
         /* o dado mais antigo na tela (cache de até 10 min) */
-        if (p.r.lidoEm && (!res.lidoEm || p.r.lidoEm < res.lidoEm)) res.lidoEm = p.r.lidoEm;
-        p.r.prazos.forEach(function (g) {
-          if (!g.prazo || A.diaDe(g.prazo) !== alvo) return;
-          res.prazo = Math.max(res.prazo, g.prazo);
-          if (!res.longo && g.nomeado) res.longo = g.longo;
-          res.itens = res.itens.concat(g.c.itens);
-          res.iniciadas += g.c.iniciada;
-          if (g.c.pendentes) res.disciplinas.push({ ou: ou, nome: p.nome, pendentes: g.c.pendentes, iniciada: g.c.iniciada });
+        if (p.r.readAt && (!res.readAt || p.r.readAt < res.readAt)) res.readAt = p.r.readAt;
+        p.r.deadlines.forEach(function (g) {
+          if (!g.deadline || A.dayOf(g.deadline) !== target) return;
+          res.deadline = Math.max(res.deadline, g.deadline);
+          if (!res.longLabel && g.named) res.longLabel = g.longLabel;
+          res.items = res.items.concat(g.c.items);
+          res.startedCount += g.c.started;
+          if (g.c.pending) res.courses.push({ ou: ou, name: p.name, pending: g.c.pending, started: g.c.started });
         });
       });
-      res.c = A.contar(res.itens);
-      res.longo = res.longo || "Próximo prazo";
+      res.c = A.tally(res.items);
+      res.longLabel = res.longLabel || "Próximo prazo";
       return res;
     }
 
-    function curto(nome) {
-      var antes = nome.split(":")[0].trim();
-      return antes.length >= 3 ? antes : nome;
+    function shortLabel(name) {
+      var before = name.split(":")[0].trim();
+      return before.length >= 3 ? before : name;
     }
 
     /* Uma legenda só, no resumo (os cards não têm largura para ela). */
-    function legenda() {
+    function legend() {
       return (
-        '<ul class="eaa-r-legenda" aria-label="Legenda das cores">' +
-        A.LEGENDA.map(function (l) {
+        '<ul class="eaa-r-legend" aria-label="Legenda das cores">' +
+        A.LEGEND.map(function (l) {
           return '<li><i class="' + l[0] + '"></i>' + l[1] + "</li>";
         }).join("") +
         "</ul>"
@@ -168,40 +168,40 @@ EAAPlus.add({
     /* Os dados podem vir do cache (até 10 min): a idade fica à vista e o
        aluno força uma leitura nova com um clique. Mesma linha no
        carregamento, para a altura não pular. */
-    function rodape(lidoEm) {
+    function footer(readAt) {
       return (
-        '<div class="eaa-r-par eaa-r-rodape"><span>' + (lidoEm ? "Atualizado às " + A.hora(lidoEm) : "&nbsp;") + "</span>" +
-        '<button type="button" class="eaa-r-atualizar" title="Ler de novo notas e entregas de todas as disciplinas"' +
-        (lidoEm ? "" : " disabled") + ">Atualizar</button></div>"
+        '<div class="eaa-r-pair eaa-r-footer"><span>' + (readAt ? "Atualizado às " + A.formatTime(readAt) : "&nbsp;") + "</span>" +
+        '<button type="button" class="eaa-r-refresh" title="Ler de novo notas e entregas de todas as disciplinas"' +
+        (readAt ? "" : " disabled") + ">Atualizar</button></div>"
       );
     }
 
-    function htmlDoResumo(res) {
-      var urgente = res.c.pendentes && A.diasAte(res.prazo) <= 1;
-      var tudo = !res.c.pendentes;
-      var direita = tudo
-        ? '<span class="eaa-r-tag corrigida">✓ tudo entregue</span>'
-        : '<span class="eaa-r-tag' + (res.iniciadas ? " iniciada" : "") + '">' +
-          (res.iniciadas ? "⚠ " + A.plural(res.iniciadas, "não enviada", "não enviadas") + " · " : "") +
-          "faltam " + res.c.pendentes + "</span>";
-      var fichas = res.disciplinas
+    function summaryHtml(res) {
+      var urgent = res.c.pending && A.daysUntil(res.deadline) <= 1;
+      var everything = !res.c.pending;
+      var rightHtml = everything
+        ? '<span class="eaa-r-tag graded">✓ tudo entregue</span>'
+        : '<span class="eaa-r-tag' + (res.startedCount ? " started" : "") + '">' +
+          (res.startedCount ? "⚠ " + A.plural(res.startedCount, "não enviada", "não enviadas") + " · " : "") +
+          "faltam " + res.c.pending + "</span>";
+      var chips = res.courses
         .map(function (d) {
           return (
-            '<a class="eaa-r-ficha' + (d.iniciada ? " iniciada" : "") + '" href="/d2l/home/' + d.ou + '" title="' + esc(d.nome) + '">' +
-            '<span class="eaa-r-fnome">' + esc(curto(d.nome)) + '</span><span class="eaa-r-fnum">' + d.pendentes + "</span></a>"
+            '<a class="eaa-r-chip' + (d.started ? " started" : "") + '" href="/d2l/home/' + d.ou + '" title="' + esc(d.name) + '">' +
+            '<span class="eaa-r-cname">' + esc(shortLabel(d.name)) + '</span><span class="eaa-r-cnum">' + d.pending + "</span></a>"
           );
         })
         .join("");
       return (
-        '<div class="eaa-r-par"><span class="eaa-r-titulo">' + esc(res.longo) + "</span>" +
-        '<span class="eaa-r-quando' + (urgente ? " urgente" : "") + '">' +
-        A.data(res.prazo) + " às " + A.hora(res.prazo) + " · " + A.falta(res.prazo, true) + "</span></div>" +
-        A.segmentos(res.c.itens, "eaa-r-seg") +
-        '<div class="eaa-r-par eaa-r-leg"><span>' + res.c.entregues + " de " + res.c.itens.length +
-        " atividades entregues</span>" + direita + "</div>" +
-        (fichas ? '<div class="eaa-r-fichas">' + fichas + "</div>" : "") +
-        legenda() +
-        rodape(res.lidoEm)
+        '<div class="eaa-r-pair"><span class="eaa-r-title">' + esc(res.longLabel) + "</span>" +
+        '<span class="eaa-r-when' + (urgent ? " urgent" : "") + '">' +
+        A.formatDate(res.deadline) + " às " + A.formatTime(res.deadline) + " · " + A.timeLeft(res.deadline, true) + "</span></div>" +
+        A.segments(res.c.items, "eaa-r-seg") +
+        '<div class="eaa-r-pair eaa-r-caption"><span>' + res.c.delivered + " de " + res.c.items.length +
+        " atividades entregues</span>" + rightHtml + "</div>" +
+        (chips ? '<div class="eaa-r-chips">' + chips + "</div>" : "") +
+        legend() +
+        footer(res.readAt)
       );
     }
 
@@ -211,65 +211,65 @@ EAAPlus.add({
        resultado, para nada pular quando terminar. Erro também conta como
        resposta; e depois de ESPERA_MAX mostra o que tiver, em vez de girar
        para sempre por causa de uma disciplina que não responde. */
-    var resolvidos = {};
-    var inicioDaCarga = null;
-    var ESPERA_MAX = 20000;
+    var resolved = {};
+    var loadStart = null;
+    var MAX_WAIT_MS = 20000;
 
-    function htmlCarregando(prontas, total) {
-      var pct = total ? Math.round((prontas / total) * 100) : 0;
+    function loadingHtml(readyCount, total) {
+      var pct = total ? Math.round((readyCount / total) * 100) : 0;
       return (
-        '<div class="eaa-r-par"><span class="eaa-r-titulo">Próximo prazo</span>' +
-        '<span class="eaa-r-quando eaa-r-status" role="status">carregando ' + prontas + " de " + total + " disciplinas…</span></div>" +
-        '<div class="eaa-r-progresso" aria-hidden="true"><i style="width:' + pct + '%"></i></div>' +
-        '<div class="eaa-r-par eaa-r-leg"><span>Lendo notas e entregas no AVA</span><span></span></div>' +
-        '<div class="eaa-r-fichas" aria-hidden="true">' +
-        '<span class="eaa-r-ficha eaa-r-vazia" style="width:128px"></span>' +
-        '<span class="eaa-r-ficha eaa-r-vazia" style="width:96px"></span>' +
-        '<span class="eaa-r-ficha eaa-r-vazia" style="width:152px"></span></div>' +
-        legenda() +
-        rodape(null)
+        '<div class="eaa-r-pair"><span class="eaa-r-title">Próximo prazo</span>' +
+        '<span class="eaa-r-when eaa-r-status" role="status">carregando ' + readyCount + " de " + total + " disciplinas…</span></div>" +
+        '<div class="eaa-r-progress" aria-hidden="true"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="eaa-r-pair eaa-r-caption"><span>Lendo notas e entregas no AVA</span><span></span></div>' +
+        '<div class="eaa-r-chips" aria-hidden="true">' +
+        '<span class="eaa-r-chip eaa-r-empty" style="width:128px"></span>' +
+        '<span class="eaa-r-chip eaa-r-empty" style="width:96px"></span>' +
+        '<span class="eaa-r-chip eaa-r-empty" style="width:152px"></span></div>' +
+        legend() +
+        footer(null)
       );
     }
 
-    function atualizarResumo(visiveis) {
-      var alvo = document.querySelector("d2l-my-courses-v2");
-      if (!alvo || !alvo.parentNode) return;
-      var caixa = document.getElementById(RESUMO_ID);
-      var sumir = function () {
-        if (caixa) caixa.remove();
+    function updateSummary(visible) {
+      var target = document.querySelector("d2l-my-courses-v2");
+      if (!target || !target.parentNode) return;
+      var box = document.getElementById(SUMMARY_ID);
+      var hide = function () {
+        if (box) box.remove();
       };
-      if (!visiveis.length) return sumir();
+      if (!visible.length) return hide();
 
-      var faltam = visiveis.filter(function (ou) {
-        return !resolvidos[ou];
+      var missing = visible.filter(function (ou) {
+        return !resolved[ou];
       }).length;
-      if (!faltam) inicioDaCarga = null;
-      else if (inicioDaCarga === null) inicioDaCarga = Date.now();
-      var carregando = faltam > 0 && Date.now() - inicioDaCarga < ESPERA_MAX;
+      if (!missing) loadStart = null;
+      else if (loadStart === null) loadStart = Date.now();
+      var loading = missing > 0 && Date.now() - loadStart < MAX_WAIT_MS;
 
-      var novo;
-      if (carregando) {
-        novo = htmlCarregando(visiveis.length - faltam, visiveis.length);
+      var fresh;
+      if (loading) {
+        fresh = loadingHtml(visible.length - missing, visible.length);
       } else {
-        var res = resumoGeral(visiveis);
-        if (!res || !res.c.itens.length) return sumir();
-        novo = htmlDoResumo(res);
+        var res = overallSummary(visible);
+        if (!res || !res.c.items.length) return hide();
+        fresh = summaryHtml(res);
       }
 
-      if (!caixa) {
-        caixa = document.createElement("section");
-        caixa.id = RESUMO_ID;
-        caixa.setAttribute("aria-label", "Próximo prazo das disciplinas");
-        caixa.addEventListener("click", function (ev) {
-          var b = ev.target.closest && ev.target.closest(".eaa-r-atualizar");
-          if (b && !b.disabled) atualizarTudo();
+      if (!box) {
+        box = document.createElement("section");
+        box.id = SUMMARY_ID;
+        box.setAttribute("aria-label", "Próximo prazo das disciplinas");
+        box.addEventListener("click", function (ev) {
+          var b = ev.target.closest && ev.target.closest(".eaa-r-refresh");
+          if (b && !b.disabled) refreshAll();
         });
       }
-      caixa.setAttribute("aria-busy", carregando ? "true" : "false");
-      if (caixa.nextSibling !== alvo) alvo.parentNode.insertBefore(caixa, alvo);
-      if (caixa.getAttribute("data-html") !== novo) {
-        caixa.setAttribute("data-html", novo);
-        caixa.innerHTML = novo;
+      box.setAttribute("aria-busy", loading ? "true" : "false");
+      if (box.nextSibling !== target) target.parentNode.insertBefore(box, target);
+      if (box.getAttribute("data-html") !== fresh) {
+        box.setAttribute("data-html", fresh);
+        box.innerHTML = fresh;
       }
     }
 
@@ -278,69 +278,69 @@ EAAPlus.add({
      * ------------------------------------------------------------- */
     /* Disciplina sem atividades ou com erro: não volta a montar o bloco a
        cada varredura (evita piscar "Carregando…" e ler de novo). */
-    var semBloco = {};
+    var noBlock = {};
     /* Sobe a cada Atualizar: bloco de geração antiga é lido de novo, e
        resposta que chega de uma geração antiga é descartada. */
-    var geracao = 0;
+    var generation = 0;
 
-    function processar(card, ou) {
-      if (semBloco[ou]) return;
-      var sombra = card.shadowRoot;
-      var cartao = sombra && sombra.querySelector("d2l-card");
-      if (!cartao) return;
-      var cabecalho = cartao.querySelector(".d2l-enrollment-card-content-flex");
-      if (!cabecalho) return; /* ainda montando */
+    function process(card, ou) {
+      if (noBlock[ou]) return;
+      var shadow = card.shadowRoot;
+      var d2lCard = shadow && shadow.querySelector("d2l-card");
+      if (!d2lCard) return;
+      var header = d2lCard.querySelector(".d2l-enrollment-card-content-flex");
+      if (!header) return; /* ainda montando */
 
-      var fantasma = cartao.querySelector("." + MARCA + ".fantasma");
-      var bloco = cartao.querySelector("." + MARCA + ".real");
-      if (fantasma && bloco && bloco.getAttribute("data-geracao") === String(geracao)) return;
-      var escrever = function (conteudo) {
-        fantasma.innerHTML = bloco.innerHTML = conteudo;
+      var ghost = d2lCard.querySelector("." + MARK + ".ghost");
+      var block = d2lCard.querySelector("." + MARK + ".real");
+      if (ghost && block && block.getAttribute("data-generation") === String(generation)) return;
+      var write = function (content) {
+        ghost.innerHTML = block.innerHTML = content;
       };
-      var remover = function () {
-        fantasma.remove();
-        bloco.remove();
+      var removeBlocks = function () {
+        ghost.remove();
+        block.remove();
       };
 
       /* Bloco que já existe (Atualizar): fica com o dado antigo até o novo
          chegar, para o card não encolher e crescer de novo. */
-      if (!fantasma || !bloco) {
-        if (fantasma) fantasma.remove();
-        if (bloco) bloco.remove();
-        preparar(sombra);
-        fantasma = document.createElement("div");
-        fantasma.className = MARCA + " fantasma";
-        fantasma.setAttribute("slot", "content");
-        fantasma.setAttribute("aria-hidden", "true");
-        bloco = document.createElement("div");
-        bloco.className = MARCA + " real";
-        bloco.setAttribute("slot", "content");
-        escrever('<span class="eaa-carregando">Carregando progresso…</span>');
-        cartao.appendChild(fantasma);
-        cartao.appendChild(bloco);
+      if (!ghost || !block) {
+        if (ghost) ghost.remove();
+        if (block) block.remove();
+        prepare(shadow);
+        ghost = document.createElement("div");
+        ghost.className = MARK + " ghost";
+        ghost.setAttribute("slot", "content");
+        ghost.setAttribute("aria-hidden", "true");
+        block = document.createElement("div");
+        block.className = MARK + " real";
+        block.setAttribute("slot", "content");
+        write('<span class="eaa-loading">Carregando progresso…</span>');
+        d2lCard.appendChild(ghost);
+        d2lCard.appendChild(block);
       }
-      var minha = geracao;
-      bloco.setAttribute("data-geracao", String(minha));
+      var myGeneration = generation;
+      block.setAttribute("data-generation", String(myGeneration));
 
       /* nome: uma leitura só para todas as disciplinas (EAAPlus.ava.nome) */
-      Promise.all([A.dados(ou), A.nome(ou)]).then(
-        function (par) {
-          if (minha !== geracao) return;
-          var r = par[0];
-          resolvidos[ou] = true;
+      Promise.all([A.courseData(ou), A.name(ou)]).then(
+        function (pair) {
+          if (myGeneration !== generation) return;
+          var r = pair[0];
+          resolved[ou] = true;
           if (!r.total) {
-            semBloco[ou] = true;
-            return remover();
+            noBlock[ou] = true;
+            return removeBlocks();
           }
-          prontos[ou] = { r: r, nome: par[1] || "Disciplina" };
-          escrever(html(r));
+          ready[ou] = { r: r, name: pair[1] || "Disciplina" };
+          write(html(r));
         },
-        function (erro) {
-          if (minha !== geracao) return;
-          resolvidos[ou] = true;
-          semBloco[ou] = true;
-          remover();
-          if (window.console && console.warn) console.warn("[EAA+] progresso da disciplina " + ou + ":", erro);
+        function (err) {
+          if (myGeneration !== generation) return;
+          resolved[ou] = true;
+          noBlock[ou] = true;
+          removeBlocks();
+          if (window.console && console.warn) console.warn("[EAA+] progresso da disciplina " + ou + ":", err);
         }
       );
     }
@@ -348,42 +348,42 @@ EAAPlus.add({
     /* Botão Atualizar: lê tudo de novo do servidor SEM recarregar a página
        (o AVA pediria de novo ~250 arquivos). O resumo volta ao carregamento
        — mesma altura — e os cards trocam o conteúdo quando o dado chega. */
-    function atualizarTudo() {
-      geracao++;
-      prontos = {};
-      resolvidos = {};
-      semBloco = {};
-      inicioDaCarga = null;
-      A.recomecar();
-      varrer();
+    function refreshAll() {
+      generation++;
+      ready = {};
+      resolved = {};
+      noBlock = {};
+      loadStart = null;
+      A.restart();
+      scan();
     }
 
-    function cards(no, saida) {
-      var filhos = no.querySelectorAll("*");
-      for (var i = 0; i < filhos.length; i++) {
-        var el = filhos[i];
-        if (el.tagName === "D2L-MY-COURSES-ENROLLMENT-CARD") saida.push(el);
-        else if (el.shadowRoot) cards(el.shadowRoot, saida);
+    function cards(node, out) {
+      var kids = node.querySelectorAll("*");
+      for (var i = 0; i < kids.length; i++) {
+        var el = kids[i];
+        if (el.tagName === "D2L-MY-COURSES-ENROLLMENT-CARD") out.push(el);
+        else if (el.shadowRoot) cards(el.shadowRoot, out);
       }
-      return saida;
+      return out;
     }
 
-    function varrer() {
+    function scan() {
       var r = document.querySelector("d2l-my-courses-v2");
       if (!r || !r.shadowRoot) return;
-      var visiveis = [];
+      var visible = [];
       cards(r.shadowRoot, []).forEach(function (card) {
         var ou = (card.id || "").replace(/^enrollment-card-/, "");
         /* Só os visíveis: as outras abas carregam quando forem abertas. */
         if (!/^\d+$/.test(ou) || !card.getClientRects().length) return;
-        visiveis.push(ou);
-        processar(card, ou);
+        visible.push(ou);
+        process(card, ou);
       });
-      atualizarResumo(visiveis);
+      updateSummary(visible);
     }
 
-    varrer();
-    setInterval(varrer, VARREDURA_MS);
+    scan();
+    setInterval(scan, SCAN_MS);
     return true;
   }
 });

@@ -15,7 +15,7 @@
  */
 
 EAAPlus.add({
-  id: "proxima-aula",
+  id: "next-class",
 
   init: function () {
     var CARD_ID = "eaa-next-class";
@@ -23,13 +23,13 @@ EAAPlus.add({
     var TZ = "America/Sao_Paulo";
 
     var DATA_RE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-    var HORA_RE = /^(\d{1,2}):(\d{2})\s*(?:às|as|-|–)\s*(\d{1,2}):(\d{2})$/i;
+    var TIME_RE = /^(\d{1,2}):(\d{2})\s*(?:às|as|-|–)\s*(\d{1,2}):(\d{2})$/i;
 
-    var SETA_ESQ =
+    var ARROW_LEFT =
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" ' +
       'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
       'stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
-    var SETA_DIR =
+    var ARROW_RIGHT =
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" ' +
       'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
       'stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>';
@@ -43,9 +43,9 @@ EAAPlus.add({
      * errada. Então convertemos "hora de parede em São Paulo" para o
      * instante real, perguntando ao Intl qual o deslocamento naquela data.
      * ------------------------------------------------------------- */
-    var formatador = null;
+    var formatter = null;
     try {
-      formatador = new Intl.DateTimeFormat("en-US", {
+      formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: TZ,
         hour12: false,
         year: "numeric",
@@ -55,13 +55,13 @@ EAAPlus.add({
         minute: "2-digit"
       });
     } catch (e) {
-      formatador = null; /* navegador sem suporte: cai no fuso local */
+      formatter = null; /* navegador sem suporte: cai no fuso local */
     }
 
-    function paredeEmSaoPaulo(ts) {
+    function wallInSaoPaulo(ts) {
       var p = {};
-      formatador.formatToParts(new Date(ts)).forEach(function (parte) {
-        if (parte.type !== "literal") p[parte.type] = parseInt(parte.value, 10);
+      formatter.formatToParts(new Date(ts)).forEach(function (part) {
+        if (part.type !== "literal") p[part.type] = parseInt(part.value, 10);
       });
       return Date.UTC(
         p.year,
@@ -72,13 +72,13 @@ EAAPlus.add({
       );
     }
 
-    function dataDeBrasilia(ano, mes, dia, hora, minuto) {
-      var alvo = Date.UTC(ano, mes - 1, dia, hora, minuto);
-      if (!formatador) return new Date(ano, mes - 1, dia, hora, minuto);
+    function brasiliaDate(year, mon, day, hour, minute) {
+      var target = Date.UTC(year, mon - 1, day, hour, minute);
+      if (!formatter) return new Date(year, mon - 1, day, hour, minute);
 
-      var ts = alvo;
+      var ts = target;
       for (var i = 0; i < 2; i++) {
-        ts = alvo - (paredeEmSaoPaulo(ts) - ts);
+        ts = target - (wallInSaoPaulo(ts) - ts);
       }
       return new Date(ts);
     }
@@ -86,30 +86,30 @@ EAAPlus.add({
     /* ---------------------------------------------------------------
      * Leitura das sessões
      * ------------------------------------------------------------- */
-    function lerSessoes(list) {
-      var sessoes = [];
+    function readSessions(list) {
+      var sessions = [];
 
       Array.prototype.forEach.call(
         list.querySelectorAll(".card"),
         function (card) {
-          var disciplina = card.querySelector(".discipline");
-          if (!disciplina) return;
+          var course = card.querySelector(".discipline");
+          if (!course) return;
 
-          var metas = card.querySelectorAll(".meta span");
-          var etiqueta = card.querySelector(".period-tag");
+          var metaItems = card.querySelectorAll(".meta span");
+          var periodTag = card.querySelector(".period-tag");
           var link = card.querySelector("a.btn-link");
 
-          var periodos = card.dataset.periods
+          var periods = card.dataset.periods
             ? card.dataset.periods.split(",").map(Number)
-            : EAAPlus.periodos(etiqueta ? etiqueta.textContent : "");
+            : EAAPlus.periods(periodTag ? periodTag.textContent : "");
 
           var base = {
-            nome: disciplina.textContent.trim(),
-            professor: metas.length ? metas[0].textContent.trim() : "",
-            etiqueta: etiqueta ? etiqueta.textContent.trim() : "",
-            periodos: periodos,
+            name: course.textContent.trim(),
+            professor: metaItems.length ? metaItems[0].textContent.trim() : "",
+            periodTag: periodTag ? periodTag.textContent.trim() : "",
+            periods: periods,
             href: link ? link.getAttribute("href") : null,
-            cor: (card.getAttribute("style") || "").replace(
+            color: (card.getAttribute("style") || "").replace(
               /^[\s\S]*--accent-color:\s*([^;]+)[\s\S]*$/,
               "$1"
             )
@@ -118,46 +118,46 @@ EAAPlus.add({
           Array.prototype.forEach.call(
             card.querySelectorAll("tbody tr"),
             function (tr) {
-              var celulas = tr.children;
-              if (celulas.length < 3) return;
+              var cells = tr.children;
+              if (cells.length < 3) return;
 
-              var d = celulas[0].textContent.trim().match(DATA_RE);
-              var h = celulas[2].textContent.trim().match(HORA_RE);
+              var d = cells[0].textContent.trim().match(DATA_RE);
+              var h = cells[2].textContent.trim().match(TIME_RE);
               if (!d || !h) return; /* linha fora do padrão: ignora */
 
-              var inicio = dataDeBrasilia(+d[3], +d[2], +d[1], +h[1], +h[2]);
-              var fim = dataDeBrasilia(+d[3], +d[2], +d[1], +h[3], +h[4]);
-              if (fim < inicio) fim = new Date(fim.getTime() + 86400000);
+              var start = brasiliaDate(+d[3], +d[2], +d[1], +h[1], +h[2]);
+              var end = brasiliaDate(+d[3], +d[2], +d[1], +h[3], +h[4]);
+              if (end < start) end = new Date(end.getTime() + 86400000);
 
-              sessoes.push({
+              sessions.push({
                 /* chave estável: permite reencontrar a mesma sessão depois
                    de um recálculo, para a seta não perder o lugar */
-                chave: base.nome + "@" + inicio.getTime(),
-                nome: base.nome,
+                key: base.name + "@" + start.getTime(),
+                name: base.name,
                 professor: base.professor,
-                etiqueta: base.etiqueta,
-                periodos: base.periodos,
+                periodTag: base.periodTag,
+                periods: base.periods,
                 href: base.href,
-                cor: base.cor,
-                inicio: inicio,
-                fim: fim
+                color: base.color,
+                start: start,
+                end: end
               });
             }
           );
         }
       );
 
-      sessoes.sort(function (a, b) {
-        if (a.inicio - b.inicio !== 0) return a.inicio - b.inicio;
-        return a.nome.localeCompare(b.nome, "pt-BR");
+      sessions.sort(function (a, b) {
+        if (a.start - b.start !== 0) return a.start - b.start;
+        return a.name.localeCompare(b.name, "pt-BR");
       });
-      return sessoes;
+      return sessions;
     }
 
     /* ---------------------------------------------------------------
      * Texto
      * ------------------------------------------------------------- */
-    function mesmoDia(a, b) {
+    function sameDay(a, b) {
       return (
         a.getFullYear() === b.getFullYear() &&
         a.getMonth() === b.getMonth() &&
@@ -165,50 +165,50 @@ EAAPlus.add({
       );
     }
 
-    function quando(data, agora) {
-      var hora = data.toLocaleTimeString("pt-BR", {
+    function when(date, now) {
+      var time = date.toLocaleTimeString("pt-BR", {
         hour: "2-digit",
         minute: "2-digit"
       });
 
-      var amanha = new Date(agora.getTime() + 86400000);
-      if (mesmoDia(data, agora)) return "Hoje às " + hora;
-      if (mesmoDia(data, amanha)) return "Amanhã às " + hora;
+      var tomorrow = new Date(now.getTime() + 86400000);
+      if (sameDay(date, now)) return "Hoje às " + time;
+      if (sameDay(date, tomorrow)) return "Amanhã às " + time;
 
-      var dia = data.toLocaleDateString("pt-BR", {
+      var day = date.toLocaleDateString("pt-BR", {
         weekday: "short",
         day: "2-digit",
         month: "2-digit"
       });
-      return dia.charAt(0).toUpperCase() + dia.slice(1) + " às " + hora;
+      return day.charAt(0).toUpperCase() + day.slice(1) + " às " + time;
     }
 
-    function faltam(data, agora) {
-      var seg = Math.round((data - agora) / 1000);
+    function countdown(date, now) {
+      var seg = Math.round((date - now) / 1000);
       if (seg <= 60) return "começa agora";
 
       var min = Math.round(seg / 60);
       if (min < 60) return "em " + min + " min";
 
-      var horas = Math.floor(min / 60);
-      if (horas < 24) {
-        var resto = min % 60;
-        return "em " + horas + "h" + (resto ? String(resto).padStart(2, "0") : "");
+      var hours = Math.floor(min / 60);
+      if (hours < 24) {
+        var rest = min % 60;
+        return "em " + hours + "h" + (rest ? String(rest).padStart(2, "0") : "");
       }
 
-      var dias = Math.round(horas / 24);
-      return dias === 1 ? "em 1 dia" : "em " + dias + " dias";
+      var days = Math.round(hours / 24);
+      return days === 1 ? "em 1 dia" : "em " + days + " dias";
     }
 
     /* ---------------------------------------------------------------
      * Montagem
      * ------------------------------------------------------------- */
-    function criarCartao() {
-      var secao = document.createElement("section");
-      secao.id = CARD_ID;
-      secao.setAttribute("aria-label", "Próxima aula");
+    function createCard() {
+      var section = document.createElement("section");
+      section.id = CARD_ID;
+      section.setAttribute("aria-label", "Próxima aula");
 
-      secao.innerHTML =
+      section.innerHTML =
         '<div class="nc-inner">' +
         '<div class="nc-body">' +
         '<p class="nc-eyebrow"></p>' +
@@ -218,27 +218,27 @@ EAAPlus.add({
         '<div class="nc-side">' +
         '<div class="nc-action"></div>' +
         '<div class="nc-nav">' +
-        '<button type="button" class="nc-arrow" data-passo="-1" ' +
+        '<button type="button" class="nc-arrow" data-step="-1" ' +
         'aria-label="Aula anterior">' +
-        SETA_ESQ +
+        ARROW_LEFT +
         "</button>" +
         '<span class="nc-pos"></span>' +
-        '<button type="button" class="nc-arrow" data-passo="1" ' +
+        '<button type="button" class="nc-arrow" data-step="1" ' +
         'aria-label="Próxima aula">' +
-        SETA_DIR +
+        ARROW_RIGHT +
         "</button>" +
         "</div>" +
         "</div>" +
         "</div>";
 
-      return secao;
+      return section;
     }
 
-    function periodoSelecionado() {
-      var aba = document.querySelector(
+    function selectedPeriod() {
+      var tabButton = document.querySelector(
         '#eaa-period-filter .pf-tab[aria-selected="true"]'
       );
-      return aba ? aba.dataset.period : "all";
+      return tabButton ? tabButton.dataset.period : "all";
     }
 
     /* ---------------------------------------------------------------
@@ -252,162 +252,162 @@ EAAPlus.add({
     var header = instructions.closest("header");
     if (!header) return false;
 
-    var lista = header.parentElement.querySelector("main.list");
-    if (!lista) return false;
+    var toList = header.parentElement.querySelector("main.list");
+    if (!toList) return false;
 
-    var sessoes = lerSessoes(lista);
-    if (!sessoes.length) return false;
+    var sessions = readSessions(toList);
+    if (!sessions.length) return false;
 
-    var secao = criarCartao();
+    var section = createCard();
 
-    var olho = secao.querySelector(".nc-eyebrow");
-    var titulo = secao.querySelector(".nc-title");
-    var meta = secao.querySelector(".nc-meta");
-    var acao = secao.querySelector(".nc-action");
-    var nav = secao.querySelector(".nc-nav");
-    var posicao = secao.querySelector(".nc-pos");
-    var setaAnterior = secao.querySelector('.nc-arrow[data-passo="-1"]');
-    var setaProxima = secao.querySelector('.nc-arrow[data-passo="1"]');
+    var eye = section.querySelector(".nc-eyebrow");
+    var title = section.querySelector(".nc-title");
+    var meta = section.querySelector(".nc-meta");
+    var action = section.querySelector(".nc-action");
+    var nav = section.querySelector(".nc-nav");
+    var position = section.querySelector(".nc-pos");
+    var prevArrow = section.querySelector('.nc-arrow[data-step="-1"]');
+    var nextArrow = section.querySelector('.nc-arrow[data-step="1"]');
 
-    var indice = 0;
-    var chaveAtual = null; /* o que o aluno está olhando, para não perder o lugar */
+    var idx = 0;
+    var currentKey = null; /* o que o aluno está olhando, para não perder o lugar */
 
-    function futuras(agora) {
-      var periodo = periodoSelecionado();
-      return sessoes.filter(function (s) {
-        if (s.fim <= agora) return false;
-        return periodo === "all" || s.periodos.indexOf(+periodo) !== -1;
+    function upcoming(now) {
+      var period = selectedPeriod();
+      return sessions.filter(function (s) {
+        if (s.end <= now) return false;
+        return period === "all" || s.periods.indexOf(+period) !== -1;
       });
     }
 
-    function render(preservarPosicao) {
-      var agora = new Date();
-      var periodo = periodoSelecionado();
-      var proximas = futuras(agora);
+    function render(keepPosition) {
+      var now = new Date();
+      var period = selectedPeriod();
+      var nextOnes = upcoming(now);
 
       /* Depois de um recálculo, reencontra a sessão que estava na tela.
          Sem isso, uma aula terminando puxaria o card debaixo do aluno. */
-      if (preservarPosicao && chaveAtual) {
-        var achou = -1;
-        for (var i = 0; i < proximas.length; i++) {
-          if (proximas[i].chave === chaveAtual) {
-            achou = i;
+      if (keepPosition && currentKey) {
+        var hit = -1;
+        for (var i = 0; i < nextOnes.length; i++) {
+          if (nextOnes[i].key === currentKey) {
+            hit = i;
             break;
           }
         }
-        indice = achou === -1 ? 0 : achou;
+        idx = hit === -1 ? 0 : hit;
       }
 
-      if (indice > proximas.length - 1) indice = Math.max(0, proximas.length - 1);
+      if (idx > nextOnes.length - 1) idx = Math.max(0, nextOnes.length - 1);
 
-      secao.classList.remove("is-live", "is-empty");
-      acao.textContent = "";
+      section.classList.remove("is-live", "is-empty");
+      action.textContent = "";
 
-      if (!proximas.length) {
-        chaveAtual = null;
-        secao.classList.add("is-empty");
-        secao.style.removeProperty("--accent-color");
+      if (!nextOnes.length) {
+        currentKey = null;
+        section.classList.add("is-empty");
+        section.style.removeProperty("--accent-color");
         nav.hidden = true;
-        olho.textContent =
-          periodo === "all" ? "AULAS SÍNCRONAS" : periodo + "º PERÍODO";
-        titulo.textContent = "Nenhuma aula futura por aqui.";
+        eye.textContent =
+          period === "all" ? "AULAS SÍNCRONAS" : period + "º PERÍODO";
+        title.textContent = "Nenhuma aula futura por aqui.";
         meta.textContent =
-          periodo === "all"
+          period === "all"
             ? "O calendário do semestre chegou ao fim."
             : "Nenhuma aula deste período está agendada daqui pra frente.";
         return;
       }
 
-      var aula = proximas[indice];
-      chaveAtual = aula.chave;
+      var lesson = nextOnes[idx];
+      currentKey = lesson.key;
 
-      if (aula.cor) secao.style.setProperty("--accent-color", aula.cor);
+      if (lesson.color) section.style.setProperty("--accent-color", lesson.color);
 
-      var aoVivo = aula.inicio <= agora && agora < aula.fim;
-      var rotuloPeriodo =
-        periodo === "all" ? aula.etiqueta : periodo + "º período";
+      var live = lesson.start <= now && now < lesson.end;
+      var periodLabel =
+        period === "all" ? lesson.periodTag : period + "º período";
 
       /* Uma aula no mesmo horário da anterior é exatamente o caso que as
          setas existem para resolver — vale dizer isso na cara do card. */
-      var simultanea =
-        indice > 0 &&
-        proximas[indice - 1].inicio.getTime() === aula.inicio.getTime();
+      var simultaneous =
+        idx > 0 &&
+        nextOnes[idx - 1].start.getTime() === lesson.start.getTime();
 
-      if (aoVivo && indice === 0) {
-        secao.classList.add("is-live");
-        olho.innerHTML =
+      if (live && idx === 0) {
+        section.classList.add("is-live");
+        eye.innerHTML =
           '<span class="nc-dot" aria-hidden="true"></span>AO VIVO AGORA';
-      } else if (simultanea) {
-        olho.textContent = "AO MESMO TEMPO";
-        if (rotuloPeriodo) olho.textContent += " · " + rotuloPeriodo;
-      } else if (indice > 0) {
-        olho.textContent = "EM SEGUIDA";
-        if (rotuloPeriodo) olho.textContent += " · " + rotuloPeriodo;
+      } else if (simultaneous) {
+        eye.textContent = "AO MESMO TEMPO";
+        if (periodLabel) eye.textContent += " · " + periodLabel;
+      } else if (idx > 0) {
+        eye.textContent = "EM SEGUIDA";
+        if (periodLabel) eye.textContent += " · " + periodLabel;
       } else {
-        olho.textContent = "PRÓXIMA AULA";
-        if (rotuloPeriodo) olho.textContent += " · " + rotuloPeriodo;
+        eye.textContent = "PRÓXIMA AULA";
+        if (periodLabel) eye.textContent += " · " + periodLabel;
       }
 
-      titulo.textContent = aula.nome;
+      title.textContent = lesson.name;
 
-      var partes = [];
-      if (aula.professor) partes.push(aula.professor);
-      partes.push(quando(aula.inicio, agora));
-      if (aoVivo) {
-        partes.push(
+      var parts = [];
+      if (lesson.professor) parts.push(lesson.professor);
+      parts.push(when(lesson.start, now));
+      if (live) {
+        parts.push(
           "termina às " +
-            aula.fim.toLocaleTimeString("pt-BR", {
+            lesson.end.toLocaleTimeString("pt-BR", {
               hour: "2-digit",
               minute: "2-digit"
             })
         );
       } else {
-        partes.push(faltam(aula.inicio, agora));
+        parts.push(countdown(lesson.start, now));
       }
-      meta.textContent = partes.join(" · ");
+      meta.textContent = parts.join(" · ");
 
-      if (aula.href) {
+      if (lesson.href) {
         var a = document.createElement("a");
         a.className = "nc-btn";
-        a.href = aula.href;
+        a.href = lesson.href;
         a.target = "_blank";
         a.rel = "noopener noreferrer";
-        a.textContent = aoVivo ? "Entrar agora" : "Entrar na aula";
-        acao.appendChild(a);
+        a.textContent = live ? "Entrar agora" : "Entrar na aula";
+        action.appendChild(a);
       } else {
-        var aviso = document.createElement("span");
-        aviso.className = "nc-btn is-disabled";
-        aviso.textContent = "Link a confirmar";
-        acao.appendChild(aviso);
+        var warning = document.createElement("span");
+        warning.className = "nc-btn is-disabled";
+        warning.textContent = "Link a confirmar";
+        action.appendChild(warning);
       }
 
-      nav.hidden = proximas.length < 2;
-      posicao.textContent = indice + 1 + "/" + proximas.length;
-      setaAnterior.disabled = indice === 0;
-      setaProxima.disabled = indice >= proximas.length - 1;
+      nav.hidden = nextOnes.length < 2;
+      position.textContent = idx + 1 + "/" + nextOnes.length;
+      prevArrow.disabled = idx === 0;
+      nextArrow.disabled = idx >= nextOnes.length - 1;
     }
 
-    nav.addEventListener("click", function (evento) {
-      var botao = evento.target.closest(".nc-arrow");
-      if (!botao || botao.disabled) return;
-      indice += parseInt(botao.dataset.passo, 10);
-      if (indice < 0) indice = 0;
+    nav.addEventListener("click", function (event) {
+      var button = event.target.closest(".nc-arrow");
+      if (!button || button.disabled) return;
+      idx += parseInt(button.dataset.step, 10);
+      if (idx < 0) idx = 0;
       render(false);
     });
 
     (document.getElementById("eaa-period-filter") || header)
-      .insertAdjacentElement("afterend", secao);
+      .insertAdjacentElement("afterend", section);
 
     render(false);
 
     /* Trocar de aba recomeça do início — o aluno mudou de assunto. */
-    var abas = document.getElementById("eaa-period-filter");
-    if (abas) {
+    var tabs = document.getElementById("eaa-period-filter");
+    if (tabs) {
       new MutationObserver(function () {
-        indice = 0;
-        chaveAtual = null;
+        idx = 0;
+        currentKey = null;
         render(false);
-      }).observe(abas, {
+      }).observe(tabs, {
         attributes: true,
         attributeFilter: ["aria-selected"],
         subtree: true

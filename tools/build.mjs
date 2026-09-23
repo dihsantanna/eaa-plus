@@ -27,8 +27,8 @@ const zip = new AdmZip();
 zip.addLocalFile("manifest.json");
 zip.addLocalFolder("src", "src");
 zip.addLocalFolder("icons", "icons");
-const nomeZip = `dist/eaa-plus-v${manifest.version}.zip`;
-zip.writeZip(nomeZip);
+const zipName = `dist/eaa-plus-v${manifest.version}.zip`;
+zip.writeZip(zipName);
 
 /* ---------- bloco para o Elementor ---------- */
 const js = cs.js.map((f) => readFileSync(f, "utf8")).join("\n");
@@ -50,5 +50,5 @@ writeFileSync(
 `
 );
 
-console.log(`\n✔ ${nomeZip}`);
+console.log(`\n✔ ${zipName}`);
 console.log("✔ dist/colar-no-elementor.html");

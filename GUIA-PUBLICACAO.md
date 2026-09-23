@@ -28,12 +28,12 @@
 |---|---|
 | `manifest.json` | Manifest V3, **uma permissão só: `storage`** (sem aviso na instalação) |
 | `src/core.js` | Núcleo: registra as melhorias e isola falhas entre elas |
-| `src/fundo.js` | Service worker: só libera o `chrome.storage.session` para o cache do AVA |
-| `src/features/filtro-periodos.*` | Melhoria 1 — abas de filtro por período |
-| `src/features/proxima-aula.*` | Melhoria 2 — card da próxima aula |
-| `src/ava-dados.js` | Leitura das notas e entregas no AVA (único arquivo com acesso à rede) |
-| `src/features/ava-progresso.*` | Melhoria 3 — progresso nos cards da página inicial do AVA |
-| `src/features/ava-disciplina.*` | Melhoria 4 — barra de progresso nas páginas de cada disciplina |
+| `src/background.js` | Service worker: só libera o `chrome.storage.session` para o cache do AVA |
+| `src/features/period-filter.*` | Melhoria 1 — abas de filtro por período |
+| `src/features/next-class.*` | Melhoria 2 — card da próxima aula |
+| `src/ava-data.js` | Leitura das notas e entregas no AVA (único arquivo com acesso à rede) |
+| `src/features/ava-progress.*` | Melhoria 3 — progresso nos cards da página inicial do AVA |
+| `src/features/ava-course.*` | Melhoria 4 — barra de progresso nas páginas de cada disciplina |
 | `icons/16, 48, 128` | Ícones (o de 128 já com o padding de 16px exigido pela loja) |
 
 **A extensão roda em duas páginas, cada uma com seu próprio bloco:**
@@ -269,12 +269,12 @@ As três são verdadeiras neste caso.
 ### 5.5 Política de privacidade (obrigatória a partir da 1.1.0)
 
 O painel pede uma **URL pública**. O texto vive em
-`POLITICA-DE-PRIVACIDADE.md` e vira página com `npm run politica`,
+`POLITICA-DE-PRIVACIDADE.md` e vira página com `npm run policy`,
 publicada na **Vercel** (projeto `eaa-plus-privacidade`):
 
 ```
-npm run politica
-npx vercel deploy .politica/eaa-plus-privacidade --prod
+npm run policy
+npx vercel deploy .policy/eaa-plus-privacidade --prod
 ```
 
 **URL publicada (cole no campo *Privacy policy* da aba):**
@@ -350,7 +350,7 @@ EAAPlus.add({
 });
 ```
 
-Utilitário disponível: `EAAPlus.periodos("1º ao 4º período")` devolve `[1,2,3,4]`.
+Utilitário disponível: `EAAPlus.periods("1º ao 4º período")` devolve `[1,2,3,4]`.
 
 **b) Registre no `manifest.json`,** acrescentando aos arrays `js` e `css` do bloco existente (mesma página) ou criando um novo bloco em `content_scripts` com seu próprio `matches` (outra página).
 

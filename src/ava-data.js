@@ -6,7 +6,7 @@
  *
  * De onde vêm os dados: rotas do próprio Brightspace, no mesmo domínio, com a
  * sessão do aluno. Só GET. Nada é enviado para fora. Este é o ÚNICO arquivo
- * com acesso à rede; verificar-manifest.mjs cobra.
+ * com acesso à rede; check-manifest.mjs cobra.
  *
  * Cache entre páginas (chrome.storage.session: só memória, só a extensão
  * enxerga, some ao fechar o navegador) — ver "Cache entre páginas" abaixo.
@@ -29,50 +29,50 @@ EAAPlus.ava = (function () {
   "use strict";
 
   var API = "/d2l/api/le/1.99/";
-  var LISTA_QUESTIONARIOS = "/d2l/lms/quizzing/user/quizzes_list.d2l?ou=";
-  var LISTA_TAREFAS = "/d2l/lms/dropbox/user/folders_list.d2l?ou=";
-  var APROVA = 6;
-  var RECUPERA = 4;
-  var PARALELO = 4;
-  var MAX_PRAZOS = 4;
+  var QUIZ_LIST = "/d2l/lms/quizzing/user/quizzes_list.d2l?ou=";
+  var ASSIGNMENT_LIST = "/d2l/lms/dropbox/user/folders_list.d2l?ou=";
+  var PASS_MARK = 6;
+  var RECOVERY_MARK = 4;
+  var PARALLEL = 4;
+  var MAX_DEADLINES = 4;
   var TZ = "America/Sao_Paulo";
 
   /* ---------------------------------------------------------------
    * Rede: só GET, só caminhos do próprio AVA
    * ------------------------------------------------------------- */
-  var fila = [];
-  var ativos = 0;
+  var queue = [];
+  var active = 0;
 
-  function mesmaOrigem(caminho) {
+  function sameOrigin(path) {
     /* "/x" resolve no domínio da página; "//x" ou "https:" sairiam dele. */
-    if (!/^\/(?!\/)/.test(caminho)) throw new Error("caminho fora do AVA: " + caminho);
-    return caminho;
+    if (!/^\/(?!\/)/.test(path)) throw new Error("caminho fora do AVA: " + path);
+    return path;
   }
 
-  function pegar(caminho, comoTexto) {
-    return new Promise(function (ok, falha) {
-      fila.push(function () {
-        ativos++;
-        fetch(mesmaOrigem(caminho), { credentials: "same-origin" })
+  function request(path, asText) {
+    return new Promise(function (resolve, reject) {
+      queue.push(function () {
+        active++;
+        fetch(sameOrigin(path), { credentials: "same-origin" })
           .then(function (r) {
-            if (!r.ok) throw new Error(caminho + " respondeu " + r.status);
-            return comoTexto ? r.text() : r.json();
+            if (!r.ok) throw new Error(path + " respondeu " + r.status);
+            return asText ? r.text() : r.json();
           })
-          .then(ok, falha)
+          .then(resolve, reject)
           .then(function () {
-            ativos--;
-            proximo();
+            active--;
+            pump();
           });
       });
-      proximo();
+      pump();
     });
   }
 
-  function proximo() {
-    while (ativos < PARALELO && fila.length) fila.shift()();
+  function pump() {
+    while (active < PARALLEL && queue.length) queue.shift()();
   }
 
-  function lista(o) {
+  function toList(o) {
     if (Array.isArray(o)) return o;
     return (o && o.Objects) || [];
   }
@@ -80,60 +80,60 @@ EAAPlus.ava = (function () {
   /* ---------------------------------------------------------------
    * Datas e números
    * ------------------------------------------------------------- */
-  var fmtDia = null;
-  var fmtData = null;
-  var fmtHora = null;
+  var fmtDay = null;
+  var fmtDate = null;
+  var fmtTime = null;
   try {
-    fmtDia = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
-    fmtData = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit" });
-    fmtHora = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+    fmtDay = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+    fmtDate = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit" });
+    fmtTime = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
   } catch (e) {
-    fmtDia = null;
+    fmtDay = null;
   }
 
-  function ts(texto) {
-    var t = texto ? Date.parse(texto) : NaN;
+  function ts(value) {
+    var t = value ? Date.parse(value) : NaN;
     return isNaN(t) ? null : t;
   }
 
   /* Dia de calendário em Brasília, "2026-09-28". */
-  function diaDe(t) {
-    if (!fmtDia) return new Date(t).toISOString().slice(0, 10);
-    return fmtDia.format(new Date(t));
+  function dayOf(t) {
+    if (!fmtDay) return new Date(t).toISOString().slice(0, 10);
+    return fmtDay.format(new Date(t));
   }
 
-  function diasAte(alvo) {
-    var a = diaDe(Date.now()).split("-");
-    var b = diaDe(alvo).split("-");
+  function daysUntil(target) {
+    var a = dayOf(Date.now()).split("-");
+    var b = dayOf(target).split("-");
     return Math.round((Date.UTC(+b[0], b[1] - 1, +b[2]) - Date.UTC(+a[0], a[1] - 1, +a[2])) / 86400000);
   }
 
-  function data(t) {
-    return fmtData ? fmtData.format(new Date(t)) : new Date(t).toLocaleDateString();
+  function formatDate(t) {
+    return fmtDate ? fmtDate.format(new Date(t)) : new Date(t).toLocaleDateString();
   }
 
-  function hora(t) {
-    return fmtHora ? fmtHora.format(new Date(t)) : "";
+  function formatTime(t) {
+    return fmtTime ? fmtTime.format(new Date(t)) : "";
   }
 
   /* "hoje" · "amanhã" · "5 dias" · "encerrado" */
-  function falta(t, prefixo) {
+  function timeLeft(t, prefix) {
     if (t < Date.now()) return "encerrado";
-    var d = diasAte(t);
+    var d = daysUntil(t);
     if (d <= 0) return "hoje";
     if (d === 1) return "amanhã";
-    return (prefixo ? "em " : "") + d + " dias";
+    return (prefix ? "em " : "") + d + " dias";
   }
 
-  function num(n) {
+  function formatNum(n) {
     return (Math.round(n * 10) / 10).toLocaleString("pt-BR", {
       minimumFractionDigits: 1,
       maximumFractionDigits: 1
     });
   }
 
-  function plural(n, um, varios) {
-    return n + " " + (n === 1 ? um : varios);
+  function plural(n, one, many) {
+    return n + " " + (n === 1 ? one : many);
   }
 
   function esc(s) {
@@ -142,7 +142,7 @@ EAAPlus.ava = (function () {
     });
   }
 
-  function texto(el) {
+  function cleanText(el) {
     return (el.textContent || "").replace(/\s+/g, " ").trim();
   }
 
@@ -163,39 +163,39 @@ EAAPlus.ava = (function () {
    *      formato. Sem id, sem cache.
    * Qualquer erro do storage = segue sem cache, como antes.
    * ------------------------------------------------------------- */
-  var VALIDADE = 10 * 60 * 1000;
-  var FORMATO = 1;
-  var PREFIXO = "ava:";
-  var naoGuardar = {};
-  var avisado = false;
+  var TTL_MS = 10 * 60 * 1000;
+  var FORMAT = 2; /* 2: campos em inglês (format, user, readAt, value) */
+  var PREFIX = "ava:";
+  var noStore = {};
+  var warned = false;
 
   /* Uma vez por página: sem cache a extensão funciona igual, só lê mais. */
-  function semCache(erro) {
-    if (avisado || !window.console || !console.warn) return;
-    avisado = true;
-    console.warn("[EAA+] cache entre páginas indisponível:", erro);
+  function cacheUnavailable(err) {
+    if (warned || !window.console || !console.warn) return;
+    warned = true;
+    console.warn("[EAA+] cache entre páginas indisponível:", err);
   }
 
   /* Toda operação passa por aqui: a área é buscada na hora (o service
      worker pode liberar o acesso depois que esta página carregou) e erro
      síncrono vira promessa rejeitada, como o assíncrono. */
-  function noStorage(fazer) {
+  function noStorage(operation) {
     try {
       var area = chrome.storage && chrome.storage.session;
       if (!area) throw new Error("chrome.storage.session não disponível aqui");
-      return Promise.resolve(fazer(area)).then(null, function (e) {
-        semCache(e);
+      return Promise.resolve(operation(area)).then(null, function (e) {
+        cacheUnavailable(e);
         throw e;
       });
     } catch (e) {
-      semCache(e);
+      cacheUnavailable(e);
       return Promise.reject(e);
     }
   }
 
-  function ignorar() {}
+  function ignore() {}
 
-  function usuario() {
+  function currentUserId() {
     try {
       var c = JSON.parse(document.documentElement.getAttribute("data-global-context") || "{}");
       return c && c.userId ? String(c.userId) : null;
@@ -205,31 +205,31 @@ EAAPlus.ava = (function () {
   }
 
   /* Enquanto o Atualizar esvazia o cache, ninguém lê o que está lá. */
-  var limpando = Promise.resolve();
+  var clearing = Promise.resolve();
 
-  function lerGuardado(chave) {
-    var eu = usuario();
-    if (!eu) return Promise.resolve(null);
-    return limpando
+  function readStored(key) {
+    var me = currentUserId();
+    if (!me) return Promise.resolve(null);
+    return clearing
       .then(function () {
         return noStorage(function (area) {
-          return area.get(PREFIXO + chave);
+          return area.get(PREFIX + key);
         });
       })
       .then(
         function (o) {
-          var e = o && o[PREFIXO + chave];
-          if (!e || e.formato !== FORMATO) return null;
+          var e = o && o[PREFIX + key];
+          if (!e || e.format !== FORMAT) return null;
           /* outro aluno usou este navegador: nada do que está lá serve */
-          if (e.usuario !== eu) {
-            esquecerTudo();
+          if (e.user !== me) {
+            forgetAll();
             return null;
           }
-          var idade = Date.now() - e.lidoEm;
-          if (!(idade >= 0 && idade < VALIDADE)) {
+          var age = Date.now() - e.readAt;
+          if (!(age >= 0 && age < TTL_MS)) {
             noStorage(function (area) {
-              return area.remove(PREFIXO + chave);
-            }).then(null, ignorar);
+              return area.remove(PREFIX + key);
+            }).then(null, ignore);
             return null;
           }
           return e;
@@ -240,89 +240,89 @@ EAAPlus.ava = (function () {
       );
   }
 
-  function guardar(chave, valor, lidoEm) {
-    var eu = usuario();
-    if (!eu || naoGuardar[chave]) return;
+  function store(key, value, readAt) {
+    var me = currentUserId();
+    if (!me || noStore[key]) return;
     var o = {};
-    o[PREFIXO + chave] = { formato: FORMATO, usuario: eu, lidoEm: lidoEm, valor: valor };
+    o[PREFIX + key] = { format: FORMAT, user: me, readAt: readAt, value: value };
     noStorage(function (area) {
       return area.set(o);
-    }).then(null, ignorar);
+    }).then(null, ignore);
   }
 
   /* Disciplina desta página: não lê nem grava o cache dela, e apaga o que
      houver agora e de novo ao sair (outra aba pode ter guardado no meio). */
-  function esquecer(ou) {
+  function forget(ou) {
     ou = String(ou);
-    naoGuardar[ou] = true;
+    noStore[ou] = true;
     noStorage(function (area) {
-      return area.remove(PREFIXO + ou);
-    }).then(null, ignorar);
+      return area.remove(PREFIX + ou);
+    }).then(null, ignore);
   }
 
-  function esquecerTudo() {
+  function forgetAll() {
     return noStorage(function (area) {
-      return area.get(null).then(function (tudo) {
-        var chaves = Object.keys(tudo || {}).filter(function (k) {
-          return k.indexOf(PREFIXO) === 0;
+      return area.get(null).then(function (everything) {
+        var keyList = Object.keys(everything || {}).filter(function (k) {
+          return k.indexOf(PREFIX) === 0;
         });
-        return chaves.length ? area.remove(chaves) : null;
+        return keyList.length ? area.remove(keyList) : null;
       });
-    }).then(null, ignorar);
+    }).then(null, ignore);
   }
 
   /* Pela URL, antes de qualquer leitura: /d2l/home/{ou}, /d2l/le/lessons/{ou}/…
      e as páginas ?ou={ou}. A barra da disciplina confirma pelo link
      "Início do Curso" (esquecer() de novo, se a URL não tiver o id). */
-  var ouDaPagina = (location.search.match(/[?&]ou=(\d+)/) ||
+  var pageOu = (location.search.match(/[?&]ou=(\d+)/) ||
     location.pathname.match(/^\/d2l\/(?:home|le\/[a-z]+)\/(\d+)(?:\/|$)/) || [])[1];
-  if (ouDaPagina) esquecer(ouDaPagina);
+  if (pageOu) forget(pageOu);
   window.addEventListener("pagehide", function () {
-    Object.keys(naoGuardar).forEach(esquecer);
+    Object.keys(noStore).forEach(forget);
   });
 
   /* Só os campos que classificar()/resumir() usam. O caminho sem cache passa
      pelo MESMO corte, então dado guardado e dado fresco desenham igual — e
      textos longos (instruções, descrições) nunca vão para o cache. */
-  function so(o, campos) {
-    var saida = {};
-    campos.forEach(function (c) {
-      if (o && o[c] !== undefined) saida[c] = o[c];
+  function pick(o, fields) {
+    var out = {};
+    fields.forEach(function (c) {
+      if (o && o[c] !== undefined) out[c] = o[c];
     });
-    return saida;
+    return out;
   }
 
-  function enxugarToc(m) {
+  function slimToc(m) {
     return {
       Topics: (m.Topics || []).map(function (t) {
-        return so(t, ["TopicId", "GradeItemId", "EndDateTime"]);
+        return pick(t, ["TopicId", "GradeItemId", "EndDateTime"]);
       }),
-      Modules: (m.Modules || []).map(enxugarToc)
+      Modules: (m.Modules || []).map(slimToc)
     };
   }
 
-  function enxugar(b) {
+  function slim(b) {
     return {
       gi: b.gi.map(function (g) {
-        return so(g, ["Id", "Name", "GradeType", "IsHidden", "MaxPoints"]);
+        return pick(g, ["Id", "Name", "GradeType", "IsHidden", "MaxPoints"]);
       }),
-      valores: b.valores.map(function (v) {
-        return so(v, ["GradeObjectIdentifier", "GradeObjectName", "PointsNumerator", "PointsDenominator"]);
+      values: b.values.map(function (v) {
+        return pick(v, ["GradeObjectIdentifier", "GradeObjectName", "PointsNumerator", "PointsDenominator"]);
       }),
-      pastas: b.pastas.map(function (p) {
-        var r = so(p, ["Id", "Name", "GradeItemId", "IsHidden", "DueDate"]);
-        if (p.Availability) r.Availability = so(p.Availability, ["EndDate"]);
+      folders: b.folders.map(function (p) {
+        var r = pick(p, ["Id", "Name", "GradeItemId", "IsHidden", "DueDate"]);
+        if (p.Availability) r.Availability = pick(p.Availability, ["EndDate"]);
         return r;
       }),
-      questionarios: b.questionarios.map(function (q) {
-        return so(q, ["QuizId", "Name", "GradeItemId", "IsActive", "DueDate", "EndDate"]);
+      quizzes: b.quizzes.map(function (q) {
+        return pick(q, ["QuizId", "Name", "GradeItemId", "IsActive", "DueDate", "EndDate"]);
       }),
-      toc: b.toc ? { Modules: (b.toc.Modules || []).map(enxugarToc) } : null,
-      meusItens: b.meusItens.map(function (i) {
-        return so(i, ["ItemId", "DateCompleted", "DueDate", "EndDate"]);
+      toc: b.toc ? { Modules: (b.toc.Modules || []).map(slimToc) } : null,
+      myItems: b.myItems.map(function (i) {
+        return pick(i, ["ItemId", "DateCompleted", "DueDate", "EndDate"]);
       }),
-      listaQ: b.listaQ,
-      envios: b.envios
+      quizList: b.quizList,
+      submissions: b.submissions
     };
   }
 
@@ -330,24 +330,24 @@ EAAPlus.ava = (function () {
    * Dados de uma disciplina
    * ------------------------------------------------------------- */
   var cache = {};
-  var boletins = {};
-  var guardados = {};
+  var gradebooks = {};
+  var storedByCourse = {};
 
   /* Botão Atualizar: esquece tudo — memória desta página (inclusive erros)
      e cache — para a próxima leitura de cada disciplina ir ao servidor. */
-  function recomecar() {
+  function restart() {
     cache = {};
-    boletins = {};
-    guardados = {};
-    nomesPromessa = null;
-    limpando = esquecerTudo();
-    return limpando;
+    gradebooks = {};
+    storedByCourse = {};
+    namesPromise = null;
+    clearing = forgetAll();
+    return clearing;
   }
 
-  function guardadoDe(ou) {
+  function storedFor(ou) {
     ou = String(ou);
-    if (!guardados[ou]) guardados[ou] = naoGuardar[ou] ? Promise.resolve(null) : lerGuardado(ou);
-    return guardados[ou];
+    if (!storedByCourse[ou]) storedByCourse[ou] = noStore[ou] ? Promise.resolve(null) : readStored(ou);
+    return storedByCourse[ou];
   }
 
   /* O boletim é a primeira leitura da fila e já diz o formato da disciplina:
@@ -358,33 +358,33 @@ EAAPlus.ava = (function () {
      nada de tentar de novo sozinho (a varredura roda a cada segundo — uma
      disciplina com erro viraria leitura sem fim). Tenta de novo quando o
      aluno recarrega a página. */
-  function boletim(ou) {
-    if (!boletins[ou]) {
-      boletins[ou] = guardadoDe(ou).then(function (e) {
-        return e ? e.valor.gi : pegar(API + ou + "/grades/");
+  function gradebook(ou) {
+    if (!gradebooks[ou]) {
+      gradebooks[ou] = storedFor(ou).then(function (e) {
+        return e ? e.value.gi : request(API + ou + "/grades/");
       });
     }
-    return boletins[ou];
+    return gradebooks[ou];
   }
 
-  function previa(ou) {
-    return boletim(ou).then(function (gi) {
-      var comAv = (gi || []).some(function (g) {
+  function preview(ou) {
+    return gradebook(ou).then(function (gi) {
+      var hasAv = (gi || []).some(function (g) {
         return /^\s*nota\s*av\s*1\b/i.test(g.Name);
       });
-      return { comAv: comAv, rotulo: comAv ? "Av1" : "Nota", colunas: comAv ? 2 : 1 };
+      return { hasAv: hasAv, label: hasAv ? "Av1" : "Nota", columns: hasAv ? 2 : 1 };
     });
   }
 
-  function dados(ou) {
+  function courseData(ou) {
     if (!cache[ou]) {
-      cache[ou] = guardadoDe(ou).then(function (e) {
-        if (e) return montar(ou, e.valor, e.lidoEm);
-        var inicio = Date.now(); /* a idade conta do começo da leitura */
-        return baixar(ou).then(function (b) {
-          var bruto = enxugar(b.bruto);
-          if (b.completo) guardar(String(ou), bruto, inicio);
-          return montar(ou, bruto, inicio);
+      cache[ou] = storedFor(ou).then(function (e) {
+        if (e) return assemble(ou, e.value, e.readAt);
+        var start = Date.now(); /* a idade conta do começo da leitura */
+        return download(ou).then(function (b) {
+          var raw = slim(b.raw);
+          if (b.complete) store(String(ou), raw, start);
+          return assemble(ou, raw, start);
         });
       });
     }
@@ -392,10 +392,10 @@ EAAPlus.ava = (function () {
   }
 
   /* Sempre a partir dos dados crus: o relógio de agora decide o que venceu. */
-  function montar(ou, b, lidoEm) {
-    var itens = classificar(ou, b.gi, b.valores, b.pastas, b.questionarios, b.toc, b.meusItens, b.listaQ, b.envios);
-    var r = resumir(itens, b.valores);
-    r.lidoEm = lidoEm;
+  function assemble(ou, b, readAt) {
+    var items = classify(ou, b.gi, b.values, b.folders, b.quizzes, b.toc, b.myItems, b.quizList, b.submissions);
+    var r = summarize(items, b.values);
+    r.readAt = readAt;
     return r;
   }
 
@@ -412,68 +412,68 @@ EAAPlus.ava = (function () {
    * Devolve { bruto, completo }. Uma leitura que falhou vira lista vazia
    * (a disciplina ainda aparece, com o que deu para ler), mas aí completo =
    * false e nada disso vai para o cache. */
-  function baixar(ou) {
+  function download(ou) {
     var base = API + ou + "/";
-    var completo = true;
-    function falhou(valor) {
+    var complete = true;
+    function failed(value) {
       return function () {
-        completo = false;
-        return valor;
+        complete = false;
+        return value;
       };
     }
     return Promise.all([
-      boletim(ou),
-      pegar(base + "grades/values/myGradeValues/"),
-      pegar(base + "dropbox/folders/").then(lista, falhou([])),
-      pegar(base + "quizzes/").then(lista, falhou([]))
+      gradebook(ou),
+      request(base + "grades/values/myGradeValues/"),
+      request(base + "dropbox/folders/").then(toList, failed([])),
+      request(base + "quizzes/").then(toList, failed([]))
     ]).then(function (r) {
       var gi = r[0] || [];
-      var valores = r[1] || [];
-      var pastas = r[2];
-      var questionarios = r[3];
+      var values = r[1] || [];
+      var folders = r[2];
+      var quizzes = r[3];
 
-      var numericos = {};
+      var numericIds = {};
       gi.forEach(function (g) {
-        if (ehAtividade(g)) numericos[g.Id] = true;
+        if (isActivity(g)) numericIds[g.Id] = true;
       });
-      var comNota = {};
-      valores.forEach(function (v) {
-        if (v.PointsNumerator !== null && v.PointsNumerator !== undefined) comNota[String(v.GradeObjectIdentifier)] = true;
+      var gradedIds = {};
+      values.forEach(function (v) {
+        if (v.PointsNumerator !== null && v.PointsNumerator !== undefined) gradedIds[String(v.GradeObjectIdentifier)] = true;
       });
-      var ligados = {};
-      pastas.concat(questionarios).forEach(function (a) {
-        if (a.GradeItemId) ligados[a.GradeItemId] = true;
+      var linked = {};
+      folders.concat(quizzes).forEach(function (a) {
+        if (a.GradeItemId) linked[a.GradeItemId] = true;
       });
 
-      var temQuestionario = questionarios.some(function (q) {
+      var hasQuiz = quizzes.some(function (q) {
         return q.IsActive !== false;
       });
-      var semLigacao = Object.keys(numericos).some(function (id) {
-        return !ligados[id] && !comNota[id];
+      var unlinked = Object.keys(numericIds).some(function (id) {
+        return !linked[id] && !gradedIds[id];
       });
-      var paraConferir = pastas.filter(function (p) {
-        if (p.IsHidden || comNota[String(p.GradeItemId)]) return false;
-        return numericos[p.GradeItemId] || qualAv("", p.Name);
+      var toCheck = folders.filter(function (p) {
+        if (p.IsHidden || gradedIds[String(p.GradeItemId)]) return false;
+        return numericIds[p.GradeItemId] || whichAv("", p.Name);
       });
 
       return Promise.all([
-        temQuestionario ? pegar(LISTA_QUESTIONARIOS + ou, true).then(lerListaDeQuestionarios, falhou({})) : {},
-        semLigacao ? pegar(base + "content/toc").then(null, falhou(null)) : null,
-        semLigacao ? pegar(base + "content/myItems/").then(lista, falhou([])) : [],
-        paraConferir.length ? conferirEnvios(ou, paraConferir) : { enviadas: {}, secoes: {}, completo: true }
+        hasQuiz ? request(QUIZ_LIST + ou, true).then(parseQuizList, failed({})) : {},
+        unlinked ? request(base + "content/toc").then(null, failed(null)) : null,
+        unlinked ? request(base + "content/myItems/").then(toList, failed([])) : [],
+        toCheck.length ? checkSubmissions(ou, toCheck) : { submittedIds: {}, sections: {}, complete: true }
       ]).then(function (s) {
-        if (!s[3].completo) completo = false;
+        if (!s[3].complete) complete = false;
         return {
-          completo: completo,
-          bruto: {
+          complete: complete,
+          raw: {
             gi: gi,
-            valores: valores,
-            pastas: pastas,
-            questionarios: questionarios,
+            values: values,
+            folders: folders,
+            quizzes: quizzes,
             toc: s[1],
-            meusItens: s[2],
-            listaQ: s[0],
-            envios: { enviadas: s[3].enviadas, secoes: s[3].secoes }
+            myItems: s[2],
+            quizList: s[0],
+            submissions: { submittedIds: s[3].submittedIds, sections: s[3].sections }
           }
         };
       });
@@ -485,30 +485,30 @@ EAAPlus.ava = (function () {
    * contra a API em 15 tarefas reais, 100% de acordo). Se a página falhar ou
    * uma tarefa não aparecer nela, pergunta à API de envios só por aquela.
    * Se essa pergunta falhar, a resposta sai com completo = false. */
-  function conferirEnvios(ou, pastas) {
-    return pegar(LISTA_TAREFAS + ou + "&isprv=0", true)
-      .then(lerListaDeTarefas, function () {
+  function checkSubmissions(ou, folders) {
+    return request(ASSIGNMENT_LIST + ou + "&isprv=0", true)
+      .then(parseAssignmentList, function () {
         return {};
       })
-      .then(function (pagina) {
-        var r = { enviadas: {}, secoes: {}, completo: true };
-        var faltam = pastas.filter(function (p) {
-          var l = pagina[String(p.Id)];
+      .then(function (page) {
+        var r = { submittedIds: {}, sections: {}, complete: true };
+        var missing = folders.filter(function (p) {
+          var l = page[String(p.Id)];
           if (!l) return true;
-          if (l.enviado) r.enviadas[p.Id] = true;
-          if (l.secao) r.secoes[p.Id] = l.secao;
+          if (l.submitted) r.submittedIds[p.Id] = true;
+          if (l.section) r.sections[p.Id] = l.section;
           return false;
         });
         return Promise.all(
-          faltam.map(function (p) {
-            return pegar(API + ou + "/dropbox/folders/" + p.Id + "/submissions/mysubmissions/").then(
+          missing.map(function (p) {
+            return request(API + ou + "/dropbox/folders/" + p.Id + "/submissions/mysubmissions/").then(
               function (e) {
-                if (lista(e).some(function (x) {
+                if (toList(e).some(function (x) {
                   return x.Submissions && x.Submissions.length;
-                })) r.enviadas[p.Id] = true;
+                })) r.submittedIds[p.Id] = true;
               },
               function () {
-                r.completo = false;
+                r.complete = false;
               }
             );
           })
@@ -521,47 +521,47 @@ EAAPlus.ava = (function () {
   /* Página "Atividades com Anexo": tabela com linhas de seção
    * (tr.d_ggl2, "Av1 - Primeiro Fechamento") e uma linha por tarefa, com o
    * link ?db={id} e a coluna "Status de Conclusão". */
-  function lerListaDeTarefas(html) {
-    var mapa = {};
+  function parseAssignmentList(html) {
+    var byId = {};
     var doc = new DOMParser().parseFromString(html, "text/html");
-    var secao = "";
-    var linhas = doc.querySelectorAll("table tr");
-    for (var i = 0; i < linhas.length; i++) {
-      var tr = linhas[i];
+    var section = "";
+    var rows = doc.querySelectorAll("table tr");
+    for (var i = 0; i < rows.length; i++) {
+      var tr = rows[i];
       if (/\bd_ggl2\b/.test(tr.className)) {
-        secao = texto(tr);
+        section = cleanText(tr);
         continue;
       }
       var db = null;
       var links = tr.querySelectorAll("a[href]");
       for (var j = 0; j < links.length && !db; j++) db = (links[j].getAttribute("href").match(/[?&]db=(\d+)/) || [])[1];
       if (!db || tr.children.length < 2) continue;
-      mapa[db] = { secao: secao, enviado: /\d+\s*envio/i.test(texto(tr.children[1])) };
+      byId[db] = { section: section, submitted: /\d+\s*envio/i.test(cleanText(tr.children[1])) };
     }
-    return mapa;
+    return byId;
   }
 
-  function ehAtividade(g) {
+  function isActivity(g) {
     return g.GradeType === "Numeric" && !g.IsHidden && g.MaxPoints > 0;
   }
 
   /* Nome oficial das disciplinas, numa leitura só. O atributo text do card não
      serve: já veio "Nome, código, semestre" e depois só "Fechada". */
-  var nomesPromessa = null;
+  var namesPromise = null;
 
-  function nomes() {
-    if (!nomesPromessa) {
-      nomesPromessa = lerGuardado("nomes").then(function (e) {
-        if (e) return e.valor;
-        var inicio = Date.now();
-        return pegar("/d2l/api/lp/1.63/enrollments/myenrollments/?orgUnitTypeId=3").then(
+  function names() {
+    if (!namesPromise) {
+      namesPromise = readStored("names").then(function (e) {
+        if (e) return e.value;
+        var start = Date.now();
+        return request("/d2l/api/lp/1.63/enrollments/myenrollments/?orgUnitTypeId=3").then(
           function (m) {
-            var mapa = {};
+            var byId = {};
             ((m && m.Items) || []).forEach(function (i) {
-              if (i.OrgUnit) mapa[i.OrgUnit.Id] = i.OrgUnit.Name;
+              if (i.OrgUnit) byId[i.OrgUnit.Id] = i.OrgUnit.Name;
             });
-            guardar("nomes", mapa, inicio);
-            return mapa;
+            store("names", byId, start);
+            return byId;
           },
           function () {
             return {}; /* sem nomes: as fichas dizem "Disciplina" */
@@ -569,192 +569,192 @@ EAAPlus.ava = (function () {
         );
       });
     }
-    return nomesPromessa;
+    return namesPromise;
   }
 
-  function nome(ou) {
-    return nomes().then(function (mapa) {
-      return mapa[ou] || "";
+  function name(ou) {
+    return names().then(function (byId) {
+      return byId[ou] || "";
     });
   }
 
   /* Página "Lista de questionários": uma tabela com uma seção por grupo de
    * avaliação ("Avaliação 1 (Av1) - Primeiro Fechamento") e, em cada linha,
    * o link GoToQuiz(id), o status e as tentativas "usadas / permitidas". */
-  function lerListaDeQuestionarios(html) {
-    var mapa = {};
+  function parseQuizList(html) {
+    var byId = {};
     var doc = new DOMParser().parseFromString(html, "text/html");
-    var secao = "";
-    var linhas = doc.querySelectorAll("table.d2l-table tr");
-    for (var i = 0; i < linhas.length; i++) {
-      var tr = linhas[i];
-      var celulas = tr.children;
-      if (!celulas.length) continue;
+    var section = "";
+    var rows = doc.querySelectorAll("table.d2l-table tr");
+    for (var i = 0; i < rows.length; i++) {
+      var tr = rows[i];
+      var cells = tr.children;
+      if (!cells.length) continue;
       if (/\bd_gh\b/.test(tr.className)) {
-        secao = texto(celulas[0]);
+        section = cleanText(cells[0]);
         continue;
       }
       var link = tr.querySelector("[onclick*='GoToQuiz(']");
       var id = link && (link.getAttribute("onclick").match(/GoToQuiz\((\d+)/) || [])[1];
       if (!id) continue;
-      var usadas = (texto(celulas[celulas.length - 1]).match(/^(\d+)\s*\//) || [])[1];
-      mapa[id] = {
-        secao: secao,
-        usadas: usadas ? parseInt(usadas, 10) : 0,
+      var used = (cleanText(cells[cells.length - 1]).match(/^(\d+)\s*\//) || [])[1];
+      byId[id] = {
+        section: section,
+        used: used ? parseInt(used, 10) : 0,
         /* A tentativa aberta é marcada por um ícone na própria linha. O
            texto "Tentativa em andamento" da coluna de status NÃO serve: é só
            o nome do link de feedback em questionários já corrigidos. */
-        andamento: !!tr.querySelector("img[alt*='em andamento' i]")
+        inProgress: !!tr.querySelector("img[alt*='em andamento' i]")
       };
     }
-    return mapa;
+    return byId;
   }
 
-  function topicos(toc) {
-    var saida = [];
-    (function andar(modulos) {
-      (modulos || []).forEach(function (m) {
+  function topics(toc) {
+    var out = [];
+    (function walk(modules) {
+      (modules || []).forEach(function (m) {
         (m.Topics || []).forEach(function (t) {
-          saida.push(t);
+          out.push(t);
         });
-        andar(m.Modules);
+        walk(m.Modules);
       });
     })(toc && toc.Modules);
-    return saida;
+    return out;
   }
 
   /* Av2 e Av3: a nota das atividades fica oculta para o aluno até o
      lançamento, então elas não aparecem no boletim. Reconhece pela seção da
      Lista de questionários ("Avaliação 2 (Av2)") ou pelo nome. */
-  function qualAv(secao, nome) {
-    var m = (secao || "").match(/\(\s*Av\s*([23])\s*\)|Avalia[çc][ãa]o\s*([23])\b/i);
+  function whichAv(section, name) {
+    var m = (section || "").match(/\(\s*Av\s*([23])\s*\)|Avalia[çc][ãa]o\s*([23])\b/i);
     if (m) return +(m[1] || m[2]);
-    m = (nome || "").match(/\bAv\s*([23])\b/i);
+    m = (name || "").match(/\bAv\s*([23])\b/i);
     if (m) return +m[1];
-    if (/recupera[çc][ãa]o/i.test((secao || "") + " " + (nome || ""))) return 3;
+    if (/recupera[çc][ãa]o/i.test((section || "") + " " + (name || ""))) return 3;
     return null;
   }
 
-  function linkDaTarefa(ou, id) {
+  function assignmentLink(ou, id) {
     return "/d2l/lms/dropbox/user/folder_submit_files.d2l?db=" + id + "&grpid=0&isprv=0&bp=0&ou=" + ou;
   }
 
-  function linkDoQuestionario(ou, id) {
+  function quizLink(ou, id) {
     return "/d2l/lms/quizzing/user/quiz_summary.d2l?ou=" + ou + "&qi=" + id + "&cfql=1";
   }
 
-  function classificar(ou, boletim, valores, pastas, questionarios, toc, meusItens, listaQ, envios) {
-    var nota = {};
-    valores.forEach(function (v) {
-      nota[String(v.GradeObjectIdentifier)] = v;
+  function classify(ou, gradebook, values, folders, quizzes, toc, myItems, quizList, submissions) {
+    var grade = {};
+    values.forEach(function (v) {
+      grade[String(v.GradeObjectIdentifier)] = v;
     });
 
     /* Atividade avaliada que é tópico de conteúdo (e não tarefa/questionário):
        o conteúdo diz se foi concluída e qual o prazo. */
-    var meu = {};
-    meusItens.forEach(function (i) {
-      meu[i.ItemId] = i;
+    var myItemById = {};
+    myItems.forEach(function (i) {
+      myItemById[i.ItemId] = i;
     });
-    var peloConteudo = {};
-    topicos(toc).forEach(function (t) {
+    var byContent = {};
+    topics(toc).forEach(function (t) {
       if (!t.GradeItemId) return;
-      var i = meu[t.TopicId] || {};
-      peloConteudo[t.GradeItemId] = {
-        feito: !!i.DateCompleted,
-        prazo: ts(i.DueDate) || ts(i.EndDate) || ts(t.EndDateTime)
+      var i = myItemById[t.TopicId] || {};
+      byContent[t.GradeItemId] = {
+        done: !!i.DateCompleted,
+        deadline: ts(i.DueDate) || ts(i.EndDate) || ts(t.EndDateTime)
       };
     });
 
-    var noBoletim = {};
-    var itens = boletim
-      .filter(ehAtividade)
+    var inGradebook = {};
+    var items = gradebook
+      .filter(isActivity)
       .map(function (g) {
-        noBoletim[g.Id] = true;
-        var it = novoItem(g.Name, g.MaxPoints, 1);
-        var c = peloConteudo[g.Id];
+        inGradebook[g.Id] = true;
+        var it = newItem(g.Name, g.MaxPoints, 1);
+        var c = byContent[g.Id];
         if (c) {
-          it.enviado = c.feito;
-          it.prazo = c.prazo;
+          it.submitted = c.done;
+          it.deadline = c.deadline;
         }
 
-        pastas.forEach(function (p) {
+        folders.forEach(function (p) {
           if (p.GradeItemId !== g.Id || p.IsHidden) return;
-          it.tarefa = p.Id;
-          it.prazo = ts(p.DueDate) || ts((p.Availability || {}).EndDate);
-          it.link = linkDaTarefa(ou, p.Id);
-          if (envios.enviadas[p.Id]) it.enviado = true;
-          if (envios.secoes[p.Id]) it.secao = envios.secoes[p.Id];
+          it.assignment = p.Id;
+          it.deadline = ts(p.DueDate) || ts((p.Availability || {}).EndDate);
+          it.link = assignmentLink(ou, p.Id);
+          if (submissions.submittedIds[p.Id]) it.submitted = true;
+          if (submissions.sections[p.Id]) it.section = submissions.sections[p.Id];
         });
-        questionarios.forEach(function (q) {
+        quizzes.forEach(function (q) {
           if (q.GradeItemId !== g.Id || q.IsActive === false) return;
-          it.prazo = ts(q.DueDate) || ts(q.EndDate);
-          it.link = linkDoQuestionario(ou, q.QuizId);
-          lerTentativas(it, listaQ[String(q.QuizId)]);
+          it.deadline = ts(q.DueDate) || ts(q.EndDate);
+          it.link = quizLink(ou, q.QuizId);
+          applyAttempts(it, quizList[String(q.QuizId)]);
         });
 
-        var v = nota[String(g.Id)];
+        var v = grade[String(g.Id)];
         if (v && v.PointsNumerator !== null && v.PointsNumerator !== undefined) {
-          it.pontos = v.PointsNumerator;
-          it.estado = "corrigida";
+          it.points = v.PointsNumerator;
+          it.state = "graded";
         }
         return it;
       });
 
     /* Av2/Av3: atividades cuja nota está oculta (fora do boletim visível).
        Entram sem pontos — só prazo, estado e link. */
-    questionarios.forEach(function (q) {
-      if (q.IsActive === false || noBoletim[q.GradeItemId]) return;
-      var l = listaQ[String(q.QuizId)];
-      var av = qualAv(l && l.secao, q.Name);
+    quizzes.forEach(function (q) {
+      if (q.IsActive === false || inGradebook[q.GradeItemId]) return;
+      var l = quizList[String(q.QuizId)];
+      var av = whichAv(l && l.section, q.Name);
       if (!av) return;
-      var it = novoItem(q.Name, 0, av);
-      it.prazo = ts(q.DueDate) || ts(q.EndDate);
-      it.link = linkDoQuestionario(ou, q.QuizId);
-      lerTentativas(it, l);
-      itens.push(it);
+      var it = newItem(q.Name, 0, av);
+      it.deadline = ts(q.DueDate) || ts(q.EndDate);
+      it.link = quizLink(ou, q.QuizId);
+      applyAttempts(it, l);
+      items.push(it);
     });
-    pastas.forEach(function (p) {
-      if (p.IsHidden || noBoletim[p.GradeItemId]) return;
-      var av = qualAv(envios.secoes[p.Id], p.Name);
+    folders.forEach(function (p) {
+      if (p.IsHidden || inGradebook[p.GradeItemId]) return;
+      var av = whichAv(submissions.sections[p.Id], p.Name);
       if (!av) return;
-      var it = novoItem(p.Name, 0, av);
-      it.tarefa = p.Id;
-      it.prazo = ts(p.DueDate) || ts((p.Availability || {}).EndDate);
-      it.link = linkDaTarefa(ou, p.Id);
-      it.enviado = !!envios.enviadas[p.Id];
-      it.secao = envios.secoes[p.Id] || "";
-      itens.push(it);
+      var it = newItem(p.Name, 0, av);
+      it.assignment = p.Id;
+      it.deadline = ts(p.DueDate) || ts((p.Availability || {}).EndDate);
+      it.link = assignmentLink(ou, p.Id);
+      it.submitted = !!submissions.submittedIds[p.Id];
+      it.section = submissions.sections[p.Id] || "";
+      items.push(it);
     });
-    return itens;
+    return items;
   }
 
-  function novoItem(nome, max, av) {
+  function newItem(name, max, av) {
     return {
-      nome: nome,
+      name: name,
       max: max,
       av: av,
-      pontos: null,
-      prazo: null,
-      tarefa: null,
+      points: null,
+      deadline: null,
+      assignment: null,
       link: "",
-      secao: "",
-      enviado: false,
-      andamento: false,
-      estado: null
+      section: "",
+      submitted: false,
+      inProgress: false,
+      state: null
     };
   }
 
-  function lerTentativas(it, l) {
+  function applyAttempts(it, l) {
     if (!l) return;
-    it.secao = l.secao;
-    it.andamento = l.andamento;
-    if (l.usadas > 0 && !l.andamento) it.enviado = true;
+    it.section = l.section;
+    it.inProgress = l.inProgress;
+    if (l.used > 0 && !l.inProgress) it.submitted = true;
   }
 
-  function formula(valores, n) {
+  function formula(values, n) {
     var re = new RegExp("^\\s*nota\\s*av\\s*" + n + "\\b", "i");
-    for (var i = 0; i < valores.length; i++) {
-      if (re.test(valores[i].GradeObjectName)) return valores[i];
+    for (var i = 0; i < values.length; i++) {
+      if (re.test(values[i].GradeObjectName)) return values[i];
     }
     return null;
   }
@@ -762,54 +762,54 @@ EAAPlus.ava = (function () {
   /* "Avaliação 1 (Av1) - Último Fechamento", 2º grupo →
      curto "2º Fechamento" (mesma largura em todas as linhas),
      longo "Av1 · Último Fechamento" (nome oficial). */
-  function nomesDoPrazo(secao, ordem) {
-    var partes = secao.split(/\s[-–]\s/);
-    var fim = partes.length > 1 ? partes[partes.length - 1] : "";
-    var av = (secao.match(/\((Av\s*\d)\)|^\s*(Av\s*\d)\b/i) || []).slice(1).filter(Boolean)[0];
-    if (!fim) return null;
+  function deadlineNames(section, order) {
+    var parts = section.split(/\s[-–]\s/);
+    var end = parts.length > 1 ? parts[parts.length - 1] : "";
+    var av = (section.match(/\((Av\s*\d)\)|^\s*(Av\s*\d)\b/i) || []).slice(1).filter(Boolean)[0];
+    if (!end) return null;
     return {
-      curto: ordem + "º " + fim.split(/\s+/).pop(),
-      longo: (av ? av.replace(/\s/g, "") + " · " : "") + fim
+      shortLabel: order + "º " + end.split(/\s+/).pop(),
+      longLabel: (av ? av.replace(/\s/g, "") + " · " : "") + end
     };
   }
 
-  function estadoFinal(it, agora) {
-    if (it.estado) return it.estado;
-    var vencido = it.prazo && it.prazo < agora;
-    if (it.andamento && !vencido) return "iniciada";
-    if (it.enviado || it.andamento) return "aguardando";
-    if (vencido) return "perdida";
-    return "afazer";
+  function finalState(it, now) {
+    if (it.state) return it.state;
+    var overdue = it.deadline && it.deadline < now;
+    if (it.inProgress && !overdue) return "started";
+    if (it.submitted || it.inProgress) return "awaiting";
+    if (overdue) return "missed";
+    return "todo";
   }
 
-  function contar(itens) {
-    var c = { itens: itens, corrigida: 0, aguardando: 0, iniciada: 0, perdida: 0, afazer: 0 };
-    itens.forEach(function (it) {
-      c[it.estado]++;
+  function tally(items) {
+    var c = { items: items, graded: 0, awaiting: 0, started: 0, missed: 0, todo: 0 };
+    items.forEach(function (it) {
+      c[it.state]++;
     });
-    c.entregues = c.corrigida + c.aguardando;
-    c.pendentes = c.afazer + c.iniciada;
+    c.delivered = c.graded + c.awaiting;
+    c.pending = c.todo + c.started;
     return c;
   }
 
-  function resumir(itens, valores) {
-    var agora = Date.now();
-    var f1 = formula(valores, 1);
-    var f2 = formula(valores, 2);
-    var f3 = formula(valores, 3);
+  function summarize(items, values) {
+    var now = Date.now();
+    var f1 = formula(values, 1);
+    var f2 = formula(values, 2);
+    var f3 = formula(values, 3);
     /* A fórmula vale 0 até a prova ser lançada; 0 não é resultado. */
-    var lancada = { 2: !!(f2 && f2.PointsNumerator > 0), 3: !!(f3 && f3.PointsNumerator > 0) };
+    var released = { 2: !!(f2 && f2.PointsNumerator > 0), 3: !!(f3 && f3.PointsNumerator > 0) };
 
-    itens.forEach(function (it) {
+    items.forEach(function (it) {
       /* Nota da Av2/Av3 lançada: as atividades dela foram corrigidas. */
-      if (it.av > 1 && lancada[it.av]) it.estado = "corrigida";
-      it.estado = estadoFinal(it, agora);
+      if (it.av > 1 && released[it.av]) it.state = "graded";
+      it.state = finalState(it, now);
     });
 
-    var r = { total: 0, ok: 0, av1: 0, av1Max: 0, av2: null, av3: null, comAv: false, prazos: [] };
-    itens.forEach(function (it) {
+    var r = { total: 0, ok: 0, av1: 0, av1Max: 0, av2: null, av3: null, hasAv: false, deadlines: [] };
+    items.forEach(function (it) {
       r.total += it.max;
-      if (it.estado === "corrigida" && it.pontos !== null) r.ok += it.pontos;
+      if (it.state === "graded" && it.points !== null) r.ok += it.points;
     });
     r.av1 = f1 && f1.PointsNumerator !== null ? f1.PointsNumerator : r.ok;
 
@@ -817,61 +817,61 @@ EAAPlus.ava = (function () {
        recuperação (Av1 + Av2 entre 4 e 6). Sem isso ela sumiria da vista de
        quem precisa e apareceria como pendência para quem já passou. Fica
        também se o aluno já mexeu nela (iniciou, enviou ou tem nota). */
-    var soma = lancada[2] ? r.av1 + f2.PointsNumerator : null;
-    var emRecuperacao = !!f1 && soma !== null && soma >= RECUPERA && soma < APROVA;
-    itens = itens.filter(function (it) {
-      return it.av !== 3 || emRecuperacao || it.estado === "aguardando" || it.estado === "iniciada" || it.estado === "corrigida";
+    var sum = released[2] ? r.av1 + f2.PointsNumerator : null;
+    var inRecovery = !!f1 && sum !== null && sum >= RECOVERY_MARK && sum < PASS_MARK;
+    items = items.filter(function (it) {
+      return it.av !== 3 || inRecovery || it.state === "awaiting" || it.state === "started" || it.state === "graded";
     });
 
     /* Av1: um grupo por dia de prazo (Brasília) — o curso de Música tem dois
        fechamentos. Av2 e Av3: um grupo cada, com o nome delas. */
-    var porDia = {};
-    itens.forEach(function (it) {
-      var chave = it.av > 1 ? "av" + it.av : it.prazo ? diaDe(it.prazo) : "sem";
-      if (!porDia[chave]) porDia[chave] = { dia: chave, av: it.av > 1 ? it.av : 1, prazo: it.prazo, itens: [], secao: "" };
-      var g = porDia[chave];
-      g.itens.push(it);
-      if (it.prazo && it.prazo > g.prazo) g.prazo = it.prazo;
-      if (!g.secao && it.secao) g.secao = it.secao;
+    var byDay = {};
+    items.forEach(function (it) {
+      var key = it.av > 1 ? "av" + it.av : it.deadline ? dayOf(it.deadline) : "sem";
+      if (!byDay[key]) byDay[key] = { day: key, av: it.av > 1 ? it.av : 1, deadline: it.deadline, items: [], section: "" };
+      var g = byDay[key];
+      g.items.push(it);
+      if (it.deadline && it.deadline > g.deadline) g.deadline = it.deadline;
+      if (!g.section && it.section) g.section = it.section;
     });
-    var grupos = Object.keys(porDia)
+    var groups = Object.keys(byDay)
       .map(function (k) {
-        return porDia[k];
+        return byDay[k];
       })
       .sort(function (a, b) {
-        return (a.prazo || Infinity) - (b.prazo || Infinity);
+        return (a.deadline || Infinity) - (b.deadline || Infinity);
       })
-      .slice(0, MAX_PRAZOS);
+      .slice(0, MAX_DEADLINES);
 
-    var ordem = 0;
-    grupos.forEach(function (g) {
-      var nomes;
-      if (g.av === 2) nomes = { curto: "Av2", longo: "Av2" };
-      else if (g.av === 3) nomes = { curto: "Av3", longo: "Av3 · Recuperação" };
-      else if (!g.prazo) nomes = { curto: "Sem prazo", longo: "Sem prazo" };
-      else nomes = nomesDoPrazo(g.secao, ++ordem);
-      g.nomeado = !!nomes;
-      var soAv1 = grupos.filter(function (x) {
+    var order = 0;
+    groups.forEach(function (g) {
+      var names;
+      if (g.av === 2) names = { shortLabel: "Av2", longLabel: "Av2" };
+      else if (g.av === 3) names = { shortLabel: "Av3", longLabel: "Av3 · Recuperação" };
+      else if (!g.deadline) names = { shortLabel: "Sem prazo", longLabel: "Sem prazo" };
+      else names = deadlineNames(g.section, ++order);
+      g.named = !!names;
+      var av1Only = groups.filter(function (x) {
         return x.av === 1;
       }).length;
-      g.curto = nomes ? nomes.curto : soAv1 > 1 ? ordem + "º prazo" : "Prazo";
-      g.longo = nomes ? nomes.longo : "Próximo prazo";
-      g.c = contar(g.itens);
+      g.shortLabel = names ? names.shortLabel : av1Only > 1 ? order + "º prazo" : "Prazo";
+      g.longLabel = names ? names.longLabel : "Próximo prazo";
+      g.c = tally(g.items);
     });
-    r.prazos = grupos;
+    r.deadlines = groups;
 
     /* Disciplinas como Canto Coral e Atividades Extensionistas não têm
        Av1/Av2: é um item só, valendo 10. Ali a regra do manual não se
        aplica, então mostramos só a nota, sem situação. */
-    r.comAv = !!f1;
-    r.rotulo = r.comAv ? "Av1" : "Nota";
+    r.hasAv = !!f1;
+    r.label = r.hasAv ? "Av1" : "Nota";
     r.av1Max = f1 && f1.PointsDenominator ? f1.PointsDenominator : r.total;
-    if (lancada[2]) r.av2 = f2.PointsNumerator;
-    if (lancada[3]) r.av3 = f3.PointsNumerator;
-    r.c = contar(itens);
+    if (released[2]) r.av2 = f2.PointsNumerator;
+    if (released[3]) r.av3 = f3.PointsNumerator;
+    r.c = tally(items);
     /* Só a Av1 decide se já dá para dizer quanto falta na Av2. */
-    r.c1 = contar(
-      itens.filter(function (it) {
+    r.c1 = tally(
+      items.filter(function (it) {
         return it.av === 1;
       })
     );
@@ -881,90 +881,90 @@ EAAPlus.ava = (function () {
   /* ---------------------------------------------------------------
    * Textos e peças de desenho comuns
    * ------------------------------------------------------------- */
-  function situacao(r) {
-    if (!r.comAv) return null;
+  function standing(r) {
+    if (!r.hasAv) return null;
     /* O manual não diz como a Av3 entra na média final: só mostra a nota. */
-    if (r.av3 !== null) return ["", "Nota da Av3 · " + num(r.av3)];
+    if (r.av3 !== null) return ["", "Nota da Av3 · " + formatNum(r.av3)];
     if (r.av2 !== null) {
-      var soma = r.av1 + r.av2;
-      if (soma >= APROVA) return ["aprovado", "Aprovado · " + num(soma)];
-      if (soma >= RECUPERA) return ["recuperacao", "Av3 (recuperação) · " + num(soma)];
-      return ["reprovado", "Reprovado · " + num(soma)];
+      var sum = r.av1 + r.av2;
+      if (sum >= PASS_MARK) return ["passed", "Aprovado · " + formatNum(sum)];
+      if (sum >= RECOVERY_MARK) return ["recovery", "Av3 (recuperação) · " + formatNum(sum)];
+      return ["failed", "Reprovado · " + formatNum(sum)];
     }
-    if (r.c1.aguardando || r.c1.pendentes) return null;
-    var resta = Math.max(0, APROVA - r.av1);
-    if (resta === 0) return ["aprovado", "Av1 já garante os " + num(APROVA)];
-    return ["", "Precisa de " + num(resta) + " na Av2"];
+    if (r.c1.awaiting || r.c1.pending) return null;
+    var needed = Math.max(0, PASS_MARK - r.av1);
+    if (needed === 0) return ["passed", "Av1 já garante os " + formatNum(PASS_MARK)];
+    return ["", "Precisa de " + formatNum(needed) + " na Av2"];
   }
 
   /* O estado que mais pede atenção num prazo. */
-  function destaque(c) {
-    if (c.iniciada) return ["iniciada", "⚠ " + plural(c.iniciada, "não enviada", "não enviadas")];
-    if (c.perdida) return ["perdida", plural(c.perdida, "perdida", "perdidas")];
-    if (c.aguardando) return ["aguardando", c.aguardando + " aguardando"];
-    if (c.corrigida && c.corrigida === c.itens.length) return ["corrigida", "corrigido"];
-    if (c.afazer) return ["", c.afazer + " a fazer"];
+  function highlight(c) {
+    if (c.started) return ["started", "⚠ " + plural(c.started, "não enviada", "não enviadas")];
+    if (c.missed) return ["missed", plural(c.missed, "perdida", "perdidas")];
+    if (c.awaiting) return ["awaiting", c.awaiting + " aguardando"];
+    if (c.graded && c.graded === c.items.length) return ["graded", "corrigido"];
+    if (c.todo) return ["", c.todo + " a fazer"];
     return ["", ""];
   }
 
-  var ROTULO = {
-    corrigida: "corrigida",
-    aguardando: "aguardando correção",
-    iniciada: "iniciada e não enviada",
-    perdida: "prazo perdido",
-    afazer: "a fazer"
+  var STATE_LABEL = {
+    graded: "corrigida",
+    awaiting: "aguardando correção",
+    started: "iniciada e não enviada",
+    missed: "prazo perdido",
+    todo: "a fazer"
   };
 
   /* Sempre os cinco estados, na mesma ordem, para o aluno aprender uma vez. */
-  var LEGENDA = [
-    ["corrigida", "Corrigida"],
-    ["aguardando", "Aguardando correção"],
-    ["iniciada", "Iniciada, não enviada"],
-    ["perdida", "Prazo perdido"],
-    ["afazer", "A fazer"]
+  var LEGEND = [
+    ["graded", "Corrigida"],
+    ["awaiting", "Aguardando correção"],
+    ["started", "Iniciada, não enviada"],
+    ["missed", "Prazo perdido"],
+    ["todo", "A fazer"]
   ];
 
-  function segmentos(itens, classe) {
+  function segments(items, cls) {
     return (
-      '<div class="eaa-seg' + (classe ? " " + classe : "") + '" aria-hidden="true">' +
-      itens
+      '<div class="eaa-seg' + (cls ? " " + cls : "") + '" aria-hidden="true">' +
+      items
         .map(function (it) {
-          return '<i class="' + it.estado + '"></i>';
+          return '<i class="' + it.state + '"></i>';
         })
         .join("") +
       "</div>"
     );
   }
 
-  function quando(g) {
-    return g.prazo ? data(g.prazo) + " · " + falta(g.prazo) : "sem data";
+  function when(g) {
+    return g.deadline ? formatDate(g.deadline) + " · " + timeLeft(g.deadline) : "sem data";
   }
 
-  function urgente(g) {
-    return !!(g.prazo && g.prazo >= Date.now() && g.c.pendentes && diasAte(g.prazo) <= 1);
+  function urgent(g) {
+    return !!(g.deadline && g.deadline >= Date.now() && g.c.pending && daysUntil(g.deadline) <= 1);
   }
 
   return {
-    dados: dados,
-    previa: previa,
-    nome: nome,
-    esquecer: esquecer,
-    recomecar: recomecar,
-    diaDe: diaDe,
-    diasAte: diasAte,
-    data: data,
-    hora: hora,
-    falta: falta,
-    num: num,
+    courseData: courseData,
+    preview: preview,
+    name: name,
+    forget: forget,
+    restart: restart,
+    dayOf: dayOf,
+    daysUntil: daysUntil,
+    formatDate: formatDate,
+    formatTime: formatTime,
+    timeLeft: timeLeft,
+    formatNum: formatNum,
     plural: plural,
     esc: esc,
-    contar: contar,
-    situacao: situacao,
-    destaque: destaque,
-    segmentos: segmentos,
-    quando: quando,
-    urgente: urgente,
-    ROTULO: ROTULO,
-    LEGENDA: LEGENDA
+    tally: tally,
+    standing: standing,
+    highlight: highlight,
+    segments: segments,
+    when: when,
+    urgent: urgent,
+    STATE_LABEL: STATE_LABEL,
+    LEGEND: LEGEND
   };
 })();

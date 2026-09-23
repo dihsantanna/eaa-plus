@@ -5,7 +5,7 @@
  * Grade de 4px e simetria: toda linha é "esquerda | direita" com as mesmas
  * margens; fichas com a mesma altura e o mesmo raio. Cores da D2L. */
 
-#eaa-resumo {
+#eaa-summary {
   box-sizing: border-box;
   display: grid;
   gap: 8px;
@@ -18,78 +18,78 @@
   color: #494c4e;
 }
 
-#eaa-resumo * {
+#eaa-summary * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-#eaa-resumo .eaa-r-par {
+#eaa-summary .eaa-r-pair {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 16px;
 }
 
-#eaa-resumo .eaa-r-par > :last-child {
+#eaa-summary .eaa-r-pair > :last-child {
   flex: none;
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
-#eaa-resumo .eaa-r-titulo {
+#eaa-summary .eaa-r-title {
   font-size: 16px;
   font-weight: 700;
   color: #202122;
 }
 
-#eaa-resumo .eaa-r-quando {
+#eaa-summary .eaa-r-when {
   font-weight: 700;
   color: #202122;
 }
 
-#eaa-resumo .eaa-r-quando.urgente {
+#eaa-summary .eaa-r-when.urgent {
   color: #cd2026;
 }
 
-#eaa-resumo .eaa-seg {
+#eaa-summary .eaa-seg {
   display: flex;
   gap: 2px;
   height: 8px;
 }
 
-#eaa-resumo .eaa-seg i {
+#eaa-summary .eaa-seg i {
   flex: 1 1 0;
   border-radius: 4px;
   background: #e3e9f1;
 }
 
-#eaa-resumo .eaa-seg .corrigida { background: #46a661; }
-#eaa-resumo .eaa-seg .aguardando { background: #ffba59; }
-#eaa-resumo .eaa-seg .iniciada { background: #e87511; }
-#eaa-resumo .eaa-seg .perdida { background: #cd2026; }
+#eaa-summary .eaa-seg .graded { background: #46a661; }
+#eaa-summary .eaa-seg .awaiting { background: #ffba59; }
+#eaa-summary .eaa-seg .started { background: #e87511; }
+#eaa-summary .eaa-seg .missed { background: #cd2026; }
 
-#eaa-resumo .eaa-r-leg {
+#eaa-summary .eaa-r-caption {
   font-size: 13px;
 }
 
-#eaa-resumo .eaa-r-tag {
+#eaa-summary .eaa-r-tag {
   font-weight: 700;
   color: #202122;
 }
 
-#eaa-resumo .eaa-r-tag.iniciada { color: #b34f00; }
-#eaa-resumo .eaa-r-tag.corrigida { color: #2c7a43; }
+#eaa-summary .eaa-r-tag.started { color: #b34f00; }
+#eaa-summary .eaa-r-tag.graded { color: #2c7a43; }
 
-#eaa-resumo .eaa-r-fichas {
+#eaa-summary .eaa-r-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   padding-top: 4px;
 }
 
-#eaa-resumo .eaa-r-ficha {
+#eaa-summary .eaa-r-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -103,25 +103,25 @@
   text-decoration: none;
 }
 
-#eaa-resumo .eaa-r-ficha:hover,
-#eaa-resumo .eaa-r-ficha:focus-visible {
+#eaa-summary .eaa-r-chip:hover,
+#eaa-summary .eaa-r-chip:focus-visible {
   border-color: #006fbf;
   color: #006fbf;
 }
 
-#eaa-resumo .eaa-r-ficha:focus-visible {
+#eaa-summary .eaa-r-chip:focus-visible {
   outline: 2px solid #006fbf;
   outline-offset: 2px;
 }
 
-#eaa-resumo .eaa-r-fnome {
+#eaa-summary .eaa-r-cname {
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-#eaa-resumo .eaa-r-fnum {
+#eaa-summary .eaa-r-cnum {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -136,19 +136,19 @@
 
 /* Carregamento: mesma moldura e mesmas linhas do resultado. A barra enche
    conforme as disciplinas respondem; as fichas vazias guardam o lugar. */
-#eaa-resumo .eaa-r-status {
+#eaa-summary .eaa-r-status {
   font-weight: 400;
   color: #6e7477;
 }
 
-#eaa-resumo .eaa-r-progresso {
+#eaa-summary .eaa-r-progress {
   height: 8px;
   border-radius: 4px;
   overflow: hidden;
   background: #e3e9f1;
 }
 
-#eaa-resumo .eaa-r-progresso i {
+#eaa-summary .eaa-r-progress i {
   display: block;
   height: 100%;
   border-radius: 4px;
@@ -156,20 +156,20 @@
   transition: width 0.2s ease;
 }
 
-#eaa-resumo .eaa-r-ficha.eaa-r-vazia {
+#eaa-summary .eaa-r-chip.eaa-r-empty {
   border-color: transparent;
   background: #f1f5fb;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #eaa-resumo .eaa-r-progresso i {
+  #eaa-summary .eaa-r-progress i {
     transition: none;
   }
 }
 
 /* Legenda: cinco itens de uma borda à outra, com espaços iguais entre eles —
    alinhada às linhas "esquerda | direita" do resto do resumo. */
-#eaa-resumo .eaa-r-legenda {
+#eaa-summary .eaa-r-legend {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -183,14 +183,14 @@
   color: #6e7477;
 }
 
-#eaa-resumo .eaa-r-legenda li {
+#eaa-summary .eaa-r-legend li {
   display: flex;
   align-items: center;
   gap: 8px;
   white-space: nowrap;
 }
 
-#eaa-resumo .eaa-r-legenda i {
+#eaa-summary .eaa-r-legend i {
   flex: none;
   width: 16px;
   height: 8px;
@@ -198,19 +198,19 @@
   background: #e3e9f1;
 }
 
-#eaa-resumo .eaa-r-legenda .corrigida { background: #46a661; }
-#eaa-resumo .eaa-r-legenda .aguardando { background: #ffba59; }
-#eaa-resumo .eaa-r-legenda .iniciada { background: #e87511; }
-#eaa-resumo .eaa-r-legenda .perdida { background: #cd2026; }
+#eaa-summary .eaa-r-legend .graded { background: #46a661; }
+#eaa-summary .eaa-r-legend .awaiting { background: #ffba59; }
+#eaa-summary .eaa-r-legend .started { background: #e87511; }
+#eaa-summary .eaa-r-legend .missed { background: #cd2026; }
 
 /* Rodapé: idade dos dados | Atualizar. Mesma tipografia da legenda. */
-#eaa-resumo .eaa-r-rodape {
+#eaa-summary .eaa-r-footer {
   font-size: 12px;
   line-height: 16px;
   color: #6e7477;
 }
 
-#eaa-resumo .eaa-r-atualizar {
+#eaa-summary .eaa-r-refresh {
   -webkit-appearance: none;
   appearance: none;
   height: 16px;
@@ -227,25 +227,25 @@
   cursor: pointer;
 }
 
-#eaa-resumo .eaa-r-atualizar:hover:not(:disabled) {
+#eaa-summary .eaa-r-refresh:hover:not(:disabled) {
   text-decoration: underline;
 }
 
-#eaa-resumo .eaa-r-atualizar:focus-visible {
+#eaa-summary .eaa-r-refresh:focus-visible {
   outline: 2px solid #006fbf;
   outline-offset: 2px;
 }
 
-#eaa-resumo .eaa-r-atualizar:disabled {
+#eaa-summary .eaa-r-refresh:disabled {
   color: #6e7477;
   cursor: default;
 }
 
-#eaa-resumo .eaa-r-ficha.iniciada {
+#eaa-summary .eaa-r-chip.started {
   border-color: #e87511;
 }
 
-#eaa-resumo .eaa-r-ficha.iniciada .eaa-r-fnum {
+#eaa-summary .eaa-r-chip.started .eaa-r-cnum {
   background: #e87511;
   color: #fff;
 }

@@ -7,9 +7,9 @@
   "scripts": {
     "test": "playwright test",
     "build": "node tools/build.mjs",
-    "check": "node tools/verificar-manifest.mjs",
+    "check": "node tools/check-manifest.mjs",
     "dev": "node tools/dev.mjs",
-    "politica": "node tools/politica.mjs"
+    "policy": "node tools/policy.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

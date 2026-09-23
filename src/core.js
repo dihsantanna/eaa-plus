@@ -8,7 +8,7 @@
  *
  * Contrato de uma melhoria:
  *   {
- *     id:    "filtro-periodos",     // identificador para log
+ *     id:    "period-filter",       // identificador para log
  *     init:  function () { ... }    // retorna false se o DOM ainda não existe
  *   }
  *
@@ -88,10 +88,10 @@ var EAAPlus = (function () {
    *   "1º, 2º e 3º períodos"  -> [1, 2, 3]
    *   "1º ao 4º período"      -> [1, 2, 3, 4]
    * Sem etiqueta reconhecível, devolve todos os períodos. */
-  function periodos(text) {
+  function periods(text) {
     var t = (text || "").toLowerCase();
-    var achados = t.match(/\d\s*º/g) || [];
-    var nums = achados.map(function (s) {
+    var found = t.match(/\d\s*º/g) || [];
+    var nums = found.map(function (s) {
       return parseInt(s, 10);
     });
 
@@ -100,9 +100,9 @@ var EAAPlus = (function () {
     if (/\bao\b/.test(t) && nums.length >= 2) {
       var min = Math.min.apply(null, nums);
       var max = Math.max.apply(null, nums);
-      var faixa = [];
-      for (var i = min; i <= max; i++) faixa.push(i);
-      return faixa;
+      var range = [];
+      for (var i = min; i <= max; i++) range.push(i);
+      return range;
     }
 
     return nums.filter(function (n, i) {
@@ -110,5 +110,5 @@ var EAAPlus = (function () {
     });
   }
 
-  return { add: add, periodos: periodos };
+  return { add: add, periods: periods };
 })();

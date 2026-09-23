@@ -12,7 +12,7 @@
     "storage"
   ],
   "background": {
-    "service_worker": "src/fundo.js"
+    "service_worker": "src/background.js"
   },
   "content_scripts": [
     {
@@ -21,12 +21,12 @@
       ],
       "js": [
         "src/core.js",
-        "src/features/filtro-periodos.js",
-        "src/features/proxima-aula.js"
+        "src/features/period-filter.js",
+        "src/features/next-class.js"
       ],
       "css": [
-        "src/features/filtro-periodos.css",
-        "src/features/proxima-aula.css"
+        "src/features/period-filter.css",
+        "src/features/next-class.css"
       ],
       "run_at": "document_idle"
     },
@@ -36,14 +36,14 @@
       ],
       "js": [
         "src/core.js",
-        "src/ava-dados.js",
-        "src/features/ava-progresso.js",
-        "src/features/ava-disciplina.js"
+        "src/ava-data.js",
+        "src/features/ava-progress.js",
+        "src/features/ava-course.js"
       ],
       "run_at": "document_idle",
       "css": [
-        "src/features/ava-progresso.css",
-        "src/features/ava-disciplina.css"
+        "src/features/ava-progress.css",
+        "src/features/ava-course.css"
       ]
     }
   ]
