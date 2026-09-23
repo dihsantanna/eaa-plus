@@ -147,6 +147,8 @@ export const DISCIPLINAS = [
     /* Período da Av2: fechamentos encerrados e corrigidos, Av2 aberta. */
     ou: 50010,
     nome: "História da Educação",
+    /* responde devagar: o resumo tem que esperar por ela */
+    atraso: 2500,
     grades: [...FORMULAS, numerico(1101, "Atividade Unidade I", 2.5), numerico(1102, "Atividade Unidade II", 2.5)],
     valores: [...av(4.0, 0), valor(1101, "Atividade Unidade I", 2.0, 2.5), valor(1102, "Atividade Unidade II", 2.0, 2.5)],
     quizzes: [
@@ -277,7 +279,7 @@ function rotas() {
       api[b + "grades/"] = { status: d.falha, corpo: { title: "erro" } };
       continue;
     }
-    api[b + "grades/"] = ok(d.grades);
+    api[b + "grades/"] = d.atraso ? { ...ok(d.grades), atraso: d.atraso } : ok(d.grades);
     api[`/d2l/api/lp/1.63/enrollments/myenrollments/${d.ou}`] = ok({ OrgUnit: { Id: d.ou, Name: d.nome }, Access: {}, PinDate: null });
     api[b + "grades/values/myGradeValues/"] = ok(d.valores);
     api[b + "dropbox/folders/"] = ok(d.pastas || []);

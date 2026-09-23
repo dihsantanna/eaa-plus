@@ -191,21 +191,62 @@ EAAPlus.add({
       );
     }
 
+    /* Enquanto houver disciplina visível sem resposta, o resumo fica em
+       carregamento: somar só as que chegaram mostraria números errados
+       ("faltam 2", depois "faltam 5"). A moldura e as linhas são as mesmas do
+       resultado, para nada pular quando terminar. Erro também conta como
+       resposta; e depois de ESPERA_MAX mostra o que tiver, em vez de girar
+       para sempre por causa de uma disciplina que não responde. */
+    var resolvidos = {};
+    var inicioDaCarga = null;
+    var ESPERA_MAX = 20000;
+
+    function htmlCarregando(prontas, total) {
+      var pct = total ? Math.round((prontas / total) * 100) : 0;
+      return (
+        '<div class="eaa-r-par"><span class="eaa-r-titulo">Próximo prazo</span>' +
+        '<span class="eaa-r-quando eaa-r-status" role="status">carregando ' + prontas + " de " + total + " disciplinas…</span></div>" +
+        '<div class="eaa-r-progresso" aria-hidden="true"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="eaa-r-par eaa-r-leg"><span>Lendo notas e entregas no AVA</span><span></span></div>' +
+        '<div class="eaa-r-fichas" aria-hidden="true">' +
+        '<span class="eaa-r-ficha eaa-r-vazia" style="width:128px"></span>' +
+        '<span class="eaa-r-ficha eaa-r-vazia" style="width:96px"></span>' +
+        '<span class="eaa-r-ficha eaa-r-vazia" style="width:152px"></span></div>' +
+        legenda()
+      );
+    }
+
     function atualizarResumo(visiveis) {
       var alvo = document.querySelector("d2l-my-courses-v2");
       if (!alvo || !alvo.parentNode) return;
       var caixa = document.getElementById(RESUMO_ID);
-      var res = resumoGeral(visiveis);
-      if (!res || !res.c.itens.length) {
+      var sumir = function () {
         if (caixa) caixa.remove();
-        return;
+      };
+      if (!visiveis.length) return sumir();
+
+      var faltam = visiveis.filter(function (ou) {
+        return !resolvidos[ou];
+      }).length;
+      if (!faltam) inicioDaCarga = null;
+      else if (inicioDaCarga === null) inicioDaCarga = Date.now();
+      var carregando = faltam > 0 && Date.now() - inicioDaCarga < ESPERA_MAX;
+
+      var novo;
+      if (carregando) {
+        novo = htmlCarregando(visiveis.length - faltam, visiveis.length);
+      } else {
+        var res = resumoGeral(visiveis);
+        if (!res || !res.c.itens.length) return sumir();
+        novo = htmlDoResumo(res);
       }
-      var novo = htmlDoResumo(res);
+
       if (!caixa) {
         caixa = document.createElement("section");
         caixa.id = RESUMO_ID;
         caixa.setAttribute("aria-label", "Próximo prazo das disciplinas");
       }
+      caixa.setAttribute("aria-busy", carregando ? "true" : "false");
       if (caixa.nextSibling !== alvo) alvo.parentNode.insertBefore(caixa, alvo);
       if (caixa.getAttribute("data-html") !== novo) {
         caixa.setAttribute("data-html", novo);
@@ -245,11 +286,13 @@ EAAPlus.add({
 
       A.dados(ou).then(
         function (r) {
+          resolvidos[ou] = true;
           if (!r.total) return remover();
           prontos[ou] = { r: r, nome: r.nome || "Disciplina" };
           escrever(html(r));
         },
         function (erro) {
+          resolvidos[ou] = true;
           remover();
           if (window.console && console.warn) console.warn("[EAA+] progresso da disciplina " + ou + ":", erro);
         }

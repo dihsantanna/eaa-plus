@@ -20,6 +20,8 @@ createServer(async (req, res) => {
   if (rota.startsWith("/d2l/api/") || rota.startsWith("/d2l/lms/")) {
     const api = JSON.parse(await readFile(join(RAIZ, "api.json"), "utf8"));
     const r = req.method !== "GET" ? { status: 405, corpo: null } : api[req.url] || api[rota];
+    /* "atraso" simula uma disciplina que o AVA demora a responder */
+    if (r && r.atraso) await new Promise((ok) => setTimeout(ok, r.atraso));
     if (r && r.html !== undefined) {
       res.writeHead(r.status, { "content-type": "text/html; charset=utf-8" });
       return res.end(r.html);

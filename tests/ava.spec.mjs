@@ -198,6 +198,23 @@ test.describe("resumo do próximo prazo", () => {
     expect(await segs(r)).toEqual(["corrigida", "aguardando", "afazer", "afazer"]);
   });
 
+  test("fica carregando até todas as disciplinas responderem, sem números parciais", async ({ page, baseURL }) => {
+    await page.goto(`${baseURL}/d2l/home`);
+    const r = resumo(page);
+    /* 50010 responde com 2,5s de atraso */
+    await expect(r).toHaveAttribute("aria-busy", "true", { timeout: 8000 });
+    await expect(r.locator(".eaa-r-status")).toHaveText(/^carregando \d+ de \d+ disciplinas…$/);
+    await expect(r.locator(".eaa-r-leg")).not.toContainText("entregues");
+    await expect(r.locator(".eaa-r-ficha:not(.eaa-r-vazia)")).toHaveCount(0);
+    await expect(r.locator(".eaa-r-legenda li")).toHaveCount(5);
+    const alturaCarregando = await r.evaluate((e) => e.getBoundingClientRect().height);
+
+    await expect(r).toHaveAttribute("aria-busy", "false", { timeout: 8000 });
+    await expect(r.locator(".eaa-r-leg")).toHaveText("2 de 4 atividades entreguesfaltam 2");
+    const alturaFinal = await r.evaluate((e) => e.getBoundingClientRect().height);
+    expect(Math.abs(alturaFinal - alturaCarregando), "sem pulo de altura ao terminar").toBeLessThan(1);
+  });
+
   test("fichas das disciplinas pendentes levam para a disciplina", async ({ page }) => {
     await page.abrir();
     const fichas = resumo(page).locator(".eaa-r-ficha");

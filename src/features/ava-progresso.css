@@ -134,6 +134,39 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Carregamento: mesma moldura e mesmas linhas do resultado. A barra enche
+   conforme as disciplinas respondem; as fichas vazias guardam o lugar. */
+#eaa-resumo .eaa-r-status {
+  font-weight: 400;
+  color: #6e7477;
+}
+
+#eaa-resumo .eaa-r-progresso {
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #e3e9f1;
+}
+
+#eaa-resumo .eaa-r-progresso i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: #006fbf;
+  transition: width 0.2s ease;
+}
+
+#eaa-resumo .eaa-r-ficha.eaa-r-vazia {
+  border-color: transparent;
+  background: #f1f5fb;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #eaa-resumo .eaa-r-progresso i {
+    transition: none;
+  }
+}
+
 /* Legenda: cinco itens de uma borda à outra, com espaços iguais entre eles —
    alinhada às linhas "esquerda | direita" do resto do resumo. */
 #eaa-resumo .eaa-r-legenda {
