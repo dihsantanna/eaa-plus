@@ -307,11 +307,11 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
 
 ## Publicação — estado atual
 
-- Chrome Web Store, conta do aluno. **Ainda não publicada**: a versão 1.0.0
-  (só AVA) será a primeira, como item novo. `dist/eaa-plus-v1.0.0.zip` pronto;
-  falta o aluno subir e preencher o painel (GUIA). Ele só disponibiliza para a
-  turma com autorização da instituição (pedido feito à coordenação em
-  2026-09-23).
+- Chrome Web Store, conta do aluno. **Enviada para análise em 2026-10-12**: a
+  versão 1.0.0 (só AVA) é a primeira, como item novo (`dist/eaa-plus-v1.0.0.zip`),
+  aguardando a revisão do Google. Ainda não está no ar. O aluno só passa o link
+  para a turma com autorização da instituição (pedido feito à coordenação em
+  2026-09-23). Qualquer mudança no pacote daqui em diante = `version` maior.
 - Visibilidade recomendada: **não listado** (só instala quem tem o link).
 - Toda atualização precisa de `version` maior no `manifest.json` e do mesmo
   lado em `package.json`.
