@@ -1,7 +1,7 @@
 /* Peças de desenho usadas pelas três telas (cards, resumo e barra da
  * disciplina): nomes dos estados, legenda, barra de segmentos e prazo. */
 
-import { formatDate, timeLeft } from "../../ava/format.ts";
+import { escapeHtml, formatDate, timeLeft } from "../../ava/format.ts";
 import type { Activity, ActivityState, DeadlineGroup } from "../../ava/types.ts";
 
 /** Nome de cada estado, como aparece ao lado da atividade. */
@@ -22,10 +22,12 @@ export const LEGEND: [ActivityState, string][] = [
   ["todo", "A fazer"],
 ];
 
-/** Um segmento colorido por atividade (a cor vem da classe = estado). */
+/** Um segmento colorido por atividade (a cor vem da classe = estado). O
+ *  nome e o estado aparecem ao passar o mouse; o leitor de tela já recebe o
+ *  mesmo texto pelo aria-label do grupo, por isso a barra é aria-hidden. */
 export const segments = (items: Activity[], cls = ""): string =>
   `<div class="eaa-seg${cls ? ` ${cls}` : ""}" aria-hidden="true">` +
-  items.map((it) => `<i class="${it.state}"></i>`).join("") +
+  items.map((it) => `<i class="${it.state}" title="${escapeHtml(`${it.name} · ${STATE_LABEL[it.state!]}`)}"></i>`).join("") +
   `</div>`;
 
 /** "28/09 · 5 dias" */

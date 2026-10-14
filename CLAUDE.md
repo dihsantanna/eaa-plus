@@ -33,7 +33,7 @@ pasta dela em `src/features/`.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 31 unitários (regras, <1s) + 49 E2E com a extensão carregada de verdade
+npm test                           # 33 unitários (regras, <1s) + 51 E2E com a extensão carregada de verdade
 npm run test:unit                  # só os unitários das regras (tests/unit/, TypeScript direto no Node)
 npm run typecheck                  # tsc estrito (sem gerar arquivos)
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
@@ -307,11 +307,17 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
 
 ## Publicação — estado atual
 
-- Chrome Web Store, conta do aluno. **Enviada para análise em 2026-10-12**: a
-  versão 1.0.0 (só AVA) é a primeira, como item novo (`dist/eaa-plus-v1.0.0.zip`),
-  aguardando a revisão do Google. Ainda não está no ar. O aluno só passa o link
-  para a turma com autorização da instituição (pedido feito à coordenação em
-  2026-09-23). Qualquer mudança no pacote daqui em diante = `version` maior.
+- Chrome Web Store, conta do aluno. A versão 1.0.0 (só AVA,
+  `dist/eaa-plus-v1.0.0.zip`), enviada em 2026-10-12, foi **aprovada e está no
+  ar**; colegas da turma já usam (informado pelo aluno em 2026-10-14). Toda
+  mudança agora chega a usuários reais: `version` maior, `npm test` verde e
+  nova revisão do Google antes de valer.
+- **1.0.1** (2026-10-14, patch de UI: contraste, prazo resolvido em uma linha,
+  "sem nota ainda", nome da atividade nos segmentos, mesmos nomes nas três
+  telas, dias na barra compacta). Zip em `dist/eaa-plus-v1.0.1.zip`, a enviar
+  pelo aluno no painel. Mexer nos cards do próprio AVA (imagem menor, título
+  em 2 linhas) foi avaliado e **deixado de fora** de propósito: ganho pequeno
+  e muda o AVA de todos que instalaram.
 - Visibilidade recomendada: **não listado** (só instala quem tem o link).
 - Toda atualização precisa de `version` maior no `manifest.json` e do mesmo
   lado em `package.json`.

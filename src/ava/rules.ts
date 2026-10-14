@@ -217,15 +217,17 @@ function formula(values: GradeValue[], n: number): GradeValue | null {
 
 /** "Avaliação 1 (Av1) - Último Fechamento", 2º grupo →
  *  curto "2º Fechamento" (mesma largura em todas as linhas),
- *  longo "Av1 · Último Fechamento" (nome oficial). */
+ *  longo "Av1 · 2º Fechamento" (o mesmo nome nas três telas: o AVA chama o
+ *  2º de "Último", e o aluno via dois nomes para a mesma coisa). */
 function deadlineNames(section: string, order: number): { shortLabel: string; longLabel: string } | null {
   const parts = section.split(/\s[-–]\s/);
   const end = parts.length > 1 ? parts[parts.length - 1] : "";
   const av = (section.match(/\((Av\s*\d)\)|^\s*(Av\s*\d)\b/i) ?? []).slice(1).find(Boolean);
   if (!end) return null;
+  const shortLabel = `${order}º ${end.split(/\s+/).pop()}`;
   return {
-    shortLabel: `${order}º ${end.split(/\s+/).pop()}`,
-    longLabel: (av ? `${av.replace(/\s/g, "")} · ` : "") + end,
+    shortLabel,
+    longLabel: (av ? `${av.replace(/\s/g, "")} · ` : "") + shortLabel,
   };
 }
 
@@ -357,6 +359,17 @@ export function highlight(c: Tally): Message {
   if (c.todo) return { tone: "", text: `${c.todo} a fazer` };
   return { tone: "", text: "" };
 }
+
+/** Prazo encerrado e todo corrigido: não pede mais nada do aluno, então o
+ *  card mostra numa linha só e deixa o espaço para o que está aberto. */
+export function isSettled(g: DeadlineGroup, now = Date.now()): boolean {
+  return !!(g.deadline && g.deadline < now && g.c.items.length && g.c.graded === g.c.items.length);
+}
+
+/** Já há nota para mostrar? Antes da primeira correção a Av1 (ou a nota
+ *  única de Canto Coral) vale 0, e "0,0 / 10,0" parece nota ruim — 0 ali
+ *  não é resultado, como a fórmula da Av2. */
+export const hasGrade = (r: CourseSummary): boolean => r.av1 > 0 || r.c1.graded > 0;
 
 /** Prazo de hoje ou amanhã com algo ainda por fazer. */
 export function isUrgent(g: DeadlineGroup, now = Date.now()): boolean {

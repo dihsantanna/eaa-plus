@@ -200,6 +200,16 @@ flowchart TD
   outro.
 - **Painel geral espera todas:** somar parcialmente mostraria números errados;
   depois de 20 s mostra o que tiver.
+- **Prazo resolvido em uma linha** (`isSettled()`: encerrado e todo
+  corrigido): não pede mais nada do aluno, então dá o espaço ao que está
+  aberto. Encerrado com perdida ou aguardando continua inteiro.
+- **"sem nota ainda"** (`hasGrade()`): antes da primeira correção a nota vale
+  0, e "0,0 / 10,0" parecia nota ruim.
+- **Contorno em "a fazer" e "aguardando":** os dois preenchimentos claros
+  ficavam abaixo de 3:1 sobre o branco e sumiam; escurecer o âmbar o deixaria
+  igual ao laranja de "iniciada".
+- **Mesmos nomes nas três telas:** "Av1 · 2º Fechamento", não "Último
+  Fechamento" (nome da seção no AVA) num lugar e "2º" em outro.
 
 ---
 
@@ -466,7 +476,9 @@ flowchart TD
   mas esse link está na faixa de todas elas.
 - **Dentro da faixa, com posição absoluta:** a página de Conteúdo tem altura
   presa à janela; qualquer elemento no fluxo empurra a aula para fora da tela.
-- **Compactar ou esconder:** melhor sumir do que cobrir um link do AVA.
+- **Compactar ou esconder:** melhor sumir do que cobrir um link do AVA. A
+  compacta tira a nota, a data e a contagem, mas mantém os dias que faltam e
+  o ⚠: é o que diz se há pressa.
 - **`preview()` antes:** o carregamento já nasce com a largura final, então
   nada pula quando o resultado chega.
 

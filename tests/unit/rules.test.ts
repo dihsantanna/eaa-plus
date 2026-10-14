@@ -152,7 +152,7 @@ describe("grupos por prazo e resumo (summarize)", () => {
     });
     assert.deepEqual(
       r.deadlines.map((g) => [g.shortLabel, g.longLabel]),
-      [["1º Fechamento", "Av1 · Primeiro Fechamento"], ["2º Fechamento", "Av1 · Último Fechamento"]]
+      [["1º Fechamento", "Av1 · 1º Fechamento"], ["2º Fechamento", "Av1 · 2º Fechamento"]]
     );
   });
 
@@ -184,6 +184,35 @@ describe("grupos por prazo e resumo (summarize)", () => {
     assert.equal(r.hasAv, false);
     assert.equal(r.label, "Nota");
     assert.equal(R.standing(r), null);
+  });
+
+  test("prazo encerrado e todo corrigido: resolvido; aberto ou com problema, não", () => {
+    const r = summary({
+      gi: [...AV_FORMULAS, numeric(101, "A", 1), numeric(102, "B", 1), numeric(103, "C", 1)],
+      values: [...av(1.5, 0), value(101, "A", 1, 1), value(102, "B", 0.5, 1)],
+      quizzes: [quiz(8001, 101, YESTERDAY), quiz(8002, 102, YESTERDAY), quiz(8003, 103, LAST_CLOSE)],
+    });
+    assert.equal(R.isSettled(r.deadlines[0], NOW), true);
+    assert.equal(R.isSettled(r.deadlines[1], NOW), false);
+
+    const missed = summary({
+      gi: [...AV_FORMULAS, numeric(101, "A", 1), numeric(102, "B", 1)],
+      values: [...av(1, 0), value(101, "A", 1, 1)],
+      quizzes: [quiz(8001, 101, YESTERDAY), quiz(8002, 102, YESTERDAY)],
+    });
+    assert.deepEqual(states(missed.deadlines[0]), ["graded", "missed"]);
+    assert.equal(R.isSettled(missed.deadlines[0], NOW), false);
+  });
+
+  test("nota só aparece depois da primeira correção: antes, 0 não é resultado", () => {
+    const quizzes = [quiz(8901, 901, LAST_CLOSE)];
+    const none = summary({ gi: [numeric(901, "Nota final", 10)], quizzes });
+    assert.equal(R.hasGrade(none), false);
+    /* corrigida com 0: aí o 0 é a nota de verdade */
+    const zero = summary({ gi: [numeric(901, "Nota final", 10)], values: [value(901, "Nota final", 0, 10)], quizzes });
+    assert.equal(R.hasGrade(zero), true);
+    const av1 = summary({ gi: [...AV_FORMULAS, numeric(101, "A", 1)], values: av(0, 0), quizzes: [quiz(8001, 101, LAST_CLOSE)] });
+    assert.equal(R.hasGrade(av1), false);
   });
 });
 

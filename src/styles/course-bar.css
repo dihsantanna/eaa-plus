@@ -112,10 +112,6 @@
   font-weight: 700;
 }
 
-#eaa-course .eaa-d-col.closed {
-  opacity: 0.72;
-}
-
 #eaa-course .eaa-seg {
   display: flex;
   gap: 2px;
@@ -123,13 +119,22 @@
 }
 
 #eaa-course .eaa-seg i {
+  position: relative;
   flex: 1 1 0;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.24);
 }
 
+/* área de passar o mouse maior que a barra de 6px (o nome vem no title) */
+#eaa-course .eaa-seg i::after {
+  content: "";
+  position: absolute;
+  inset: -5px -1px;
+}
+
 #eaa-course .eaa-seg .graded { background: var(--eaa-graded); }
 #eaa-course .eaa-seg .awaiting { background: var(--eaa-awaiting); }
+#eaa-course .eaa-seg .todo { box-shadow: inset 0 0 0 1px var(--eaa-todo-edge-on-dark); }
 #eaa-course .eaa-seg .started { background: var(--eaa-started); }
 #eaa-course .eaa-seg .missed { background: var(--eaa-missed); }
 
@@ -176,11 +181,16 @@
   color: rgba(255, 255, 255, 0.78);
 }
 
-/* Janela estreita: fica só o nome do fechamento e a barra, com as colunas
-   encolhendo por igual. O ⚠ continua (a data sai, o alerta não). */
+/* Janela estreita: ficam o nome do fechamento, a barra e os dias que faltam
+   (embaixo, à direita), com as colunas encolhendo por igual. Saem a nota, a
+   data e a contagem de entregues — nunca a pressa nem o ⚠. */
 #eaa-course.compact .eaa-d-grade,
-#eaa-course.compact .eaa-d-caption {
+#eaa-course.compact .eaa-d-caption > :first-child {
   display: none;
+}
+
+#eaa-course.compact .eaa-d-caption {
+  justify-content: flex-end;
 }
 
 #eaa-course.compact .eaa-d-date {
@@ -286,7 +296,8 @@
 }
 
 #eaa-course .eaa-d-group li.graded i { background: var(--eaa-graded); }
-#eaa-course .eaa-d-group li.awaiting i { background: var(--eaa-awaiting); }
+#eaa-course .eaa-d-group li.awaiting i { background: var(--eaa-awaiting); box-shadow: inset 0 0 0 1px var(--eaa-awaiting-edge); }
+#eaa-course .eaa-d-group li.todo i { box-shadow: inset 0 0 0 1px var(--eaa-todo-edge); }
 #eaa-course .eaa-d-group li.started i { background: var(--eaa-started); }
 #eaa-course .eaa-d-group li.missed i { background: var(--eaa-missed); }
 

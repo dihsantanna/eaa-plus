@@ -60,13 +60,22 @@
 }
 
 #eaa-summary .eaa-seg i {
+  position: relative;
   flex: 1 1 0;
   border-radius: 4px;
   background: var(--eaa-track);
 }
 
+/* área de passar o mouse maior que a barra de 8px (o nome vem no title) */
+#eaa-summary .eaa-seg i::after {
+  content: "";
+  position: absolute;
+  inset: -4px -1px;
+}
+
 #eaa-summary .eaa-seg .graded { background: var(--eaa-graded); }
-#eaa-summary .eaa-seg .awaiting { background: var(--eaa-awaiting); }
+#eaa-summary .eaa-seg .awaiting { background: var(--eaa-awaiting); box-shadow: inset 0 0 0 1px var(--eaa-awaiting-edge); }
+#eaa-summary .eaa-seg .todo { box-shadow: inset 0 0 0 1px var(--eaa-todo-edge); }
 #eaa-summary .eaa-seg .started { background: var(--eaa-started); }
 #eaa-summary .eaa-seg .missed { background: var(--eaa-missed); }
 
@@ -199,7 +208,8 @@
 }
 
 #eaa-summary .eaa-r-legend .graded { background: var(--eaa-graded); }
-#eaa-summary .eaa-r-legend .awaiting { background: var(--eaa-awaiting); }
+#eaa-summary .eaa-r-legend .awaiting { background: var(--eaa-awaiting); box-shadow: inset 0 0 0 1px var(--eaa-awaiting-edge); }
+#eaa-summary .eaa-r-legend .todo { box-shadow: inset 0 0 0 1px var(--eaa-todo-edge); }
 #eaa-summary .eaa-r-legend .started { background: var(--eaa-started); }
 #eaa-summary .eaa-r-legend .missed { background: var(--eaa-missed); }
 

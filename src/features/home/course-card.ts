@@ -10,8 +10,8 @@
  */
 
 import { courseData, courseName } from "../../ava/course-data.ts";
-import { escapeHtml as esc, formatNum } from "../../ava/format.ts";
-import { highlight, isUrgent, standing } from "../../ava/rules.ts";
+import { escapeHtml as esc, formatDate, formatNum, plural } from "../../ava/format.ts";
+import { hasGrade, highlight, isSettled, isUrgent, standing } from "../../ava/rules.ts";
 import type { CourseSummary, DeadlineGroup } from "../../ava/types.ts";
 import { STATE_LABEL, segments, when } from "../shared/render.ts";
 import { CARD_CSS } from "./card-styles.ts";
@@ -19,7 +19,22 @@ import type { HomeState } from "./state.ts";
 
 const MARK = "eaa-prog";
 
+/** Prazo encerrado e todo corrigido: uma linha só ("1º Fechamento   ✓ 2
+ *  corrigidas"), para o card dar o espaço ao que ainda está aberto. A data
+ *  fica só no aria-label: com ela, o nome do prazo não cabia no card. */
+function settledRow(g: DeadlineGroup): string {
+  const date = formatDate(g.deadline as number);
+  const done = plural(g.c.graded, "corrigida", "corrigidas");
+  return (
+    `<div class="eaa-deadline closed settled" role="group" aria-label="${esc(`${g.shortLabel}, encerrado em ${date}: ${done}`)}">` +
+    `<div class="eaa-pair"><span class="eaa-name">${esc(g.shortLabel)}</span>` +
+    `<span class="eaa-tag graded">✓ ${done}</span></div>` +
+    `</div>`
+  );
+}
+
 function deadlineRow(g: DeadlineGroup): string {
+  if (isSettled(g)) return settledRow(g);
   const h = highlight(g.c);
   const w = when(g);
   const closed = g.deadline !== null && g.deadline < Date.now();
@@ -38,7 +53,9 @@ function cardHtml(r: CourseSummary): string {
   const s = standing(r);
   return (
     `<div class="eaa-pair eaa-head"><span class="eaa-label">${r.label}</span>` +
-    `<span class="eaa-val">${formatNum(r.av1)} / ${formatNum(r.av1Max)}</span></div>` +
+    (hasGrade(r)
+      ? `<span class="eaa-val">${formatNum(r.av1)} / ${formatNum(r.av1Max)}</span></div>`
+      : `<span class="eaa-val none">sem nota ainda</span></div>`) +
     r.deadlines.map(deadlineRow).join("") +
     (s ? `<div class="eaa-standing ${s.tone}">${s.text}</div>` : "")
   );

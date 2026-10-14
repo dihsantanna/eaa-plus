@@ -6,7 +6,7 @@
  */
 
 import { escapeHtml as esc, formatDate, formatNum, formatTime, timeLeft } from "../../ava/format.ts";
-import { highlight, isUrgent, standing } from "../../ava/rules.ts";
+import { hasGrade, highlight, isUrgent, standing } from "../../ava/rules.ts";
 import type { CourseSummary, DeadlineGroup, Preview } from "../../ava/types.ts";
 import { STATE_LABEL, segments, when } from "../shared/render.ts";
 
@@ -49,8 +49,12 @@ function column(g: DeadlineGroup): string {
   );
 }
 
+/** "2,5 / 5,0"; antes da primeira correção, sem número (0 não é resultado). */
+const grade = (r: CourseSummary, none: string): string =>
+  hasGrade(r) ? `${formatNum(r.av1)} / ${formatNum(r.av1Max)}` : none;
+
 const ariaText = (r: CourseSummary, cols: DeadlineGroup[]): string =>
-  `Progresso das avaliações. ${r.label}: ${formatNum(r.av1)} de ${formatNum(r.av1Max)}. ` +
+  `Progresso das avaliações. ${r.label}: ${hasGrade(r) ? `${formatNum(r.av1)} de ${formatNum(r.av1Max)}` : "sem nota ainda"}. ` +
   cols.map((g) => `${g.shortLabel}, ${when(g)}: ${g.c.delivered} de ${g.c.items.length} entregues`).join(". ") +
   ". Abrir detalhes.";
 
@@ -76,7 +80,7 @@ function panel(r: CourseSummary): string {
     .join("");
   return (
     `<div class="eaa-d-phead"><span>Avaliações da disciplina</span>` +
-    `<span class="eaa-d-pgrade">${r.label} · ${formatNum(r.av1)} / ${formatNum(r.av1Max)}</span></div>` +
+    `<span class="eaa-d-pgrade">${r.label} · ${grade(r, "sem nota ainda")}</span></div>` +
     groups +
     (s ? `<div class="eaa-d-standing ${s.tone}">${s.text}</div>` : "")
   );
@@ -88,7 +92,7 @@ export function barHtml(r: CourseSummary): string {
   return (
     `<button type="button" class="eaa-d-button" aria-expanded="false" aria-controls="eaa-d-panel" aria-label="${esc(ariaText(r, cols))}">` +
     `<span class="eaa-d-grade"><span class="eaa-d-label">${r.label}</span>` +
-    `<span class="eaa-d-val">${formatNum(r.av1)} / ${formatNum(r.av1Max)}</span></span>` +
+    `<span class="eaa-d-val">${grade(r, "—")}</span></span>` +
     cols.map(column).join("") +
     `<span class="eaa-d-arrow">${CHEVRON}</span>` +
     `</button>` +

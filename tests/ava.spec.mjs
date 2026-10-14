@@ -70,6 +70,9 @@ test.describe("progresso nas disciplinas", () => {
     await expect(p.locator(".eaa-caption")).toHaveText("4 de 5 entregues1 perdida");
     await expect(p.locator(".eaa-when")).toHaveText(/^\d{2}\/\d{2} · encerrado$/);
     await expect(p).toHaveClass(/closed/);
+    /* encerrado, mas com perdida e aguardando: continua aberto, sem esmaecer */
+    await expect(p).not.toHaveClass(/settled/);
+    await expect(p).toHaveCSS("opacity", "1");
   });
 
   test("linhas de prazo têm a mesma estrutura em todos os cards", async ({ page }) => {
@@ -104,6 +107,19 @@ test.describe("progresso nas disciplinas", () => {
     await expect(b.locator(".eaa-head")).toHaveText("Nota8,0 / 10,0");
     await expect(deadline(page, 50009, 0).locator(".eaa-caption")).toHaveText("1 de 1 entreguescorrigido");
     await expect(b.locator(".eaa-standing")).toHaveCount(0);
+  });
+
+  test("antes da primeira correção, 'sem nota ainda' no lugar de 0,0", async ({ page }) => {
+    await page.open();
+    /* 50008: nada da Av1 corrigido e a fórmula ainda 0 */
+    await expect(block(page, 50008).locator(".eaa-head")).toHaveText("Av1sem nota ainda");
+  });
+
+  test("cada segmento diz a atividade e o estado ao passar o mouse", async ({ page }) => {
+    await page.open();
+    const titles = await deadline(page, 50001, 0).locator(".eaa-seg i").evaluateAll((is) => is.map((i) => i.title));
+    expect(titles.map((t) => t.split(" · ").pop())).toEqual(["corrigida", "aguardando correção", "a fazer"]);
+    for (const t of titles) expect(t.split(" · ")[0].length, `nome em "${t}"`).toBeGreaterThan(0);
   });
 
   test("sem situação enquanto ainda há atividade em aberto", async ({ page }) => {
@@ -147,8 +163,12 @@ test.describe("Av2 e Av3", () => {
     await page.open();
     const b = block(page, 50010);
     await expect(b.locator(".eaa-name")).toHaveText(["1º Fechamento", "2º Fechamento", "Av2"]);
-    await expect(deadline(page, 50010, 0)).toHaveClass(/closed/);
-    await expect(deadline(page, 50010, 1)).toHaveClass(/closed/);
+    /* encerrados e todos corrigidos: uma linha só, sem barra */
+    for (const i of [0, 1]) {
+      await expect(deadline(page, 50010, i)).toHaveClass(/closed settled/);
+      await expect(deadline(page, 50010, i).locator(".eaa-seg")).toHaveCount(0);
+    }
+    await expect(deadline(page, 50010, 0)).toHaveText(/^1º Fechamento✓ 1 corrigida$/);
     const av2 = deadline(page, 50010, 2);
     await expect(av2).not.toHaveClass(/closed/);
     await expect(av2.locator(".eaa-when")).toHaveText(/^\d{2}\/\d{2} · 5 dias$/);
@@ -161,7 +181,8 @@ test.describe("Av2 e Av3", () => {
     await page.open();
     const b = block(page, 50011);
     await expect(b.locator(".eaa-name")).toHaveText(["1º Fechamento", "Av2", "Av3"]);
-    await expect(deadline(page, 50011, 1).locator(".eaa-caption")).toHaveText("1 de 1 entreguescorrigido");
+    /* Av2 encerrada e corrigida: uma linha só */
+    await expect(deadline(page, 50011, 1)).toHaveText(/^Av2✓ 1 corrigida$/);
     const av3 = deadline(page, 50011, 2);
     await expect(av3.locator(".eaa-when")).toHaveText(/^\d{2}\/\d{2} · 7 dias$/);
     await expect(av3.locator(".eaa-caption")).toHaveText("0 de 1 entregues1 a fazer");
@@ -190,7 +211,7 @@ test.describe("resumo do próximo prazo", () => {
   test("mostra o fechamento mais próximo somando todas as disciplinas visíveis", async ({ page }) => {
     await page.open();
     const r = summary(page);
-    await expect(r.locator(".eaa-r-title")).toHaveText("Av1 · Primeiro Fechamento");
+    await expect(r.locator(".eaa-r-title")).toHaveText("Av1 · 1º Fechamento");
     await expect(r.locator(".eaa-r-when")).toHaveText(/^\d{2}\/\d{2} às \d{2}:\d{2} · (hoje|amanhã)$/);
     await expect(r.locator(".eaa-r-when")).toHaveClass(/urgent/);
     /* 50001: corrigida, aguardando, a fazer · 50008: a fazer */
@@ -235,6 +256,10 @@ test.describe("resumo do próximo prazo", () => {
     const segments = deadline(page, 50001, 0).locator(".eaa-seg i");
     await expect(segments.nth(0)).toHaveCSS("background-color", GRADED);
     await expect(segments.nth(1)).toHaveCSS("background-color", AWAITING);
+    /* os dois estados claros têm contorno de 3:1 ou mais (sozinhos somem no branco) */
+    await expect(segments.nth(1)).toHaveCSS("box-shadow", "rgb(185, 125, 0) 0px 0px 0px 1px inset");
+    await expect(segments.nth(2)).toHaveCSS("box-shadow", "rgb(133, 146, 160) 0px 0px 0px 1px inset");
+    await expect(summary(page).locator(".eaa-r-legend i.todo")).toHaveCSS("box-shadow", "rgb(133, 146, 160) 0px 0px 0px 1px inset");
   });
 
   test("legenda com os cinco estados, de borda a borda e espaços iguais", async ({ page }) => {

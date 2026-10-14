@@ -88,6 +88,13 @@ test.describe("barra da disciplina", () => {
   test("janela estreita: compacta sem cobrir os links; estreita demais: some", async ({ page }) => {
     await page.open(ROUTES.start, 1100);
     await expect(box(page)).toHaveClass(/compact/);
+    /* saem a data e a contagem; ficam os dias que faltam e o ⚠ */
+    const last = columns(page).nth(1);
+    await expect(last.locator(".eaa-d-date")).toHaveCSS("font-size", "0px");
+    await expect(last.locator(".eaa-d-alert")).toBeVisible();
+    await expect(last.locator(".eaa-d-caption > :first-child")).toBeHidden();
+    await expect(last.locator(".eaa-d-days")).toBeVisible();
+    await expect(last.locator(".eaa-d-days")).toHaveText("30 dias");
     const m = await metrics(page);
     expect(m.box.left - m.linksEnd).toBeGreaterThanOrEqual(16);
 
@@ -114,7 +121,7 @@ test.describe("barra da disciplina", () => {
     await expect(panel(page)).toBeVisible();
 
     const groups = panel(page).locator(".eaa-d-group");
-    await expect(groups.locator(".eaa-d-ghead > :first-child")).toHaveText(["Av1 · Primeiro Fechamento", "Av1 · Último Fechamento", "Av2"]);
+    await expect(groups.locator(".eaa-d-ghead > :first-child")).toHaveText(["Av1 · 1º Fechamento", "Av1 · 2º Fechamento", "Av2"]);
     await expect(groups.nth(0).locator(".eaa-d-state")).toHaveText(["corrigida", "aguardando correção", "a fazer"]);
     await expect(groups.nth(1).locator(".eaa-d-state")).toHaveText(["iniciada e não enviada", "a fazer"]);
     /* Av2 com os links das duas partes (tarefa e questionário) */
@@ -165,7 +172,7 @@ test.describe("barra da disciplina", () => {
     await page.open("/d2l/home/50011");
     await expect(columns(page).locator(".eaa-d-name")).toHaveText(["Av2", "Av3"]);
     await button(page).click();
-    await expect(panel(page).locator(".eaa-d-ghead > :first-child")).toHaveText(["Av1 · Primeiro Fechamento", "Av2", "Av3 · Recuperação"]);
+    await expect(panel(page).locator(".eaa-d-ghead > :first-child")).toHaveText(["Av1 · 1º Fechamento", "Av2", "Av3 · Recuperação"]);
     await expect(panel(page).locator(".eaa-d-standing")).toHaveText("Av3 (recuperação) · 4,5");
   });
 

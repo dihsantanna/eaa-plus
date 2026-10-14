@@ -16,6 +16,13 @@
   --eaa-missed: #cd2026;        /* prazo perdido; também o vermelho de "urgente" */
   --eaa-track: #e3e9f1;         /* a fazer / fundo da barra */
 
+  /* contorno dos dois estados de preenchimento claro: sozinhos eles ficam
+     abaixo de 3:1 sobre o branco (WCAG 1.4.11) e sumiriam. Contornado = ainda
+     não corrigido; cheio = resolvido ou com problema. */
+  --eaa-todo-edge: #8592a0;     /* 3,2:1 sobre branco */
+  --eaa-awaiting-edge: #b97d00; /* 3,5:1 sobre branco */
+  --eaa-todo-edge-on-dark: rgba(255, 255, 255, 0.6);
+
   /* estados como texto (mais escuros, para contraste sobre branco) */
   --eaa-graded-text: #2c7a43;
   --eaa-awaiting-text: #8a5300;
