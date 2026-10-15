@@ -244,20 +244,55 @@ test.describe("resumo do próximo prazo", () => {
     expect(Math.abs(finalHeight - loadingHeight), "sem pulo de altura ao terminar").toBeLessThan(1);
   });
 
-  test("lista do que falta: uma linha por disciplina, com link, barra e o que falta", async ({ page }) => {
+  test("lista do que falta: uma linha por disciplina, com a barra dela e o que falta", async ({ page }) => {
     await page.open();
     const rows = summary(page).locator(".eaa-r-course");
     await expect(rows).toHaveCount(2);
     /* mesma quantidade a fazer: ordem pelo nome */
     await expect(rows.locator(".eaa-r-cname")).toHaveText(["Percepção Musical I", "Técnica Vocal I"]);
     await expect(rows.locator(".eaa-r-cleft")).toHaveText(["1 a fazer", "1 a fazer"]);
-    await expect(rows.nth(1)).toHaveAttribute("href", "/d2l/home/50001");
     /* a barra da linha é a da disciplina neste prazo: corrigida, aguardando, a fazer */
     expect(await segs(rows.nth(1))).toEqual(["graded", "awaiting", "todo"]);
     const heights = await rows.evaluateAll((f) => f.map((x) => x.getBoundingClientRect().height));
     expect(new Set(heights).size, "linhas com a mesma altura").toBe(1);
     /* duas pendentes: nada escondido, sem "Ver mais" */
     await expect(summary(page).locator(".eaa-r-more")).toHaveCount(0);
+  });
+
+  test("a linha abre as atividades da disciplina, com estado e link direto", async ({ page }) => {
+    await page.open();
+    const row = summary(page).locator("li[data-ou='50001']");
+    const button = row.locator(".eaa-r-course");
+    const acts = row.locator(".eaa-r-acts");
+    await expect(button).toHaveAttribute("aria-expanded", "false");
+    await expect(acts).toBeHidden();
+
+    await button.click();
+    await expect(button).toHaveAttribute("aria-expanded", "true");
+    await expect(acts).toBeVisible();
+    /* mesma ordem da barrinha da linha */
+    await expect(acts.locator(".eaa-r-istate")).toHaveText(["corrigida", "aguardando correção", "a fazer"]);
+    await expect(acts.locator("a.eaa-r-iname").first()).toHaveAttribute("href", "/d2l/lms/quizzing/user/quiz_summary.d2l?ou=50001&qi=8001&cfql=1");
+    await expect(acts.locator("a.eaa-r-iname").nth(1)).toHaveAttribute("href", "/d2l/lms/dropbox/user/folder_submit_files.d2l?db=7001&grpid=0&isprv=0&bp=0&ou=50001");
+    await expect(acts.locator(".eaa-r-gocourse")).toHaveAttribute("href", "/d2l/home/50001");
+    /* a outra continua fechada */
+    await expect(summary(page).locator("li[data-ou='50008'] .eaa-r-acts")).toBeHidden();
+
+    /* continua aberta depois de algumas varreduras, e fecha pelo teclado */
+    await page.waitForTimeout(1500);
+    await expect(acts).toBeVisible();
+    await button.focus();
+    await page.keyboard.press("Enter");
+    await expect(acts).toBeHidden();
+    await expect(button).toBeFocused();
+  });
+
+  test("linha do resumo resiste ao CSS do AVA", async ({ page }) => {
+    await page.open();
+    const button = summary(page).locator(".eaa-r-course").first();
+    await expect(button).toHaveCSS("padding", "0px 4px");
+    await expect(button).toHaveCSS("text-align", "left");
+    await expect(button).toHaveCSS("border-top-width", "0px");
   });
 
   test("cores do tema (ava-theme.css) chegam ao resumo e ao shadow DOM dos cards", async ({ page }) => {

@@ -33,7 +33,7 @@ pasta dela em `src/features/`.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 35 unitários (regras, <1s) + 51 E2E com a extensão carregada de verdade
+npm test                           # 35 unitários (regras, <1s) + 53 E2E com a extensão carregada de verdade
 npm run test:unit                  # só os unitários das regras (tests/unit/, TypeScript direto no Node)
 npm run typecheck                  # tsc estrito (sem gerar arquivos)
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
@@ -320,6 +320,10 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
   pelo aluno no painel. Mexer nos cards do próprio AVA (imagem menor, título
   em 2 linhas) foi avaliado e **deixado de fora** de propósito: ganho pequeno
   e muda o AVA de todos que instalaram.
+- **1.0.2** (2026-10-15): no resumo, cada linha de disciplina abre e mostra
+  as atividades dela no prazo, com estado e link direto. Zip em
+  `dist/eaa-plus-v1.0.2.zip`. Se a 1.0.1 ainda não foi enviada, basta enviar
+  a 1.0.2 (inclui tudo).
 - Visibilidade recomendada: **não listado** (só instala quem tem o link).
 - Toda atualização precisa de `version` maior no `manifest.json` e do mesmo
   lado em `package.json`.

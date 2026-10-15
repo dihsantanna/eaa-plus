@@ -206,7 +206,10 @@ flowchart TD
 - **Lista em vez de fichas:** as fichas pareciam filtros, o número sozinho não
   dizia o que contava e os nomes eram cortados. Cada linha diz "2 a fazer"
   (ou "⚠ 1 não enviada"), com a barra da disciplina; ordem por urgência
-  (`byUrgency()`). Até 4 à vista (`rowsShown()`), o resto em "Ver mais" —
+  (`byUrgency()`). A linha abre e mostra cada atividade com o estado e o
+  link direto, sem ler nada novo (o link já vem com a atividade); a linha
+  aberta continua aberta quando o conteúdo é reescrito (`openRows`).
+  Até 4 à vista (`rowsShown()`), o resto em "Ver mais" —
   que não é lembrado: o AVA recarrega a página a cada clique e guardar a
   escolha pediria `storage.local` (disco, muda a política).
 - **Prazo resolvido em uma linha** (`isSettled()`: encerrado e todo

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "EAA+ — Melhorias para alunos",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Progresso das avaliações no AVA da EAA/FABAT: o que já foi corrigido, o que aguarda correção, o que falta e os prazos.",
   "icons": {
     "16": "icons/icon16.png",

@@ -20,6 +20,9 @@ export class HomeState {
   readonly noBlock = new Set<string>();
   /** Quando começou a espera do painel geral (null = nada pendente). */
   loadStart: number | null = null;
+  /** Linhas do resumo abertas (ou): o conteúdo é reescrito quando chega
+   *  dado novo, e elas continuam abertas. Só nesta página, nada guardado. */
+  readonly openRows = new Set<string>();
 
   reset(): void {
     this.generation++;
