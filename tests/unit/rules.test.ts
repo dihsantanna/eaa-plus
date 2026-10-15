@@ -216,6 +216,25 @@ describe("grupos por prazo e resumo (summarize)", () => {
   });
 });
 
+describe("lista do resumo (byUrgency, rowsShown)", () => {
+  test("não enviada primeiro, depois quem tem mais a fazer, depois o nome", () => {
+    const list = [
+      { name: "Técnica Vocal I", started: 0, pending: 2 },
+      { name: "Canto Coral", started: 0, pending: 2 },
+      { name: "Harmonia I", started: 1, pending: 1 },
+      { name: "Leitura e Escrita", started: 0, pending: 4 },
+    ];
+    assert.deepEqual(
+      [...list].sort(R.byUrgency).map((d) => d.name),
+      ["Harmonia I", "Leitura e Escrita", "Canto Coral", "Técnica Vocal I"]
+    );
+  });
+
+  test("até 4 à vista; esconder uma só não vale um 'Ver mais'", () => {
+    assert.deepEqual([0, 1, 4, 5, 6, 9].map(R.rowsShown), [0, 1, 4, 5, 4, 4]);
+  });
+});
+
 describe("situação pela regra do manual (standing)", () => {
   const base = { hasAv: true, av1: 3, av2: null, av3: null, c1: { awaiting: 0, pending: 0 } } as unknown as CourseSummary;
 

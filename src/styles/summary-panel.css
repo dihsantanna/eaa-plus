@@ -91,60 +91,108 @@
 #eaa-summary .eaa-r-tag.started { color: var(--eaa-started-text); }
 #eaa-summary .eaa-r-tag.graded { color: var(--eaa-graded-text); }
 
-#eaa-summary .eaa-r-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 4px;
+/* O que falta, por disciplina: uma linha cada, toda ela um link. Colunas
+   fixas (nome | barra | o que falta | seta) para as linhas lerem como tabela. */
+#eaa-summary .eaa-r-courses {
+  display: grid;
+  margin-top: 4px;
+  list-style: none;
 }
 
-#eaa-summary .eaa-r-chip {
-  display: inline-flex;
+#eaa-summary .eaa-r-courses li {
+  border-top: 1px solid var(--eaa-track);
+}
+
+#eaa-summary .eaa-r-course {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 120px 16px;
   align-items: center;
-  gap: 8px;
-  height: 28px;
-  padding: 0 4px 0 12px;
-  border: 1px solid var(--eaa-border);
-  border-radius: 14px;
-  background: var(--eaa-surface);
+  gap: 12px;
+  min-height: 32px;
+  padding: 0 4px;
+  border-radius: 4px;
   color: var(--eaa-ink);
   font-size: 13px;
   text-decoration: none;
 }
 
-#eaa-summary .eaa-r-chip:hover,
-#eaa-summary .eaa-r-chip:focus-visible {
-  border-color: var(--eaa-link);
-  color: var(--eaa-link);
+#eaa-summary a.eaa-r-course:hover {
+  background: var(--eaa-surface);
 }
 
-#eaa-summary .eaa-r-chip:focus-visible {
+#eaa-summary a.eaa-r-course:hover .eaa-r-cname,
+#eaa-summary a.eaa-r-course:focus-visible .eaa-r-cname {
+  color: var(--eaa-link);
+  text-decoration: underline;
+}
+
+#eaa-summary a.eaa-r-course:focus-visible {
   outline: 2px solid var(--eaa-link);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 #eaa-summary .eaa-r-cname {
-  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-#eaa-summary .eaa-r-cnum {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 10px;
-  background: var(--eaa-track);
-  font-weight: 700;
+#eaa-summary .eaa-r-course .eaa-seg {
+  height: 6px;
+}
+
+#eaa-summary .eaa-r-cleft {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--eaa-muted);
   font-variant-numeric: tabular-nums;
 }
 
+#eaa-summary .eaa-r-course.started .eaa-r-cleft {
+  color: var(--eaa-started-text);
+  font-weight: 700;
+}
+
+#eaa-summary .eaa-r-go {
+  color: var(--eaa-muted);
+}
+
+/* "Ver mais": fechado por padrão; a classe fica no #eaa-summary */
+#eaa-summary:not(.expanded) .eaa-r-extra,
+#eaa-summary:not(.expanded) .eaa-r-open,
+#eaa-summary.expanded .eaa-r-closed {
+  display: none;
+}
+
+#eaa-summary .eaa-r-more {
+  -webkit-appearance: none;
+  appearance: none;
+  justify-self: start;
+  height: 24px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0 4px; /* o tema pode dar padding a todo <button> */
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  box-shadow: none;
+  font: 700 12px/24px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color: var(--eaa-link);
+  cursor: pointer;
+}
+
+#eaa-summary .eaa-r-more:hover {
+  text-decoration: underline;
+}
+
+#eaa-summary .eaa-r-more:focus-visible {
+  outline: 2px solid var(--eaa-link);
+  outline-offset: 2px;
+}
+
 /* Carregamento: mesma moldura e mesmas linhas do resultado. A barra enche
-   conforme as disciplinas respondem; as fichas vazias guardam o lugar. */
+   conforme as disciplinas respondem; as linhas vazias guardam o lugar. */
 #eaa-summary .eaa-r-status {
   font-weight: 400;
   color: var(--eaa-muted);
@@ -165,8 +213,10 @@
   transition: width 0.2s ease;
 }
 
-#eaa-summary .eaa-r-chip.eaa-r-empty {
-  border-color: transparent;
+#eaa-summary .eaa-r-empty i {
+  display: block;
+  height: 12px;
+  border-radius: 3px;
   background: var(--eaa-neutral-bg);
 }
 
@@ -249,13 +299,4 @@
 #eaa-summary .eaa-r-refresh:disabled {
   color: var(--eaa-muted);
   cursor: default;
-}
-
-#eaa-summary .eaa-r-chip.started {
-  border-color: var(--eaa-started);
-}
-
-#eaa-summary .eaa-r-chip.started .eaa-r-cnum {
-  background: var(--eaa-started);
-  color: var(--eaa-white);
 }

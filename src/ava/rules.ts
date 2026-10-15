@@ -371,6 +371,23 @@ export function isSettled(g: DeadlineGroup, now = Date.now()): boolean {
  *  não é resultado, como a fórmula da Av2. */
 export const hasGrade = (r: CourseSummary): boolean => r.av1 > 0 || r.c1.graded > 0;
 
+/** Resumo da página inicial: quantas disciplinas pendentes ficam à vista
+ *  antes do "Ver mais". */
+export const SUMMARY_ROWS = 4;
+
+/** Linhas à vista: até SUMMARY_ROWS; se só uma ficaria escondida, mostra
+ *  todas ("Ver mais 1 disciplina" ocuparia a mesma linha que ela). */
+export const rowsShown = (n: number): number => (n <= SUMMARY_ROWS + 1 ? n : SUMMARY_ROWS);
+
+/** Ordem do resumo: primeiro quem tem atividade iniciada e não enviada
+ *  (perde-se o que já foi feito), depois quem tem mais a fazer, depois o nome. */
+export function byUrgency(
+  a: { started: number; pending: number; name: string },
+  b: { started: number; pending: number; name: string }
+): number {
+  return b.started - a.started || b.pending - a.pending || a.name.localeCompare(b.name, "pt-BR");
+}
+
 /** Prazo de hoje ou amanhã com algo ainda por fazer. */
 export function isUrgent(g: DeadlineGroup, now = Date.now()): boolean {
   return !!(g.deadline && g.deadline >= now && g.c.pending && daysUntil(g.deadline, now) <= 1);

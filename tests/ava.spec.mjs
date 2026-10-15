@@ -223,7 +223,8 @@ test.describe("resumo do próximo prazo", () => {
     await expect(r.locator(".eaa-r-when")).toHaveClass(/urgent/);
     /* 50001: corrigida, aguardando, a fazer · 50008: a fazer */
     await expect(r.locator(".eaa-r-caption")).toHaveText("2 de 4 atividades entreguesfaltam 2");
-    expect(await segs(r)).toEqual(["graded", "awaiting", "todo", "todo"]);
+    /* só a barra somada (as linhas da lista têm a barra delas) */
+    expect(await r.locator(".eaa-r-seg i").evaluateAll((is) => is.map((i) => i.className))).toEqual(["graded", "awaiting", "todo", "todo"]);
   });
 
   test("fica carregando até todas as disciplinas responderem, sem números parciais", async ({ page, baseURL }) => {
@@ -233,7 +234,7 @@ test.describe("resumo do próximo prazo", () => {
     await expect(r).toHaveAttribute("aria-busy", "true", { timeout: 8000 });
     await expect(r.locator(".eaa-r-status")).toHaveText(/^carregando \d+ de \d+ disciplinas…$/);
     await expect(r.locator(".eaa-r-caption")).not.toContainText("entregues");
-    await expect(r.locator(".eaa-r-chip:not(.eaa-r-empty)")).toHaveCount(0);
+    await expect(r.locator(".eaa-r-course:not(.eaa-r-empty)")).toHaveCount(0);
     await expect(r.locator(".eaa-r-legend li")).toHaveCount(5);
     const loadingHeight = await r.evaluate((e) => e.getBoundingClientRect().height);
 
@@ -243,15 +244,20 @@ test.describe("resumo do próximo prazo", () => {
     expect(Math.abs(finalHeight - loadingHeight), "sem pulo de altura ao terminar").toBeLessThan(1);
   });
 
-  test("fichas das disciplinas pendentes levam para a disciplina", async ({ page }) => {
+  test("lista do que falta: uma linha por disciplina, com link, barra e o que falta", async ({ page }) => {
     await page.open();
-    const chips = summary(page).locator(".eaa-r-chip");
-    await expect(chips).toHaveCount(2);
-    await expect(chips.nth(0)).toHaveText("Técnica Vocal I1");
-    await expect(chips.nth(0)).toHaveAttribute("href", "/d2l/home/50001");
-    await expect(chips.nth(1)).toHaveText("Percepção Musical I1");
-    const heights = await chips.evaluateAll((f) => f.map((x) => x.getBoundingClientRect().height));
-    expect(new Set(heights).size, "fichas com a mesma altura").toBe(1);
+    const rows = summary(page).locator(".eaa-r-course");
+    await expect(rows).toHaveCount(2);
+    /* mesma quantidade a fazer: ordem pelo nome */
+    await expect(rows.locator(".eaa-r-cname")).toHaveText(["Percepção Musical I", "Técnica Vocal I"]);
+    await expect(rows.locator(".eaa-r-cleft")).toHaveText(["1 a fazer", "1 a fazer"]);
+    await expect(rows.nth(1)).toHaveAttribute("href", "/d2l/home/50001");
+    /* a barra da linha é a da disciplina neste prazo: corrigida, aguardando, a fazer */
+    expect(await segs(rows.nth(1))).toEqual(["graded", "awaiting", "todo"]);
+    const heights = await rows.evaluateAll((f) => f.map((x) => x.getBoundingClientRect().height));
+    expect(new Set(heights).size, "linhas com a mesma altura").toBe(1);
+    /* duas pendentes: nada escondido, sem "Ver mais" */
+    await expect(summary(page).locator(".eaa-r-more")).toHaveCount(0);
   });
 
   test("cores do tema (ava-theme.css) chegam ao resumo e ao shadow DOM dos cards", async ({ page }) => {

@@ -163,7 +163,7 @@ flowchart TD
     J{"<b>updateSummaryPanel()</b><br/>todas as disciplinas<br/>visíveis responderam?"}
     K["<b>loadingHtml()</b><br/>'carregando 4 de 9…' com a mesma altura do resultado"]
     L["<b>overallSummary()</b><br/>acha o dia do próximo prazo entre todas<br/>e junta as atividades desse dia"]
-    M["<b>summaryHtml()</b><br/>barra somada, fichas das disciplinas pendentes,<br/>legenda e 'Atualizado às' + Atualizar"]
+    M["<b>summaryHtml()</b><br/>barra somada, lista das disciplinas pendentes<br/>('Ver mais' a partir da 5ª), legenda e<br/>'Atualizado às' + Atualizar"]
   end
 
   A --> B
@@ -203,6 +203,12 @@ flowchart TD
   outro.
 - **Painel geral espera todas:** somar parcialmente mostraria números errados;
   depois de 20 s mostra o que tiver.
+- **Lista em vez de fichas:** as fichas pareciam filtros, o número sozinho não
+  dizia o que contava e os nomes eram cortados. Cada linha diz "2 a fazer"
+  (ou "⚠ 1 não enviada"), com a barra da disciplina; ordem por urgência
+  (`byUrgency()`). Até 4 à vista (`rowsShown()`), o resto em "Ver mais" —
+  que não é lembrado: o AVA recarrega a página a cada clique e guardar a
+  escolha pediria `storage.local` (disco, muda a política).
 - **Prazo resolvido em uma linha** (`isSettled()`: encerrado e todo
   corrigido): não pede mais nada do aluno, então dá o espaço ao que está
   aberto. Encerrado com perdida ou aguardando continua inteiro.

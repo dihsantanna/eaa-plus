@@ -1,15 +1,16 @@
 /* Feature 2 — painel geral, acima dos cards.
  *
  * O próximo fechamento comum às disciplinas visíveis: quantas atividades já
- * foram entregues, em quais disciplinas ainda falta algo (fichas com link),
- * a legenda das cores e a hora dos dados, com o botão Atualizar.
+ * foram entregues, em quais disciplinas ainda falta algo (uma linha por
+ * disciplina, com link, a barra dela e o que falta; a partir da 5ª, atrás de
+ * "Ver mais"), a legenda das cores e a hora dos dados, com o botão Atualizar.
  *
  * Onde: DOM normal, logo antes de d2l-my-courses-v2 (CSS em
  * styles/summary-panel.css, vindo do manifest).
  */
 
 import { dayOf, daysUntil, escapeHtml as esc, formatDate, formatTime, plural, timeLeft } from "../../ava/format.ts";
-import { tally } from "../../ava/rules.ts";
+import { byUrgency, rowsShown, tally } from "../../ava/rules.ts";
 import type { Activity, Tally } from "../../ava/types.ts";
 import { LEGEND, segments } from "../shared/render.ts";
 import type { HomeState } from "./state.ts";
@@ -24,6 +25,8 @@ interface PendingCourse {
   name: string;
   pending: number;
   started: number;
+  /** as atividades dela neste prazo (a barrinha da linha) */
+  items: Activity[];
 }
 
 interface Overall {
@@ -60,9 +63,19 @@ function overallSummary(visible: string[], state: HomeState, now = Date.now()): 
       if (!res.longLabel && g.named) res.longLabel = g.longLabel;
       res.items.push(...g.c.items);
       res.startedCount += g.c.started;
-      if (g.c.pending) res.courses.push({ ou, name, pending: g.c.pending, started: g.c.started });
+      if (!g.c.pending) continue;
+      /* a Av1 e a Av2 de uma disciplina podem vencer no mesmo dia: uma linha só */
+      const same = res.courses.find((d) => d.ou === ou);
+      if (same) {
+        same.pending += g.c.pending;
+        same.started += g.c.started;
+        same.items.push(...g.c.items);
+      } else {
+        res.courses.push({ ou, name, pending: g.c.pending, started: g.c.started, items: [...g.c.items] });
+      }
     }
   }
+  res.courses.sort(byUrgency);
   return { ...res, longLabel: res.longLabel || "Próximo prazo", c: tally(res.items) };
 }
 
@@ -70,6 +83,43 @@ function overallSummary(visible: string[], state: HomeState, now = Date.now()): 
 function shortName(name: string): string {
   const before = name.split(":")[0].trim();
   return before.length >= 3 ? before : name;
+}
+
+const CHEVRON =
+  `<svg class="eaa-r-go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ` +
+  `stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
+
+/** Uma linha por disciplina com algo a fazer: nome (leva à disciplina), a
+ *  barra dela neste prazo e o que falta. As que passam do limite levam
+ *  "eaa-r-extra" e só aparecem com o painel aberto ("Ver mais"). */
+function courseRow(d: PendingCourse, extra: boolean): string {
+  const left = d.started ? `⚠ ${plural(d.started, "não enviada", "não enviadas")}` : `${d.pending} a fazer`;
+  return (
+    `<li${extra ? ` class="eaa-r-extra"` : ""}>` +
+    `<a class="eaa-r-course${d.started ? " started" : ""}" href="/d2l/home/${d.ou}" title="${esc(d.name)}">` +
+    `<span class="eaa-r-cname">${esc(shortName(d.name))}</span>` +
+    segments(d.items, "eaa-r-cseg") +
+    `<span class="eaa-r-cleft">${left}</span>${CHEVRON}</a></li>`
+  );
+}
+
+/** O "Ver mais" não guarda nada: o AVA recarrega a página a cada clique, e
+ *  lembrar a escolha pediria storage.local (disco). Aberto ou fechado é uma
+ *  classe no próprio #eaa-summary, que sobrevive às reescritas do conteúdo. */
+function courseList(courses: PendingCourse[]): string {
+  if (!courses.length) return "";
+  const shown = rowsShown(courses.length);
+  const hidden = courses.length - shown;
+  return (
+    `<ul class="eaa-r-courses" aria-label="Disciplinas com atividade a fazer">` +
+    courses.map((d, i) => courseRow(d, i >= shown)).join("") +
+    `</ul>` +
+    (hidden
+      ? `<button type="button" class="eaa-r-more" aria-expanded="false">` +
+        `<span class="eaa-r-closed">Ver mais ${plural(hidden, "disciplina", "disciplinas")}</span>` +
+        `<span class="eaa-r-open">Ver menos</span></button>`
+      : "")
+  );
 }
 
 /** Uma legenda só, no resumo (os cards não têm largura para ela). */
@@ -92,20 +142,13 @@ function summaryHtml(res: Overall): string {
     : `<span class="eaa-r-tag${res.startedCount ? " started" : ""}">` +
       (res.startedCount ? `⚠ ${plural(res.startedCount, "não enviada", "não enviadas")} · ` : "") +
       `faltam ${res.c.pending}</span>`;
-  const chips = res.courses
-    .map(
-      (d) =>
-        `<a class="eaa-r-chip${d.started ? " started" : ""}" href="/d2l/home/${d.ou}" title="${esc(d.name)}">` +
-        `<span class="eaa-r-cname">${esc(shortName(d.name))}</span><span class="eaa-r-cnum">${d.pending}</span></a>`
-    )
-    .join("");
   return (
     `<div class="eaa-r-pair"><span class="eaa-r-title">${esc(res.longLabel)}</span>` +
     `<span class="eaa-r-when${urgent ? " urgent" : ""}">` +
     `${formatDate(res.deadline)} às ${formatTime(res.deadline)} · ${timeLeft(res.deadline, true)}</span></div>` +
     segments(res.c.items, "eaa-r-seg") +
     `<div class="eaa-r-pair eaa-r-caption"><span>${res.c.delivered} de ${res.c.items.length} atividades entregues</span>${right}</div>` +
-    (chips ? `<div class="eaa-r-chips">${chips}</div>` : "") +
+    courseList(res.courses) +
     legend() +
     footer(res.readAt)
   );
@@ -122,10 +165,9 @@ function loadingHtml(readyCount: number, total: number): string {
     `<span class="eaa-r-when eaa-r-status" role="status">carregando ${readyCount} de ${total} disciplinas…</span></div>` +
     `<div class="eaa-r-progress" aria-hidden="true"><i style="width:${pct}%"></i></div>` +
     `<div class="eaa-r-pair eaa-r-caption"><span>Lendo notas e entregas no AVA</span><span></span></div>` +
-    `<div class="eaa-r-chips" aria-hidden="true">` +
-    `<span class="eaa-r-chip eaa-r-empty" style="width:128px"></span>` +
-    `<span class="eaa-r-chip eaa-r-empty" style="width:96px"></span>` +
-    `<span class="eaa-r-chip eaa-r-empty" style="width:152px"></span></div>` +
+    `<ul class="eaa-r-courses" aria-hidden="true">` +
+    `<li><span class="eaa-r-course eaa-r-empty"><i style="width:176px"></i></span></li>` +
+    `<li><span class="eaa-r-course eaa-r-empty"><i style="width:128px"></i></span></li></ul>` +
     legend() +
     footer(null)
   );
@@ -158,8 +200,14 @@ export function updateSummaryPanel(visible: string[], state: HomeState, onRefres
     box.id = SUMMARY_ID;
     box.setAttribute("aria-label", "Próximo prazo das disciplinas");
     box.addEventListener("click", (ev) => {
-      const button = (ev.target as Element).closest?.<HTMLButtonElement>(".eaa-r-refresh");
+      const target = ev.target as Element;
+      const button = target.closest?.<HTMLButtonElement>(".eaa-r-refresh");
       if (button && !button.disabled) onRefresh();
+      const more = target.closest?.(".eaa-r-more");
+      if (more) {
+        const open = (ev.currentTarget as HTMLElement).classList.toggle("expanded");
+        more.setAttribute("aria-expanded", String(open));
+      }
     });
   }
   box.setAttribute("aria-busy", String(loading));
@@ -168,5 +216,6 @@ export function updateSummaryPanel(visible: string[], state: HomeState, onRefres
   if (box.dataset.html !== fresh) {
     box.dataset.html = fresh;
     box.innerHTML = fresh;
+    box.querySelector(".eaa-r-more")?.setAttribute("aria-expanded", String(box.classList.contains("expanded")));
   }
 }

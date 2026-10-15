@@ -33,7 +33,7 @@ pasta dela em `src/features/`.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 33 unitários (regras, <1s) + 51 E2E com a extensão carregada de verdade
+npm test                           # 35 unitários (regras, <1s) + 51 E2E com a extensão carregada de verdade
 npm run test:unit                  # só os unitários das regras (tests/unit/, TypeScript direto no Node)
 npm run typecheck                  # tsc estrito (sem gerar arquivos)
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
@@ -314,7 +314,9 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
   nova revisão do Google antes de valer.
 - **1.0.1** (2026-10-14, patch de UI: contraste, prazo resolvido em uma linha,
   "sem nota ainda", nome da atividade nos segmentos, mesmos nomes nas três
-  telas, dias na barra compacta). Zip em `dist/eaa-plus-v1.0.1.zip`, a enviar
+  telas, dias na barra compacta; progresso logo abaixo do título do card,
+  alinhado por fileira e com divisor; no resumo, lista das disciplinas
+  pendentes no lugar das fichas, até 4 à vista + "Ver mais"). Zip em `dist/eaa-plus-v1.0.1.zip`, a enviar
   pelo aluno no painel. Mexer nos cards do próprio AVA (imagem menor, título
   em 2 linhas) foi avaliado e **deixado de fora** de propósito: ganho pequeno
   e muda o AVA de todos que instalaram.
