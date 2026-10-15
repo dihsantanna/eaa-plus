@@ -33,7 +33,7 @@ pasta dela em `src/features/`.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 35 unitários (regras, <1s) + 53 E2E com a extensão carregada de verdade
+npm test                           # 35 unitários (regras, <1s) + 54 E2E com a extensão carregada de verdade
 npm run test:unit                  # só os unitários das regras (tests/unit/, TypeScript direto no Node)
 npm run typecheck                  # tsc estrito (sem gerar arquivos)
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
@@ -306,6 +306,18 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
 6. **Dois Chromes conectados ao Claude in Chrome.** O logado no AVA é o
    "Browser 1". O outro cai na tela de login.
 
+7. **Hover do card.** Com o mouse em cima, o AVA põe
+   `.d2l-card-link-container-hover` (sublinhado + celeste) no container do
+   conteúdo, e isso se propaga a tudo no fluxo. Por isso o bloco é
+   `inline-grid` (inline atômico não herda o sublinhado). A réplica imita o
+   hover; o teste compara prints do bloco com e sem o mouse.
+
+8. **Bug do AVA no "Fixar"** (2026-10-15, confirmado com a extensão
+   desativada): a aba "Fixado" entra e o `dom-repeat` do Polymer reaproveita
+   os painéis por posição; o painel visível fica com `_thisTabSelected=false`
+   e gira para sempre. Não é nosso: contorno é trocar de aba ou recarregar.
+   Não mexer nos internos do AVA para "consertar".
+
 ## Publicação — estado atual
 
 - Chrome Web Store, conta do aluno. A versão 1.0.0 (só AVA,
@@ -322,9 +334,13 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
   em 2 linhas) foi avaliado e **deixado de fora** de propósito: ganho pequeno
   e muda o AVA de todos que instalaram.
 - **1.0.2** (2026-10-15): no resumo, cada linha de disciplina abre e mostra
-  as atividades dela no prazo, com estado e link direto. Zip em
-  `dist/eaa-plus-v1.0.2.zip`. Se a 1.0.1 ainda não foi enviada, basta enviar
-  a 1.0.2 (inclui tudo).
+  as atividades dela no prazo, com estado e link direto. Enviada para revisão
+  em 2026-10-15.
+- **1.0.3** (2026-10-15): corrige o bloco do card sublinhado/azul com o mouse
+  em cima (regressão da 1.0.1). Zip em `dist/eaa-plus-v1.0.3.zip`. Se a 1.0.2
+  ainda estiver em revisão: Store listing → ⋮ → Cancel review e envie a 1.0.3.
+- Histórico para o aluno: `CHANGELOG.md`; a seção NOVIDADES da descrição
+  (GUIA-PUBLICACAO.md) traz só a última versão.
 - Visibilidade recomendada: **não listado** (só instala quem tem o link).
 - Toda atualização precisa de `version` maior no `manifest.json` e do mesmo
   lado em `package.json`.

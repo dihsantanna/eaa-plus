@@ -158,6 +158,18 @@ test.describe("progresso nas disciplinas", () => {
     await expect(block(page, 50001)).toHaveCount(1);
   });
 
+  test("mouse em cima do card não sublinha nem pinta o bloco", async ({ page }) => {
+    await page.open();
+    const b = block(page, 50001);
+    await page.mouse.move(0, 0);
+    const before = await b.screenshot();
+    /* em cima do card (o <a> do AVA cobre tudo): o card inteiro fica "hover" */
+    await d2lCard(page, 50001).locator("d2l-card").hover({ position: { x: 20, y: 100 } });
+    await expect(d2lCard(page, 50001).locator(".d2l-card-link-container-hover")).toHaveCount(1);
+    const during = await b.screenshot();
+    expect(during.equals(before), "o bloco mudou com o mouse em cima do card").toBe(true);
+  });
+
   test("texto do bloco não herda os 19px do card", async ({ page }) => {
     await page.open();
     const size = await block(page, 50001).evaluate((el) => getComputedStyle(el).fontSize);

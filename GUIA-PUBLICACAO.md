@@ -1,20 +1,20 @@
 # EAA+ — Melhorias para alunos
-### Guia de publicação na Chrome Web Store · versão 1.0.2
+### Guia de publicação na Chrome Web Store · versão 1.0.3
 
 > **Atualização.** A 1.0.0 já está publicada (aprovada em outubro de 2026). A
-> 1.0.2 entra como **novo pacote do mesmo item**, não como item novo — veja a
-> seção 3. Ela roda **só no AVA** (Brightspace) da EAA/FABAT.
+> 1.0.3 entra como **novo pacote do mesmo item**, não como item novo — veja a
+> seção 3. Se a 1.0.2 ainda estiver em revisão: **Store listing → ⋮ → Cancel
+> review** (o envio volta a rascunho) e envie a 1.0.3, que inclui tudo dela. Ela roda **só no AVA** (Brightspace) da EAA/FABAT.
 >
 > Cada pacote enviado precisa ter a versão **maior** que a publicada
 > (*"Each new version must have a larger version number than the previous
-> version"*). A 1.0.2 inclui tudo da 1.0.1: se a 1.0.1 não foi enviada, envie
-> direto a 1.0.2. O que mudou em cada versão está em `CHANGELOG.md`.
+> version"*). A 1.0.3 inclui tudo da 1.0.1 e da 1.0.2. O que mudou em cada versão está em `CHANGELOG.md`.
 
 ---
 
 ## 1. O que está no pacote
 
-`dist/eaa-plus-v1.0.2.zip` — gerado por `npm run build` a partir da pasta `build/`, pronto para upload:
+`dist/eaa-plus-v1.0.3.zip` — gerado por `npm run build` a partir da pasta `build/`, pronto para upload:
 
 | Arquivo | Função |
 |---|---|
@@ -52,9 +52,9 @@ Teste local **não consome** slot do limite de extensões da conta.
 
 ## 3. Upload
 
-**Atualização (1.0.2):** Dashboard → clique no item **EAA+** → aba
+**Atualização (1.0.3):** Dashboard → clique no item **EAA+** → aba
 **Pacote** (*Package*) → **Enviar novo pacote** (*Upload new package*) → escolha
-`dist/eaa-plus-v1.0.2.zip`. Depois atualize a descrição (seção 4) e envie para
+`dist/eaa-plus-v1.0.3.zip`. Depois atualize a descrição (seção 4) e envie para
 revisão (seção 7). Permissões e `matches` não mudaram: as abas de
 Privacidade e Distribuição continuam como estão.
 
@@ -93,7 +93,7 @@ ajudar a si mesmo e aos colegas. Não é um produto oficial e não possui
 vínculo com a Escola de Adoração e Arte nem com a Faculdade Batista
 (FABAT).
 
-NOVIDADES DA VERSÃO 1.0.2
+NOVIDADES DA VERSÃO 1.0.3
    • No resumo acima dos cards, uma linha por disciplina com o que falta;
      um clique abre as atividades, com o estado de cada uma e o link
      direto para ela
@@ -172,7 +172,7 @@ descrição e o link do histórico vai junto, como complemento.
 | Ícone 128×128 | ✅ já vai no `.zip` |
 | Promo pequeno 440×280 (**obrigatório**) | ✅ `store/promo-440x280.png` |
 | Marquee 1400×560 (opcional) | ✅ `store/marquee-1400x560.png` |
-| Screenshot 1280×800 (**mínimo 1**) | ⬜ capture de novo na 1.0.2: o Google pede screenshots da versão atual, e o resumo mudou |
+| Screenshot 1280×800 (**mínimo 1**) | ⬜ capture de novo na 1.0.3: o Google pede screenshots da versão atual, e o resumo mudou |
 
 As imagens de `store/` saem de `python tools/generate-images.py`.
 
@@ -367,6 +367,11 @@ Ampliar o `matches` para outro site **muda as permissões do item**: a atualiza�
 - de duas páginas HTML do AVA: a Lista de questionários e a de Atividades com Anexo (`src/ava/network.ts`).
 
 Se algo mudar, os cards ficam como eram (sem erro na tela) e o Console mostra `[EAA+] progresso da disciplina ...`. O `CLAUDE.md` documenta onde cada coisa é lida.
+
+**Bug do próprio AVA (não da extensão), visto em 15/10/2026:** ao **Fixar**
+uma disciplina, a aba "Fixado" aparece e a aba aberta fica carregando sem
+parar. Acontece com a extensão desativada também. Contorno: trocar de aba e
+voltar, ou recarregar a página.
 
 Para diagnosticar: `F12` → Console. Se uma melhoria quebrar, o núcleo registra `[EAA+] melhoria "id" falhou:` e segue rodando as outras.
 

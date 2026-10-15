@@ -351,7 +351,8 @@ const D2L_CARD_STYLE = `
 .d2l-card-container{display:flex;flex-direction:column;position:relative;height:100%;box-sizing:border-box;font-family:Lato,sans-serif;font-size:19px;line-height:28px;color:#202122}
 a{position:absolute;inset:-1px;z-index:1;display:block}
 .d2l-card-header{height:80px;background:#e3e9f1;border-radius:6px 6px 0 0}
-.d2l-card-content{padding:24px 16px}`;
+.d2l-card-content{padding:24px 16px}
+:host([href]) .d2l-card-link-container-hover{color:#006fbf;text-decoration:underline}`;
 
 function page() {
   const names = Object.fromEntries([...COURSES, ONLY_IN_ALL].map((d) => [d.ou, d.name]));
@@ -385,6 +386,11 @@ customElements.define("d2l-card", class extends HTMLElement {
       '<div class="d2l-card-badge"><slot name="badge"></slot></div>' +
       '<div class="d2l-card-content"><slot name="content"></slot></div></div>' +
       '<div class="d2l-card-actions"><slot name="actions"></slot></div></div>';
+    /* Como no AVA real (conferido em 15/10/2026): com o mouse em cima, o
+       container ganha sublinhado e cor celeste, que se propagam ao conteúdo. */
+    const link = this.shadowRoot.querySelector(".d2l-card-link-container");
+    this.addEventListener("mouseenter", () => link.classList.add("d2l-card-link-container-hover"));
+    this.addEventListener("mouseleave", () => link.classList.remove("d2l-card-link-container-hover"));
   }
 });
 

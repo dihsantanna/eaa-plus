@@ -3,10 +3,13 @@
  * variáveis do tema (styles/theme.css), que são herdadas através do shadow
  * DOM. Grade de 4px; toda linha é "rótulo | valor" com as mesmas margens.
  * O bloco fica logo abaixo do título, separado por um divisor; --eaa-shift
- * (alignBlocks) desce os de título curto até a altura dos vizinhos. */
+ * (alignBlocks) desce os de título curto até a altura dos vizinhos.
+ * inline-grid (e não grid): com o mouse em cima, o AVA sublinha e pinta de
+ * celeste todo o conteúdo do card (.d2l-card-link-container-hover), e o
+ * sublinhado do pai não se propaga para dentro de um inline atômico. */
 
 export const CARD_CSS = `
-.eaa-prog{margin-top:calc(12px + var(--eaa-shift,0px));padding-top:12px;border-top:1px solid var(--eaa-track);font:400 12px/16px Lato,'Lucida Sans Unicode',sans-serif;color:var(--eaa-text);display:grid;gap:8px}
+.eaa-prog{margin-top:calc(12px + var(--eaa-shift,0px));padding-top:12px;border-top:1px solid var(--eaa-track);font:400 12px/16px Lato,'Lucida Sans Unicode',sans-serif;color:var(--eaa-text);display:inline-grid;width:100%;vertical-align:top;gap:8px}
 .eaa-prog *{box-sizing:border-box;margin:0;padding:0}
 .eaa-pair{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
 .eaa-pair>:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

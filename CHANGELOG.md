@@ -4,6 +4,12 @@ O que mudou em cada versão, do ponto de vista do aluno. A versão mais recente
 também vai, resumida, na descrição da loja (seção "Novidades" em
 `GUIA-PUBLICACAO.md`).
 
+## 1.0.3 — 15/10/2026
+
+- **Correção:** com o mouse em cima de um card, o AVA sublinha e pinta de azul
+  o conteúdo dele, e desde a 1.0.1 o bloco de progresso pegava esse
+  sublinhado. Agora o bloco fica como está.
+
 ## 1.0.2 — 15/10/2026
 
 - **Resumo acima dos cards:** cada disciplina com algo pendente abre com um

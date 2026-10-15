@@ -1,6 +1,6 @@
 {
   "name": "eaa-plus",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "EAA+ — extensão do Chrome que mostra no AVA (Brightspace) da EAA/FABAT o progresso e os prazos das avaliações.",
   "type": "module",
