@@ -1,18 +1,20 @@
 # EAA+ — Melhorias para alunos
-### Guia de publicação na Chrome Web Store · versão 1.0.0
+### Guia de publicação na Chrome Web Store · versão 1.0.2
 
-> **Primeira publicação.** A extensão ainda não está na loja: a versão 1.0.0
-> entra como um item novo. Ela roda **só no AVA** (Brightspace) da EAA/FABAT.
+> **Atualização.** A 1.0.0 já está publicada (aprovada em outubro de 2026). A
+> 1.0.2 entra como **novo pacote do mesmo item**, não como item novo — veja a
+> seção 3. Ela roda **só no AVA** (Brightspace) da EAA/FABAT.
 >
-> Nas próximas versões, cada pacote enviado precisa ter a versão **maior** que
-> a publicada (*"Each new version must have a larger version number than the
-> previous version"*) — veja a seção 9.
+> Cada pacote enviado precisa ter a versão **maior** que a publicada
+> (*"Each new version must have a larger version number than the previous
+> version"*). A 1.0.2 inclui tudo da 1.0.1: se a 1.0.1 não foi enviada, envie
+> direto a 1.0.2. O que mudou em cada versão está em `CHANGELOG.md`.
 
 ---
 
 ## 1. O que está no pacote
 
-`eaa-plus-v1.0.0.zip` — gerado por `npm run build` a partir da pasta `build/`, pronto para upload:
+`dist/eaa-plus-v1.0.2.zip` — gerado por `npm run build` a partir da pasta `build/`, pronto para upload:
 
 | Arquivo | Função |
 |---|---|
@@ -50,7 +52,14 @@ Teste local **não consome** slot do limite de extensões da conta.
 
 ## 3. Upload
 
-Dashboard → **Novo item** → **Selecionar arquivo** → escolha o `.zip`.
+**Atualização (1.0.2):** Dashboard → clique no item **EAA+** → aba
+**Pacote** (*Package*) → **Enviar novo pacote** (*Upload new package*) → escolha
+`dist/eaa-plus-v1.0.2.zip`. Depois atualize a descrição (seção 4) e envie para
+revisão (seção 7). Permissões e `matches` não mudaram: as abas de
+Privacidade e Distribuição continuam como estão.
+
+**Primeira publicação (só na 1.0.0):** Dashboard → **Novo item** →
+**Selecionar arquivo** → escolha o `.zip`.
 
 **Não descompacte antes de subir.** O `manifest.json` precisa estar na raiz do `.zip` — se você recompactar a *pasta*, ele desce um nível e o upload falha com "Manifest file is missing or unreadable".
 
@@ -72,12 +81,30 @@ Progresso das avaliações no AVA da EAA/FABAT: o que já foi corrigido, o que a
 
 **Descrição detalhada**
 
+A seção **NOVIDADES** traz só a última versão: troque o texto dela a cada
+atualização (o histórico completo fica em `CHANGELOG.md`). A loja não tem
+campo próprio para isso, e a orientação do Google é descrição concisa e
+precisa, sem excesso de palavras-chave.
+
 ```
 PROJETO INDEPENDENTE, CRIADO POR UM ALUNO
 Esta extensão foi feita por um aluno da Escola de Adoração e Arte para
 ajudar a si mesmo e aos colegas. Não é um produto oficial e não possui
 vínculo com a Escola de Adoração e Arte nem com a Faculdade Batista
 (FABAT).
+
+NOVIDADES DA VERSÃO 1.0.2
+   • No resumo acima dos cards, uma linha por disciplina com o que falta;
+     um clique abre as atividades, com o estado de cada uma e o link
+     direto para ela
+   • Nos cards, o progresso fica logo abaixo do nome da disciplina,
+     alinhado com os vizinhos; fechamento encerrado e todo corrigido
+     ocupa uma linha só
+   • "Sem nota ainda" no lugar de 0,0 antes da primeira correção
+   • Cores mais fáceis de distinguir e o nome de cada atividade ao
+     passar o mouse na barra
+   • Na barra da disciplina, os dias que faltam aparecem mesmo com a
+     janela estreita
 
 O QUE ELA FAZ
 
@@ -96,7 +123,8 @@ aluno já está.
      para chegar a 6,0; depois da Av2, se aprovou ou vai para a Av3
      (regra do Manual do Aluno EaD)
    • Acima dos cards, o próximo fechamento de todas as disciplinas e
-     quais ainda têm algo pendente
+     uma lista das que ainda têm algo pendente; cada uma abre e mostra
+     as atividades, com o link direto para cada uma
 
 2. Barra da disciplina
    • Em qualquer página de uma disciplina (conteúdo, atividades,
@@ -131,7 +159,7 @@ e notas lá antes de tomar qualquer decisão.
 | Ícone 128×128 | ✅ já vai no `.zip` |
 | Promo pequeno 440×280 (**obrigatório**) | ✅ `store/promo-440x280.png` |
 | Marquee 1400×560 (opcional) | ✅ `store/marquee-1400x560.png` |
-| Screenshot 1280×800 (**mínimo 1**) | ⬜ você precisa capturar |
+| Screenshot 1280×800 (**mínimo 1**) | ⬜ capture de novo na 1.0.2: o Google pede screenshots da versão atual, e o resumo mudou |
 
 As imagens de `store/` saem de `python tools/generate-images.py`.
 
@@ -263,7 +291,10 @@ Países: pode deixar só o Brasil.
 
 ## 7. Enviar e aguardar
 
-**Submit for review.**
+**Submit for review** (*Enviar para revisão*). Pacote e descrição novos vão
+juntos numa revisão só. Enquanto ela não sai, quem já instalou continua com a
+versão publicada; depois da aprovação, o Chrome atualiza sozinho em algumas
+horas.
 
 Prazo: a documentação do Google diz que a maioria é revisada **em poucos dias, podendo chegar a algumas semanas**. Passou de três semanas sem resposta, aí sim vale abrir suporte.
 
@@ -304,9 +335,10 @@ export const myFeature: Feature = {
 
 **b) Registre em `src/content.ts`** com `registerFeature(myFeature)`.
 
-**c) Rode `npm test` e `npm run build`,** suba a versão (ex.: `1.0.0` → `1.1.0`)
-no `src/manifest.json` e no `package.json`, e reenvie em **Package** →
-*Upload new package*.
+**c) Rode `npm test` e `npm run build`,** suba a versão (ex.: `1.0.2` → `1.0.3`)
+no `src/manifest.json` e no `package.json`, anote o que mudou em
+`CHANGELOG.md`, troque a seção NOVIDADES da descrição (seção 4) e reenvie em
+**Package** → *Upload new package*.
 
 Ampliar o `matches` para outro site **muda as permissões do item**: a atualização volta para a fila de revisão e o Chrome pede ao usuário que aceite o novo acesso.
 

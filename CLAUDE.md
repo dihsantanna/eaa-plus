@@ -86,7 +86,8 @@ tools/policy.mjs               npm run policy (página da política de privacida
 tsconfig.json                  só checagem de tipos; "sintaxe apagável" para o Node rodar .ts
 store/                         imagens da listagem (promo 440×280, marquee); o gerador
                                tools/generate-images.py fica só local (.gitignore)
-GUIA-PUBLICACAO.md             passo a passo do painel da Chrome Web Store
+GUIA-PUBLICACAO.md             passo a passo do painel da Chrome Web Store (+ texto NOVIDADES da descrição)
+CHANGELOG.md                   o que mudou em cada versão, para o aluno
 ARQUITETURA.md                 como funciona, passo a passo, e o porquê de cada decisão (para o time técnico)
 ```
 
