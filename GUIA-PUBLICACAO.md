@@ -105,6 +105,8 @@ NOVIDADES DA VERSÃO 1.0.2
      passar o mouse na barra
    • Na barra da disciplina, os dias que faltam aparecem mesmo com a
      janela estreita
+   Histórico completo de versões:
+   https://github.com/dihsantanna/eaa-plus/blob/main/CHANGELOG.md
 
 O QUE ELA FAZ
 
@@ -151,6 +153,17 @@ e notas lá antes de tomar qualquer decisão.
 
 **Categoria:** Educação
 **Idioma:** Português (Brasil)
+
+**Homepage URL** (campos adicionais; aparece em "Detalhes" na página da loja):
+
+```
+https://github.com/dihsantanna/eaa-plus
+```
+
+O Google pede que esse site explique os recursos da extensão: por isso o
+repositório (README), não só o CHANGELOG. A documentação não diz se links
+dentro da descrição ficam clicáveis, então o NOVIDADES continua escrito na
+descrição e o link do histórico vai junto, como complemento.
 
 ### Imagens
 
