@@ -152,7 +152,7 @@ flowchart TD
 
   subgraph CARD["src/features/home/course-card.ts — Feature 1"]
     E{"<b>renderCourseCard()</b><br/>o card já tem bloco<br/>da geração atual?"}
-    F["<b>ensureStyle() + createBlock()</b><br/>CSS dentro do shadow root; bloco ghost<br/>(reserva altura) + bloco real (rodapé)"]
+    F["<b>ensureStyle() + createBlock()</b><br/>CSS dentro do shadow root; um bloco<br/>logo abaixo do título, com divisor"]
     G["<b>courseData(ou) + courseName(ou)</b><br/>pede o resumo e o nome"]:::data
     H["<b>cardHtml()</b><br/>nota da Av1, uma linha por prazo<br/>e a situação ('Precisa de X na Av2')"]
     I["<b>sem bloco</b><br/>sem atividades ou erro: remove o bloco<br/>e não tenta de novo sozinho"]
@@ -193,7 +193,10 @@ flowchart TD
 - **Só cards visíveis:** abas fechadas só carregam quando abertas.
 - **CSS no shadow root, cores em variáveis:** o CSS do manifest não atravessa
   shadow DOM, mas variáveis CSS atravessam (`src/styles/theme.css`).
-- **Ghost + real:** títulos de 1 a 3 linhas deixariam os cards desalinhados.
+- **Alinhado por fileira (`alignBlocks()`):** títulos de 1 a 3 linhas deixariam
+  os blocos desalinhados; o de título curto desce até a altura dos vizinhos
+  e o espaço que sobra fica no pé do card (a pedido do aluno, em vez de
+  prender o bloco ao pé e deixar o vão em cima).
 - **Sem nova tentativa após erro:** com varredura por segundo, viraria uma
   leitura por segundo no servidor.
 - **Nome pela API:** o texto do card mudou para "Fechada" de um dia para o

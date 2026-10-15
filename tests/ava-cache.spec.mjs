@@ -30,7 +30,7 @@ const test = base.extend({
 });
 
 const summary = (page) => page.locator("#eaa-summary");
-const block = (page, ou) => page.locator(`#enrollment-card-${ou} .eaa-prog.real`);
+const block = (page, ou) => page.locator(`#enrollment-card-${ou} .eaa-prog`);
 
 async function openHome(page, baseURL, query = "") {
   page.requests.length = 0;

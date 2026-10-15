@@ -1,10 +1,12 @@
 /* CSS do bloco dentro de cada card. Vai num <style> dentro do shadow DOM do
  * card (o CSS do manifest não atravessa shadow root). As cores são as
  * variáveis do tema (styles/theme.css), que são herdadas através do shadow
- * DOM. Grade de 4px; toda linha é "rótulo | valor" com as mesmas margens. */
+ * DOM. Grade de 4px; toda linha é "rótulo | valor" com as mesmas margens.
+ * O bloco fica logo abaixo do título, separado por um divisor; --eaa-shift
+ * (alignBlocks) desce os de título curto até a altura dos vizinhos. */
 
 export const CARD_CSS = `
-.eaa-prog{margin-top:12px;font:400 12px/16px Lato,'Lucida Sans Unicode',sans-serif;color:var(--eaa-text);display:grid;gap:8px}
+.eaa-prog{margin-top:calc(12px + var(--eaa-shift,0px));padding-top:12px;border-top:1px solid var(--eaa-track);font:400 12px/16px Lato,'Lucida Sans Unicode',sans-serif;color:var(--eaa-text);display:grid;gap:8px}
 .eaa-prog *{box-sizing:border-box;margin:0;padding:0}
 .eaa-pair{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
 .eaa-pair>:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -35,6 +37,4 @@ export const CARD_CSS = `
 .eaa-standing.recovery{background:var(--eaa-recovery-bg);color:var(--eaa-awaiting-text)}
 .eaa-standing.failed{background:var(--eaa-failed-bg);color:var(--eaa-failed-text)}
 .eaa-loading{color:var(--eaa-muted);font-style:italic}
-.eaa-prog.ghost{visibility:hidden}
-.eaa-prog.real{position:absolute;left:16px;right:16px;bottom:24px;margin:0}
 `;

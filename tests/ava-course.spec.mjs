@@ -220,7 +220,7 @@ test.describe("barra da disciplina", () => {
   test("não aparece na página inicial geral", async ({ page, baseURL }) => {
     await page.setViewportSize({ width: 1400, height: 800 });
     await page.goto(baseURL + "/d2l/home");
-    await expect(page.locator("#enrollment-card-50001 .eaa-prog.real")).toBeVisible({ timeout: 8000 });
+    await expect(page.locator("#enrollment-card-50001 .eaa-prog")).toBeVisible({ timeout: 8000 });
     await expect(page.locator("#eaa-course")).toHaveCount(0);
   });
 });

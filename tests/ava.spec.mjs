@@ -25,7 +25,7 @@ const test = base.extend({
 
 /* Locators do Playwright atravessam shadow DOM aberto. */
 const d2lCard = (page, ou) => page.locator(`#enrollment-card-${ou}`);
-const block = (page, ou) => d2lCard(page, ou).locator(".eaa-prog.real");
+const block = (page, ou) => d2lCard(page, ou).locator(".eaa-prog");
 const deadline = (page, ou, i) => block(page, ou).locator(".eaa-deadline").nth(i);
 const segs = (loc) => loc.locator(".eaa-seg i").evaluateAll((is) => is.map((i) => i.className));
 const standing = (page, ou) => block(page, ou).locator(".eaa-standing");
@@ -136,19 +136,26 @@ test.describe("progresso nas disciplinas", () => {
     await expect(block(page, 50007)).toHaveCount(0);
   });
 
-  test("blocos de cards vizinhos terminam na mesma linha, com títulos de alturas diferentes", async ({ page }) => {
+  test("blocos de cards vizinhos começam na mesma linha, com títulos de alturas diferentes", async ({ page }) => {
     await page.open();
     /* 1ª fileira: 50001, 50002 e 50003 (títulos de 1 e 2 linhas) */
     for (const ou of [50002, 50003]) await expect(block(page, ou).locator(".eaa-head")).toBeVisible();
-    const footerItems = [];
-    for (const ou of [50001, 50002, 50003]) {
-      const b = await block(page, ou).boundingBox();
-      footerItems.push(Math.round(b.y + b.height));
-    }
-    expect(new Set(footerItems).size, `pés dos blocos: ${footerItems.join(", ")}`).toBe(1);
-    const ghost = d2lCard(page, 50001).locator(".eaa-prog.ghost");
-    await expect(ghost).toHaveAttribute("aria-hidden", "true");
-    await expect(ghost).toHaveCSS("visibility", "hidden");
+    const tops = async () => {
+      const out = [];
+      for (const ou of [50001, 50002, 50003]) out.push(Math.round((await block(page, ou).boundingBox()).y));
+      return out;
+    };
+    await expect.poll(async () => new Set(await tops()).size, { message: "topos dos blocos" }).toBe(1);
+    /* o de título curto desceu; o espaço que sobra fica no pé do card */
+    const [short, tall] = await Promise.all([
+      block(page, 50001).evaluate((e) => e.style.getPropertyValue("--eaa-shift")),
+      block(page, 50002).evaluate((e) => e.style.getPropertyValue("--eaa-shift")),
+    ]);
+    expect(parseInt(short)).toBeGreaterThan(0);
+    expect(tall).toBe("0px");
+    /* divisor entre o título e o progresso, e um bloco só por card */
+    await expect(block(page, 50001)).toHaveCSS("border-top-width", "1px");
+    await expect(block(page, 50001)).toHaveCount(1);
   });
 
   test("texto do bloco não herda os 19px do card", async ({ page }) => {

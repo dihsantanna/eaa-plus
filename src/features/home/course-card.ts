@@ -69,11 +69,10 @@ function ensureStyle(shadow: ShadowRoot): void {
   shadow.appendChild(style);
 }
 
-function createBlock(kind: "ghost" | "real"): HTMLDivElement {
+function createBlock(): HTMLDivElement {
   const el = document.createElement("div");
-  el.className = `${MARK} ${kind}`;
+  el.className = MARK;
   el.setAttribute("slot", "content");
-  if (kind === "ghost") el.setAttribute("aria-hidden", "true");
   return el;
 }
 
@@ -86,25 +85,17 @@ export function renderCourseCard(card: Element, ou: string, state: HomeState): v
   if (!shadow || !d2lCard) return;
   if (!d2lCard.querySelector(".d2l-enrollment-card-content-flex")) return; /* ainda montando */
 
-  /* Simetria entre cards vizinhos: os títulos têm 1 a 3 linhas, então o
-     bloco visível fica preso ao pé do card e uma cópia invisível (ghost)
-     reserva a altura. */
-  let ghost = d2lCard.querySelector<HTMLElement>(`.${MARK}.ghost`);
-  let block = d2lCard.querySelector<HTMLElement>(`.${MARK}.real`);
-  if (ghost && block && block.dataset.generation === String(state.generation)) return;
+  let block = d2lCard.querySelector<HTMLElement>(`.${MARK}`);
+  if (block && block.dataset.generation === String(state.generation)) return;
 
   /* Bloco que já existe (Atualizar): fica com o dado antigo até o novo
      chegar, para o card não encolher e crescer de novo. */
-  if (!ghost || !block) {
-    ghost?.remove();
-    block?.remove();
+  if (!block) {
     ensureStyle(shadow);
-    ghost = createBlock("ghost");
-    block = createBlock("real");
-    ghost.innerHTML = block.innerHTML = `<span class="eaa-loading">Carregando progresso…</span>`;
-    d2lCard.append(ghost, block);
+    block = createBlock();
+    block.innerHTML = `<span class="eaa-loading">Carregando progresso…</span>`;
+    d2lCard.append(block);
   }
-  const g = ghost;
   const b = block;
   const myGeneration = state.generation;
   b.dataset.generation = String(myGeneration);
@@ -115,20 +106,44 @@ export function renderCourseCard(card: Element, ou: string, state: HomeState): v
       state.resolved.add(ou);
       if (!summary.total) {
         state.noBlock.add(ou);
-        g.remove();
         b.remove();
         return;
       }
       state.ready.set(ou, { summary, name: name || "Disciplina" });
-      g.innerHTML = b.innerHTML = cardHtml(summary);
+      b.innerHTML = cardHtml(summary);
     },
     (err) => {
       if (myGeneration !== state.generation) return;
       state.resolved.add(ou);
       state.noBlock.add(ou);
-      g.remove();
       b.remove();
       console.warn(`[EAA+] progresso da disciplina ${ou}:`, err);
     }
   );
+}
+
+/** Os blocos de uma mesma fileira começam na mesma altura: os títulos têm 1
+ *  a 3 linhas, então o bloco de título curto desce o que falta (--eaa-shift)
+ *  e o espaço que sobra fica no pé do card. O título não estica (flex-grow 0,
+ *  conferido no AVA), então descer o bloco não muda o que é medido. */
+export function alignBlocks(cards: Element[]): void {
+  const rows = new Map<number, { block: HTMLElement; end: number }[]>();
+  for (const card of cards) {
+    const d2lCard = card.shadowRoot?.querySelector("d2l-card");
+    const block = d2lCard?.querySelector<HTMLElement>(`.${MARK}`);
+    const title = d2lCard?.querySelector(".d2l-enrollment-card-content-flex");
+    if (!block || !title) continue;
+    const top = card.getBoundingClientRect().top;
+    const row = Math.round(top);
+    if (!rows.has(row)) rows.set(row, []);
+    rows.get(row)!.push({ block, end: title.getBoundingClientRect().bottom - top });
+  }
+  /* mede tudo antes de escrever: escrever no meio mudaria as fileiras de baixo */
+  for (const row of rows.values()) {
+    const max = Math.max(...row.map((r) => r.end));
+    for (const { block, end } of row) {
+      const shift = `${Math.round(max - end)}px`;
+      if (block.style.getPropertyValue("--eaa-shift") !== shift) block.style.setProperty("--eaa-shift", shift);
+    }
+  }
 }
