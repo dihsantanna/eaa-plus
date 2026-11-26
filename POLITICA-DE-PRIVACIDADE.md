@@ -1,6 +1,6 @@
 # Política de privacidade — EAA+ Melhorias para alunos
 
-*Última atualização: 23 de setembro de 2026 · vale a partir da versão 1.0.0*
+*Última atualização: 26 de novembro de 2026 · vale a partir da versão 1.2.0*
 
 O EAA+ é uma extensão do Chrome feita por um aluno da Escola de Adoração e
 Arte (FABAT), sem vínculo oficial com a instituição. Esta página explica,
@@ -57,8 +57,7 @@ o que leu no `chrome.storage.session` do Chrome:
 ## O que a extensão não faz
 
 - Não envia dados para nenhum servidor — nem da extensão, nem de terceiros.
-- Não grava nada no disco: não usa cookies próprios, `localStorage`,
-  `chrome.storage.local` nem `chrome.storage.sync`.
+- Não grava notas, nomes nem dados do AVA no disco: apenas o cache temporário em memória (`chrome.storage.session`). O único dado salvo localmente (`chrome.storage.local`) é a preferência visual de layout da página inicial (amplo ou clássico), escolhida pelo aluno no popup da extensão.
 - Não lê sua senha, seu nome, sua matrícula, suas mensagens ou seu histórico
   de navegação.
 - Não altera nada no AVA: nenhuma entrega, resposta ou configuração.
@@ -75,10 +74,11 @@ antes de tomar qualquer decisão.
 
 ## Permissões
 
-A extensão pede uma única permissão, `storage`, usada só para o
-armazenamento temporário descrito acima (o Chrome não mostra aviso na
-instalação por ela). O acesso ao AVA vem apenas da declaração de onde ela
-roda (`content_scripts`).
+A extensão pede uma única permissão, `storage`, usada para o cache
+temporário em memória (`chrome.storage.session`) descrito acima e para guardar
+a preferência visual de layout (`chrome.storage.local`, sem dados pessoais).
+O Chrome não mostra aviso na instalação por ela. O acesso ao AVA vem apenas da
+declaração de onde ela roda (`content_scripts`).
 
 ## Contato
 

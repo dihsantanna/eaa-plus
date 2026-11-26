@@ -393,3 +393,90 @@
   color: var(--eaa-muted);
   cursor: default;
 }
+
+/* Fechamento do semestre (quando não há mais prazos futuros) */
+#eaa-summary .eaa-r-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #b7dfc3;
+  background: var(--eaa-passed-bg);
+  color: var(--eaa-graded-text);
+}
+
+#eaa-summary .eaa-r-banner.comfort {
+  border-color: #eed096;
+  background: var(--eaa-recovery-bg);
+  color: var(--eaa-awaiting-text);
+}
+
+#eaa-summary .eaa-r-btext {
+  display: grid;
+  gap: 2px;
+}
+
+#eaa-summary .eaa-r-btext strong {
+  font-size: 14px;
+  line-height: 18px;
+}
+
+#eaa-summary .eaa-r-btext span {
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--eaa-text);
+}
+
+#eaa-summary .eaa-r-bbadge {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid currentColor;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#eaa-summary .eaa-r-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  justify-self: end;
+}
+
+#eaa-summary .eaa-r-pill.approved {
+  background: var(--eaa-passed-bg);
+  color: var(--eaa-graded-text);
+}
+
+#eaa-summary .eaa-r-pill.partial_passed {
+  background: var(--eaa-passed-bg);
+  color: var(--eaa-graded-text);
+  border: 1px dashed #6ebc84;
+}
+
+#eaa-summary .eaa-r-pill.partial_wait,
+#eaa-summary .eaa-r-pill.waiting {
+  background: var(--eaa-recovery-bg);
+  color: var(--eaa-awaiting-text);
+}
+
+#eaa-summary .eaa-r-pill.recovery,
+#eaa-summary .eaa-r-pill.failed {
+  background: var(--eaa-failed-bg);
+  color: var(--eaa-failed-text);
+}
+
+#eaa-summary .eaa-r-course.closing {
+  grid-template-columns: minmax(0, 1fr) 96px 190px 16px;
+}
+
+#eaa-summary:not(.expanded) .eaa-r-notes-body {
+  display: none;
+}

@@ -1,0 +1,443 @@
+/* EAA+ · Layout Amplo (teto HD+ de 1440 px) — só aplica quando html.eaa-wide
+ * está ativo na página inicial (/d2l/home). Preserva integralmente o header
+ * superior original do AVA (Home, logo da faculdade, cursos, notificações e
+ * foto/nome do aluno). */
+
+html.eaa-wide .d2l-max-width,
+html.eaa-wide .d2l-page-main,
+html.eaa-wide .d2l-page-main-padding,
+html.eaa-wide .d2l-homepage,
+html.eaa-wide .homepage-container,
+html.eaa-wide .homepage-row {
+  max-width: 1440px !important;
+}
+
+/* Carregamento suspenso na página inicial até o Layout Amplo ser aplicado,
+   evitando piscar o layout antigo do AVA antes da extensão agir. */
+html.eaa-booting {
+  overflow: hidden !important;
+  background: #f1f5fb !important;
+}
+
+html.eaa-booting body {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html.eaa-booting::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  background: #f1f5fb;
+}
+
+html.eaa-booting::after {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  z-index: 2147483647;
+  border: 3px solid #dbe4f0;
+  border-top-color: #006fbf;
+  border-radius: 50%;
+  animation: eaa-boot-spin 0.75s linear infinite;
+}
+
+@keyframes eaa-boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Header mais leve e moderno: reaproveita os ícones, o logo e a foto do AVA,
+   só em escala menor (zoom) e com tom mais suave. Faixa de cima 56px, faixa
+   de baixo 40px com fundo claro e linha divisória, tudo alinhado em 1440px. */
+html.eaa-wide header[role="banner"],
+html.eaa-wide nav.d2l-navigation-s {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+html.eaa-wide nav.d2l-navigation-s {
+  box-shadow: 0 1px 0 #e9edf3, 0 4px 12px -8px rgba(0, 48, 84, 0.18) !important;
+}
+
+html.eaa-wide d2l-labs-navigation-band {
+  --d2l-labs-navigation-band-height: 3px;
+}
+
+html.eaa-wide d2l-labs-navigation-main-header {
+  height: 56px !important;
+  min-height: 0 !important;
+}
+
+/* esquerda: Home + logo da faculdade */
+html.eaa-wide .d2l-navigation-s-header-logo-area {
+  height: 56px !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+html.eaa-wide .d2l-navigation-s-home-icon {
+  opacity: 0.8;
+}
+
+html.eaa-wide .d2l-navigation-s-home-icon d2l-icon {
+  transform: scale(0.82);
+}
+
+html.eaa-wide .d2l-navigation-s-logo-divider {
+  opacity: 0.6;
+  transform: scaleY(0.75);
+}
+
+html.eaa-wide .d2l-navigation-s-logo,
+html.eaa-wide .d2l-navigation-s-logo .d2l-labs-navigation-link-image-container {
+  height: 32px !important;
+}
+
+html.eaa-wide .d2l-navigation-s-logo img {
+  height: 32px !important;
+  width: auto !important;
+  max-height: 32px !important;
+}
+
+/* direita: notificações e foto/nome do aluno (o "Cursos" foi para a esquerda).
+   IMPORTANTE: não usar CSS zoom nos wrappers porque desloca o popup dos
+   d2l-dropdown-content; reduzimos só o ícone/foto dentro deles. */
+html.eaa-wide .d2l-navigation-s-header-right {
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+/* "Cursos": quadradinho + texto dentro do próprio botão, logo depois do logo */
+html.eaa-wide .d2l-navigation-s-header-logo-area .d2l-navigation-s-course-menu {
+  display: flex !important;
+  align-items: center !important;
+  height: 56px !important;
+  width: auto !important;
+  margin-left: 14px !important;
+  padding-left: 10px !important;
+  border-left: 1px solid #e9edf3 !important;
+  opacity: 0.88;
+}
+
+html.eaa-wide .d2l-navigation-s-notifications {
+  height: 56px !important;
+  width: auto !important;
+  align-items: center !important;
+  opacity: 0.78;
+  transition: opacity 0.15s ease;
+}
+
+html.eaa-wide .d2l-navigation-s-course-menu:hover,
+html.eaa-wide .d2l-navigation-s-notifications:hover,
+html.eaa-wide .d2l-navigation-s-course-menu:focus-within,
+html.eaa-wide .d2l-navigation-s-notifications:focus-within {
+  opacity: 1;
+}
+
+html.eaa-wide .d2l-navigation-s-personal-menu {
+  height: 56px !important;
+  width: auto !important;
+  align-items: center !important;
+}
+
+html.eaa-wide .d2l-navigation-s-personal-menu img {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+}
+
+html.eaa-wide .d2l-navigation-s-personal-menu d2l-labs-navigation-link-image {
+  border-radius: 50% !important;
+}
+
+html.eaa-wide .d2l-navigation-s-personal-menu * {
+  font-weight: 500 !important;
+}
+
+/* faixa de baixo: Bibliotecas Virtuais */
+html.eaa-wide d2l-labs-navigation-main-footer {
+  height: 40px !important;
+  min-height: 0 !important;
+  background: #fafbfd !important;
+  border-top: 1px solid #eef1f6 !important;
+}
+
+html.eaa-wide .d2l-navigation-s-main-wrapper {
+  max-width: 1380px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+html.eaa-wide .d2l-navigation-s-item {
+  height: 40px !important;
+}
+
+html.eaa-wide .d2l-navigation-s-item button.d2l-navigation-s-group {
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 10px !important;
+  margin: 6px 0 !important;
+  border-radius: 6px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: #3b4a5a !important;
+  letter-spacing: 0.01em;
+}
+
+html.eaa-wide .d2l-navigation-s-item button.d2l-navigation-s-group:hover,
+html.eaa-wide .d2l-navigation-s-item button.d2l-navigation-s-group:focus-visible {
+  background: #eef2f8 !important;
+  color: #003054 !important;
+}
+
+html.eaa-wide .d2l-navigation-s-item button.d2l-navigation-s-group d2l-icon {
+  zoom: 0.75;
+}
+
+/* Widget customizado "..." usado só para hospedar o VLibras: sai do fluxo flex
+   da barra mantendo o botão flutuante [vw] ativo na tela. */
+html.eaa-wide .d2l-custom-widget[data-eaa-vlibras] {
+  position: fixed !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+html.eaa-wide .d2l-custom-widget[data-eaa-vlibras] .d2l-widget-header {
+  display: none !important;
+}
+
+html.eaa-wide .d2l-custom-widget[data-eaa-vlibras] .d2l-widget-content-padding {
+  padding: 0 !important;
+}
+
+html.eaa-wide .d2l-custom-widget[data-eaa-vlibras] d2l-html-block p {
+  display: none !important;
+}
+
+/* Configurações: em telas menores continua compactado; em desktop (>=1024px)
+   vira uma linha de atalhos rápidos dentro da mesma barra de Comunicados. */
+html.eaa-wide .d2l-widget[data-eaa-settings] {
+  margin-bottom: 12px !important;
+}
+
+/* Quando Comunicados está vazio (sem avisos ativos), libera toda a largura
+   até 1440 px para Minhas Disciplinas e junta Comunicados + atalhos de
+   Configurações numa barra única no topo da página. */
+@media (min-width: 1024px) {
+  html.eaa-wide [data-eaa-collapsed-row="1"] {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    gap: 14px !important;
+    width: 100% !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-8,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 auto !important;
+    float: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Barra única (card branco contínuo): Comunicados à esquerda | atalhos à direita */
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px 20px !important;
+    padding: 8px 18px !important;
+    min-height: 44px !important;
+    background: #ffffff !important;
+    border: 1px solid #cdd5dc !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* o AVA dá ~30px de margem embaixo de cada widget e da coluna: o espaço
+     entre a faixa e "Minhas Disciplinas" fica só no gap de 14px acima */
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-8 > .d2l-widget,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-8,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* "Minhas Disciplinas" à esquerda + abas espelhadas (Todos, Espaço, 2026.2) à direita */
+  html.eaa-wide .d2l-widget:has(d2l-my-courses-v2) > .d2l-widget-header {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px 16px !important;
+  }
+
+  html.eaa-wide .eaa-tabs {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    border-bottom: 1px solid #e6eaf0;
+    margin-left: auto;
+  }
+
+  html.eaa-wide .eaa-tab {
+    -webkit-appearance: none;
+    appearance: none;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin: 0 0 -1px 0;
+    padding: 4px 2px 7px;
+    font: 400 13px/18px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+    color: #494c4e;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  html.eaa-wide .eaa-tab:hover {
+    color: #202122;
+  }
+
+  html.eaa-wide .eaa-tab.active {
+    font-weight: 700;
+    color: #006fbf;
+    border-bottom-color: #006fbf;
+  }
+
+  html.eaa-wide .eaa-tab:focus-visible {
+    outline: 2px solid #006fbf;
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news],
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    width: auto !important;
+    flex: 0 1 auto !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] {
+    margin-left: auto !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] .d2l-widget-header {
+    padding: 0 !important;
+    margin: 0 !important;
+    flex: none !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: max-content !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] .d2l-widget-header * {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+    font-size: 13.5px !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] .d2l-widget-content,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] .d2l-widget-content-padding {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Comunicados vazio: some a caixa do AVA e vira uma linha de texto simples */
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] d2l-empty-state-simple {
+    display: none !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] .d2l-datalist-empty::after {
+    content: "nenhum aviso no momento";
+    font-size: 13px;
+    color: #6e7477;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] .d2l-datalist-empty,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] .d2l-datalist-container,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-empty-news] .d2l-placeholder {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  /* Configurações: oculta o cabeçalho e o bloco repetido de foto/Bem-vindo e
+     põe os 6 atalhos (Perfil, Conta, Notificações...) alinhados à direita */
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] .d2l-widget-header,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] .d2l-my-settings-profile-container {
+    display: none !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] .d2l-widget-content,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] .d2l-widget-content-padding {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] ul.d2l-list {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px 14px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] ul.d2l-list > li {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] ul.d2l-list > li a {
+    font-size: 12.5px !important;
+    line-height: 20px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] ul.d2l-list > li d2l-icon,
+  html.eaa-wide [data-eaa-collapsed-row="1"] .homepage-col-4 > .d2l-widget[data-eaa-settings] ul.d2l-list > li img {
+    width: 15px !important;
+    height: 15px !important;
+  }
+}

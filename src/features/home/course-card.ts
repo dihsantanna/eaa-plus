@@ -1,17 +1,15 @@
-/* Feature 1 — painel em cada card de "Minhas Disciplinas".
+/* Feature 1 — painel em cada card de "Minhas Disciplinas" (Estilo C).
  *
- * A nota da Av1 e, para cada prazo (no curso de Música a Av1 fecha em duas
- * datas), uma barra com um bloco por atividade e o estado mais importante
- * daquele prazo; embaixo, a situação pela regra do manual.
- *
- * Onde: dentro do shadow DOM do card (d2l-my-courses-enrollment-card →
- * d2l-card, slot "content"). O CSS do manifest não atravessa shadow DOM,
- * então o estilo vai num <style data-eaa> dentro do próprio card.
+ * Mostra a síntese editorial (status + detalhe à esquerda, nota grande à
+ * direita, sinalizando nota parcial e aprovação garantida mesmo parcial) e,
+ * quando a disciplina ainda tem prazos em aberto ou pendências, as barras de
+ * progresso por fechamento. Quando já está fechada e aprovada, oculta os
+ * prazos antigos para manter o card limpo.
  */
 
 import { courseData, courseName } from "../../ava/course-data.ts";
 import { escapeHtml as esc, formatDate, formatNum, plural } from "../../ava/format.ts";
-import { hasGrade, highlight, isSettled, isUrgent, standing } from "../../ava/rules.ts";
+import { courseOutcome, hasGrade, highlight, isCleanResolved, isSettled, isUrgent, standing } from "../../ava/rules.ts";
 import type { CourseSummary, DeadlineGroup } from "../../ava/types.ts";
 import { STATE_LABEL, segments, when } from "../shared/render.ts";
 import { CARD_CSS } from "./card-styles.ts";
@@ -19,9 +17,6 @@ import type { HomeState } from "./state.ts";
 
 const MARK = "eaa-prog";
 
-/** Prazo encerrado e todo corrigido: uma linha só ("1º Fechamento   ✓ 2
- *  corrigidas"), para o card dar o espaço ao que ainda está aberto. A data
- *  fica só no aria-label: com ela, o nome do prazo não cabia no card. */
 function settledRow(g: DeadlineGroup): string {
   const date = formatDate(g.deadline as number);
   const done = plural(g.c.graded, "corrigida", "corrigidas");
@@ -49,7 +44,7 @@ function deadlineRow(g: DeadlineGroup): string {
   );
 }
 
-function cardHtml(r: CourseSummary): string {
+function classicCardHtml(r: CourseSummary): string {
   const s = standing(r);
   return (
     `<div class="eaa-pair eaa-head"><span class="eaa-label">${r.label}</span>` +
@@ -60,6 +55,28 @@ function cardHtml(r: CourseSummary): string {
     (s ? `<div class="eaa-standing ${s.tone}">${s.text}</div>` : "")
   );
 }
+
+function editorialCardHtml(r: CourseSummary): string {
+  const o = courseOutcome(r);
+  const clean = isCleanResolved(r);
+  const editorial =
+    `<div class="eaa-ed ${o.status}">` +
+    `<div class="eaa-ed-left">` +
+    `<span class="eaa-ed-tag">${esc(o.label)}</span>` +
+    `<span class="eaa-ed-sub" title="${esc(o.detail)}">${esc(o.detail)}</span>` +
+    `</div>` +
+    `<div class="eaa-ed-right">` +
+    `<span class="eaa-ed-num">${esc(o.scoreText)}</span>` +
+    (o.partial ? `<span class="eaa-ed-part">parcial</span>` : "") +
+    `</div>` +
+    `</div>`;
+  if (clean) return editorial;
+  const allClosed = r.deadlines.every((g) => g.deadline !== null && g.deadline < Date.now());
+  if (allClosed && !r.c.pending && !r.c.missed) return editorial;
+  return editorial + r.deadlines.map(deadlineRow).join("");
+}
+
+const cardHtml = (r: CourseSummary, wide: boolean): string => (wide ? editorialCardHtml(r) : classicCardHtml(r));
 
 function ensureStyle(shadow: ShadowRoot): void {
   if (shadow.querySelector("style[data-eaa]")) return;
@@ -76,20 +93,17 @@ function createBlock(): HTMLDivElement {
   return el;
 }
 
-/** Monta (ou atualiza, depois do Atualizar) o bloco de progresso de um card.
- *  Chamado a cada varredura; não faz nada se o bloco já está em dia. */
-export function renderCourseCard(card: Element, ou: string, state: HomeState): void {
+/** Monta (ou atualiza) o bloco de progresso de um card. */
+export function renderCourseCard(card: Element, ou: string, state: HomeState, wide: boolean): void {
   if (state.noBlock.has(ou)) return;
   const shadow = card.shadowRoot;
   const d2lCard = shadow?.querySelector("d2l-card");
   if (!shadow || !d2lCard) return;
-  if (!d2lCard.querySelector(".d2l-enrollment-card-content-flex")) return; /* ainda montando */
+  if (!d2lCard.querySelector(".d2l-enrollment-card-content-flex")) return;
 
   let block = d2lCard.querySelector<HTMLElement>(`.${MARK}`);
-  if (block && block.dataset.generation === String(state.generation)) return;
+  if (block && block.dataset.generation === String(state.generation) && block.dataset.wide === String(wide)) return;
 
-  /* Bloco que já existe (Atualizar): fica com o dado antigo até o novo
-     chegar, para o card não encolher e crescer de novo. */
   if (!block) {
     ensureStyle(shadow);
     block = createBlock();
@@ -99,6 +113,13 @@ export function renderCourseCard(card: Element, ou: string, state: HomeState): v
   const b = block;
   const myGeneration = state.generation;
   b.dataset.generation = String(myGeneration);
+  b.dataset.wide = String(wide);
+
+  const cached = state.ready.get(ou);
+  if (cached) {
+    b.innerHTML = cardHtml(cached.summary, wide);
+    return;
+  }
 
   Promise.all([courseData(ou), courseName(ou)]).then(
     ([summary, name]) => {
@@ -110,7 +131,7 @@ export function renderCourseCard(card: Element, ou: string, state: HomeState): v
         return;
       }
       state.ready.set(ou, { summary, name: name || "Disciplina" });
-      b.innerHTML = cardHtml(summary);
+      b.innerHTML = cardHtml(summary, b.dataset.wide === "true");
     },
     (err) => {
       if (myGeneration !== state.generation) return;
@@ -122,10 +143,7 @@ export function renderCourseCard(card: Element, ou: string, state: HomeState): v
   );
 }
 
-/** Os blocos de uma mesma fileira começam na mesma altura: os títulos têm 1
- *  a 3 linhas, então o bloco de título curto desce o que falta (--eaa-shift)
- *  e o espaço que sobra fica no pé do card. O título não estica (flex-grow 0,
- *  conferido no AVA), então descer o bloco não muda o que é medido. */
+/** Os blocos de uma mesma fileira começam na mesma altura. */
 export function alignBlocks(cards: Element[]): void {
   const rows = new Map<number, { block: HTMLElement; end: number }[]>();
   for (const card of cards) {
@@ -138,7 +156,6 @@ export function alignBlocks(cards: Element[]): void {
     if (!rows.has(row)) rows.set(row, []);
     rows.get(row)!.push({ block, end: title.getBoundingClientRect().bottom - top });
   }
-  /* mede tudo antes de escrever: escrever no meio mudaria as fileiras de baixo */
   for (const row of rows.values()) {
     const max = Math.max(...row.map((r) => r.end));
     for (const { block, end } of row) {

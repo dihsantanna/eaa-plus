@@ -1,24 +1,19 @@
 /* Feature 2 — painel geral, acima dos cards.
  *
- * O próximo fechamento comum às disciplinas visíveis: quantas atividades já
- * foram entregues, em quais disciplinas ainda falta algo (uma linha por
- * disciplina, com a barra dela e o que falta; a linha abre e mostra cada
- * atividade com o estado e o link direto; a partir da 5ª disciplina, atrás de
- * "Ver mais"), a legenda das cores e a hora dos dados, com o botão Atualizar.
- *
- * Onde: DOM normal, logo antes de d2l-my-courses-v2 (CSS em
- * styles/summary-panel.css, vindo do manifest).
+ * Durante o semestre, mostra o próximo fechamento comum às disciplinas
+ * visíveis. Quando todos os prazos já encerraram (fim do semestre), muda para
+ * o resumo de fechamento: balanço comemorativo ou acolhedor, notas finais e
+ * parciais, sinalização de aprovação garantida mesmo parcial e matérias que
+ * ainda aguardam correção do professor.
  */
 
-import { dayOf, daysUntil, escapeHtml as esc, formatDate, formatTime, plural, timeLeft } from "../../ava/format.ts";
-import { byUrgency, rowsShown, tally } from "../../ava/rules.ts";
-import type { Activity, Tally } from "../../ava/types.ts";
+import { dayOf, daysUntil, escapeHtml as esc, formatDate, formatNum, formatTime, plural, timeLeft } from "../../ava/format.ts";
+import { byClosingPriority, byUrgency, courseOutcome, rowsShown, tally } from "../../ava/rules.ts";
+import type { Activity, CourseOutcome, OutcomeStatus, Tally } from "../../ava/types.ts";
 import { LEGEND, STATE_LABEL, segments } from "../shared/render.ts";
-import type { HomeState } from "./state.ts";
+import type { CourseEntry, HomeState } from "./state.ts";
 
 const SUMMARY_ID = "eaa-summary";
-/** Depois disso mostra o que tiver, em vez de girar para sempre por causa de
- *  uma disciplina que não responde. */
 const MAX_WAIT_MS = 20_000;
 
 interface PendingCourse {
@@ -26,7 +21,6 @@ interface PendingCourse {
   name: string;
   pending: number;
   started: number;
-  /** as atividades dela neste prazo (a barrinha da linha) */
   items: Activity[];
 }
 
@@ -36,13 +30,19 @@ interface Overall {
   items: Activity[];
   courses: PendingCourse[];
   startedCount: number;
-  /** o dado mais antigo na tela (cache de até 10 min) */
   readAt: number | null;
   c: Tally;
 }
 
-/** Junta, de todas as disciplinas visíveis, os grupos do dia do próximo
- *  prazo futuro. null = nenhum prazo pela frente. */
+interface ClosingCourse {
+  ou: string;
+  name: string;
+  outcome: CourseOutcome;
+  status: OutcomeStatus;
+  awaiting: number;
+  items: Activity[];
+}
+
 function overallSummary(visible: string[], state: HomeState, now = Date.now()): Overall | null {
   let target: string | null = null;
   for (const ou of visible) {
@@ -65,7 +65,6 @@ function overallSummary(visible: string[], state: HomeState, now = Date.now()): 
       res.items.push(...g.c.items);
       res.startedCount += g.c.started;
       if (!g.c.pending) continue;
-      /* a Av1 e a Av2 de uma disciplina podem vencer no mesmo dia: uma linha só */
       const same = res.courses.find((d) => d.ou === ou);
       if (same) {
         same.pending += g.c.pending;
@@ -80,7 +79,6 @@ function overallSummary(visible: string[], state: HomeState, now = Date.now()): 
   return { ...res, longLabel: res.longLabel || "Próximo prazo", c: tally(res.items) };
 }
 
-/** "Técnica Vocal I: Fundamentos" → "Técnica Vocal I" */
 function shortName(name: string): string {
   const before = name.split(":")[0].trim();
   return before.length >= 3 ? before : name;
@@ -90,28 +88,22 @@ const CHEVRON =
   `<svg class="eaa-r-go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ` +
   `stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
 
-/** Cada atividade da disciplina neste prazo, na mesma ordem da barrinha (o
- *  3º segmento é a 3ª linha): cor, nome com o link direto e o estado. Nada
- *  novo é lido do AVA — o link já vem com a atividade. */
-function activityList(d: PendingCourse): string {
-  const items = d.items
+function activityList(ou: string, name: string, itemsList: Activity[]): string {
+  const items = itemsList
     .map((it) => {
-      const name = it.link
+      const link = it.link
         ? `<a class="eaa-r-iname" href="${esc(it.link)}">${esc(it.name)}</a>`
         : `<span class="eaa-r-iname">${esc(it.name)}</span>`;
-      return `<li class="${it.state}"><i aria-hidden="true"></i>${name}<span class="eaa-r-istate">${STATE_LABEL[it.state!]}</span></li>`;
+      return `<li class="${it.state}"><i aria-hidden="true"></i>${link}<span class="eaa-r-istate">${STATE_LABEL[it.state!]}</span></li>`;
     })
     .join("");
   return (
-    `<div class="eaa-r-acts" id="eaa-r-acts-${d.ou}" hidden>` +
-    `<ul aria-label="${esc(`Atividades de ${d.name}`)}">${items}</ul>` +
-    `<a class="eaa-r-gocourse" href="/d2l/home/${d.ou}">Abrir a disciplina</a></div>`
+    `<div class="eaa-r-acts" id="eaa-r-acts-${ou}" hidden>` +
+    `<ul aria-label="${esc(`Atividades de ${name}`)}">${items}</ul>` +
+    `<a class="eaa-r-gocourse" href="/d2l/home/${ou}">Abrir a disciplina</a></div>`
   );
 }
 
-/** Uma linha por disciplina com algo a fazer: nome, a barra dela neste prazo
- *  e o que falta. A linha é um botão que abre as atividades (activityList).
- *  As que passam do limite levam "eaa-r-extra" e só aparecem com "Ver mais". */
 function courseRow(d: PendingCourse, extra: boolean): string {
   const left = d.started ? `⚠ ${plural(d.started, "não enviada", "não enviadas")}` : `${d.pending} a fazer`;
   return (
@@ -120,20 +112,16 @@ function courseRow(d: PendingCourse, extra: boolean): string {
     `<span class="eaa-r-cname">${esc(shortName(d.name))}</span>` +
     segments(d.items, "eaa-r-cseg") +
     `<span class="eaa-r-cleft">${left}</span>${CHEVRON}</button>` +
-    activityList(d) +
+    activityList(d.ou, d.name, d.items) +
     `</li>`
   );
 }
 
-/** Abre ou fecha a linha de uma disciplina (botão + lista). */
 function setRowOpen(li: Element, open: boolean): void {
   li.querySelector(".eaa-r-course")?.setAttribute("aria-expanded", String(open));
   li.querySelector(".eaa-r-acts")?.toggleAttribute("hidden", !open);
 }
 
-/** O "Ver mais" não guarda nada: o AVA recarrega a página a cada clique, e
- *  lembrar a escolha pediria storage.local (disco). Aberto ou fechado é uma
- *  classe no próprio #eaa-summary, que sobrevive às reescritas do conteúdo. */
 function courseList(courses: PendingCourse[]): string {
   if (!courses.length) return "";
   const shown = rowsShown(courses.length);
@@ -150,17 +138,13 @@ function courseList(courses: PendingCourse[]): string {
   );
 }
 
-/** Uma legenda só, no resumo (os cards não têm largura para ela). */
 const legend = (): string =>
   `<ul class="eaa-r-legend" aria-label="Legenda das cores">` +
   LEGEND.map(([state, label]) => `<li><i class="${state}"></i>${label}</li>`).join("") +
   `</ul>`;
 
-/** Os dados podem vir do cache (até 10 min): a idade fica à vista e o aluno
- *  força uma leitura nova com um clique. Mesma linha no carregamento, para a
- *  altura não pular. */
-const footer = (readAt: number | null): string =>
-  `<div class="eaa-r-pair eaa-r-footer"><span>${readAt ? `Atualizado às ${formatTime(readAt)}` : "&nbsp;"}</span>` +
+const footer = (readAt: number | null, extraLeft = ""): string =>
+  `<div class="eaa-r-pair eaa-r-footer"><span>${extraLeft}${readAt ? `Atualizado às ${formatTime(readAt)}` : "&nbsp;"}</span>` +
   `<button type="button" class="eaa-r-refresh" title="Ler de novo notas e entregas de todas as disciplinas"${readAt ? "" : " disabled"}>Atualizar</button></div>`;
 
 function summaryHtml(res: Overall): string {
@@ -182,10 +166,131 @@ function summaryHtml(res: Overall): string {
   );
 }
 
-/** Enquanto houver disciplina visível sem resposta, o resumo fica em
- *  carregamento: somar só as que chegaram mostraria números errados
- *  ("faltam 2", depois "faltam 5"). A moldura e as linhas são as mesmas do
- *  resultado, para nada pular quando terminar. */
+function closingPill(c: ClosingCourse): string {
+  const o = c.outcome;
+  if (o.status === "approved") return `✓ ${o.label} · ${o.scoreText}`;
+  if (o.status === "partial_passed") return `✓ Já passou · ${o.scoreText} parcial`;
+  if (o.status === "partial_wait") return `${o.scoreText} parcial · ${c.awaiting ? `${c.awaiting} aguardando` : o.detail.split(" · ").pop()}`;
+  if (o.status === "waiting") return `sem nota · ${c.awaiting ? `${c.awaiting} aguardando` : "pendente"}`;
+  if (o.status === "recovery") return `${o.label} · ${o.scoreText}`;
+  return `Reprovado · ${o.scoreText}`;
+}
+
+function closingRow(c: ClosingCourse, extra: boolean): string {
+  return (
+    `<li${extra ? ` class="eaa-r-extra"` : ""} data-ou="${c.ou}">` +
+    `<button type="button" class="eaa-r-course closing" aria-expanded="false" aria-controls="eaa-r-acts-${c.ou}" title="${esc(c.name)}">` +
+    `<span class="eaa-r-cname">${esc(shortName(c.name))}</span>` +
+    segments(c.items, "eaa-r-cseg") +
+    `<span class="eaa-r-pill ${c.status}">${esc(closingPill(c))}</span>${CHEVRON}</button>` +
+    activityList(c.ou, c.name, c.items) +
+    `</li>`
+  );
+}
+
+/** Resumo de fim de semestre: quando não existem mais prazos futuros. */
+function semesterSummaryHtml(visible: string[], state: HomeState): string | null {
+  const entries: { ou: string; entry: CourseEntry }[] = [];
+  let readAt: number | null = null;
+  for (const ou of visible) {
+    const entry = state.ready.get(ou);
+    if (!entry) continue;
+    entries.push({ ou, entry });
+    if (entry.summary.readAt && (!readAt || entry.summary.readAt < readAt)) readAt = entry.summary.readAt;
+  }
+  if (!entries.length) return null;
+
+  const courses: ClosingCourse[] = entries.map(({ ou, entry }) => {
+    const outcome = courseOutcome(entry.summary);
+    return {
+      ou,
+      name: entry.name,
+      outcome,
+      status: outcome.status,
+      awaiting: entry.summary.c.awaiting,
+      items: entry.summary.c.items,
+    };
+  });
+  courses.sort(byClosingPriority);
+
+  const approved = courses.filter((c) => c.status === "approved").length;
+  const partialPassed = courses.filter((c) => c.status === "partial_passed").length;
+  const guaranteed = approved + partialPassed;
+  const awaitingCourses = courses.filter((c) => c.awaiting > 0).length;
+  const awaitingItems = courses.reduce((s, c) => s + c.awaiting, 0);
+  const recovery = courses.filter((c) => c.status === "recovery").length;
+  const failed = courses.filter((c) => c.status === "failed").length;
+  const allItems = courses.flatMap((c) => c.items);
+  void allItems;
+  const scores = courses.filter((c) => !c.outcome.partial && c.outcome.score !== null).map((c) => c.outcome.score as number);
+  const avg = scores.length ? formatNum(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+
+  /* 1 segmento por disciplina: verdes primeiro, depois âmbar, depois vermelho */
+  const barRank = { graded: 0, awaiting: 1, missed: 2 } as const;
+  const barClass = (c: ClosingCourse): keyof typeof barRank =>
+    c.status === "approved" || c.status === "partial_passed" ? "graded" : c.status === "recovery" || c.status === "failed" ? "missed" : "awaiting";
+  const courseBar =
+    `<div class="eaa-seg eaa-r-seg" aria-hidden="true">` +
+    [...courses]
+      .sort((a, b) => barRank[barClass(a)] - barRank[barClass(b)])
+      .map((c) => `<i class="${barClass(c)}" title="${esc(`${c.name} · ${closingPill(c)}`)}"></i>`)
+      .join("") +
+    `</div>`;
+
+  const allPassed = recovery === 0 && failed === 0 && awaitingCourses === 0 && guaranteed === courses.length;
+  let comfort = false;
+  let headline: string;
+  let sub: string;
+  let badge: string;
+
+  if (allPassed) {
+    headline = "Semestre concluído com sucesso!";
+    sub = `${plural(approved, "disciplina aprovada", "disciplinas aprovadas")}${avg ? ` · média geral ${avg}` : ""}. Bom descanso até o próximo período!`;
+    badge = `${approved}/${courses.length} aprovadas`;
+  } else if (recovery === 0 && failed === 0) {
+    headline = guaranteed
+      ? `Parabéns pelo semestre! ${plural(guaranteed, "disciplina já garantida", "disciplinas já garantidas")}.`
+      : "Semestre encerrado — aguardando correções";
+    const parts: string[] = [];
+    if (partialPassed) parts.push(`${partialPassed} já ${partialPassed === 1 ? "passou" : "passaram"} com nota parcial`);
+    if (awaitingItems) parts.push(`${plural(awaitingItems, "atividade aguarda", "atividades aguardam")} correção do professor`);
+    sub = parts.join(" · ") || "Todas as atividades entregues foram contabilizadas.";
+    badge = awaitingCourses ? `${guaranteed} garantidas · ${awaitingCourses} aguardando` : `${guaranteed}/${courses.length} garantidas`;
+  } else {
+    comfort = true;
+    headline = recovery
+      ? `Quase lá! ${plural(guaranteed, "garantida", "garantidas")} e ${plural(recovery, "em Av3", "em Av3")}.`
+      : `Semestre encerrado · ${plural(guaranteed, "aprovada", "aprovadas")}.`;
+    sub = recovery
+      ? "Não desanime — aproveite a Av3 para fechar o semestre positivo."
+      : "Alguns percalços acontecem — confira o balanço abaixo para planejar os próximos passos.";
+    badge = recovery ? `${guaranteed} garantidas · ${recovery} em Av3` : `${guaranteed}/${courses.length} aprovadas`;
+  }
+
+  const shown = allPassed ? 0 : rowsShown(courses.length);
+  const hidden = courses.length - shown;
+  const listHtml =
+    `<ul class="eaa-r-courses" aria-label="Balanço das disciplinas">` +
+    courses.map((c, i) => closingRow(c, i >= shown)).join("") +
+    `</ul>` +
+    (hidden
+      ? `<button type="button" class="eaa-r-more" aria-expanded="false">` +
+        `<span class="eaa-r-closed">${allPassed ? `Ver notas das ${courses.length} disciplinas` : `Ver mais ${plural(hidden, "disciplina", "disciplinas")}`}</span>` +
+        `<span class="eaa-r-open">Ocultar lista</span></button>`
+      : "");
+
+  return (
+    `<div class="eaa-r-banner${comfort ? " comfort" : ""}">` +
+    `<div class="eaa-r-btext"><strong>${esc(headline)}</strong><span>${esc(sub)}</span></div>` +
+    `<span class="eaa-r-bbadge">${esc(badge)}</span></div>` +
+    (allPassed ? `<div class="eaa-r-notes-body">` : "") +
+    courseBar +
+    listHtml +
+    (allPassed ? `</div>` : "") +
+    footer(readAt)
+  );
+}
+
 function loadingHtml(readyCount: number, total: number): string {
   const pct = total ? Math.round((readyCount / total) * 100) : 0;
   return (
@@ -202,31 +307,37 @@ function loadingHtml(readyCount: number, total: number): string {
 }
 
 /** Chamado a cada varredura: cria, atualiza ou remove o painel geral. */
-export function updateSummaryPanel(visible: string[], state: HomeState, onRefresh: () => void): void {
+export function updateSummaryPanel(visible: string[], state: HomeState, onRefresh: () => void, hidden = false): void {
   const anchor = document.querySelector("d2l-my-courses-v2");
   if (!anchor?.parentNode) return;
   let box = document.getElementById(SUMMARY_ID);
   const hide = () => box?.remove();
-  if (!visible.length) return hide();
+  if (hidden || !visible.length) return hide();
 
   const missing = visible.filter((ou) => !state.resolved.has(ou)).length;
   if (!missing) state.loadStart = null;
   else state.loadStart ??= Date.now();
   const loading = missing > 0 && Date.now() - (state.loadStart ?? 0) < MAX_WAIT_MS;
 
-  let fresh: string;
+  let fresh: string | null;
+  let closingMode = false;
   if (loading) {
     fresh = loadingHtml(visible.length - missing, visible.length);
   } else {
     const res = overallSummary(visible, state);
-    if (!res || !res.c.items.length) return hide();
-    fresh = summaryHtml(res);
+    if (res && res.c.items.length) {
+      fresh = summaryHtml(res);
+    } else {
+      fresh = semesterSummaryHtml(visible, state);
+      closingMode = true;
+    }
+    if (!fresh) return hide();
   }
 
   if (!box) {
     box = document.createElement("section");
     box.id = SUMMARY_ID;
-    box.setAttribute("aria-label", "Próximo prazo das disciplinas");
+    box.setAttribute("aria-label", closingMode ? "Resumo do semestre" : "Próximo prazo das disciplinas");
     box.addEventListener("click", (ev) => {
       const target = ev.target as Element;
       const button = target.closest?.<HTMLButtonElement>(".eaa-r-refresh");
@@ -236,8 +347,6 @@ export function updateSummaryPanel(visible: string[], state: HomeState, onRefres
         const open = (ev.currentTarget as HTMLElement).classList.toggle("expanded");
         more.setAttribute("aria-expanded", String(open));
       }
-      /* linha da disciplina: guarda qual está aberta para a reescrita do
-         conteúdo (dado novo) não fechá-la */
       const row = target.closest?.(".eaa-r-course")?.closest("li[data-ou]");
       if (row) {
         const ou = (row as HTMLElement).dataset.ou!;
@@ -249,8 +358,8 @@ export function updateSummaryPanel(visible: string[], state: HomeState, onRefres
     });
   }
   box.setAttribute("aria-busy", String(loading));
+  box.setAttribute("aria-label", closingMode ? "Resumo do semestre" : "Próximo prazo das disciplinas");
   if (box.nextSibling !== anchor) anchor.parentNode.insertBefore(box, anchor);
-  /* só reescreve se mudou: a varredura roda a cada segundo */
   if (box.dataset.html !== fresh) {
     box.dataset.html = fresh;
     box.innerHTML = fresh;

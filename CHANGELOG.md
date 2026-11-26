@@ -4,6 +4,18 @@ O que mudou em cada versão, do ponto de vista do aluno. A versão mais recente
 também vai, resumida, na descrição da loja (seção "Novidades" em
 `GUIA-PUBLICACAO.md`).
 
+## 1.2.0 — 26/11/2026
+
+- **Resumo de fim de semestre:** quando os prazos do semestre encerram, o painel
+  acima dos cards passa a mostrar o balanço das disciplinas com notas finais e
+  parciais, destaque de aprovação já garantida mesmo com correção pendente e
+  aviso das matérias que ainda aguardam nota do professor.
+- **Cards mais limpos (estilo editorial) e Layout Amplo (beta):** ao ativar o
+  Layout Amplo clicando no ícone da extensão, os cards passam para o estilo
+  editorial com nota em destaque e a página inicial aproveita até 1440 px
+  mantendo o cabeçalho original do AVA. Desligado por padrão; volta ao layout
+  clássico com um clique.
+
 ## 1.0.3 — 15/10/2026
 
 - **Correção:** com o mouse em cima de um card, o AVA sublinha e pinta de azul

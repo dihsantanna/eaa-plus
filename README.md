@@ -30,5 +30,5 @@ instalar localmente, rode `npm run build` e, em `chrome://extensions` → Modo d
 desenvolvedor → **Carregar sem compactação**, selecione a pasta `build/`.
 
 Como funciona, passo a passo, e o porquê das decisões: [`ARQUITETURA.md`](ARQUITETURA.md).
-Contexto completo para o Claude Code: [`CLAUDE.md`](CLAUDE.md).
+Contexto completo para agentes (Claude Code e Antigravity): [`CLAUDE.md`](CLAUDE.md) e [`AGENTS.md`](AGENTS.md).
 Publicação na loja: [`GUIA-PUBLICACAO.md`](GUIA-PUBLICACAO.md).

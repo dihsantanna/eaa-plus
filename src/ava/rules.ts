@@ -16,12 +16,14 @@ import type {
   Activity,
   ActivityState,
   AvNumber,
+  CourseOutcome,
   CourseSummary,
   DeadlineGroup,
   DropboxFolder,
   GradeObject,
   GradeValue,
   Message,
+  OutcomeStatus,
   Preview,
   Quiz,
   QuizListEntry,
@@ -391,4 +393,160 @@ export function byUrgency(
 /** Prazo de hoje ou amanhã com algo ainda por fazer. */
 export function isUrgent(g: DeadlineGroup, now = Date.now()): boolean {
   return !!(g.deadline && g.deadline >= now && g.c.pending && daysUntil(g.deadline, now) <= 1);
+}
+
+/** Síntese editorial da disciplina (para Estilo C nos cards e resumo de fechamento):
+ *  distingue nota fechada, parcial que já garante aprovação, parcial pendente,
+ *  aguardando sem nota, recuperação (Av3) e reprovado. */
+export function courseOutcome(r: CourseSummary): CourseOutcome {
+  const stillOpen = r.c.awaiting > 0 || r.c.pending > 0;
+  const openHint = r.c.awaiting
+    ? `${r.c.awaiting} aguardando`
+    : r.c.pending
+      ? `${r.c.pending} a fazer`
+      : "aguardando correção";
+
+  if (!r.hasAv) {
+    if (!hasGrade(r)) {
+      return {
+        status: "waiting",
+        label: r.c.awaiting ? "Aguardando" : "Sem nota ainda",
+        scoreText: "—",
+        score: null,
+        partial: false,
+        detail: r.c.awaiting ? `${r.c.awaiting} aguardando correção` : r.c.pending ? `${r.c.pending} a fazer` : "Sem notas lançadas",
+      };
+    }
+    const score = r.av1;
+    const scoreText = formatNum(score);
+    if (stillOpen) {
+      const passed = score >= PASS_MARK;
+      return {
+        status: passed ? "partial_passed" : "partial_wait",
+        label: passed ? "Já passou · Parcial" : "Nota parcial",
+        scoreText,
+        score,
+        partial: true,
+        detail: `Nota ${scoreText} · ${openHint}`,
+      };
+    }
+    const passed = score >= PASS_MARK;
+    return {
+      status: passed ? "approved" : "failed",
+      label: passed ? "Concluído" : "Nota",
+      scoreText,
+      score,
+      partial: false,
+      detail: `Nota única · ${scoreText} / ${formatNum(r.av1Max)}`,
+    };
+  }
+
+  const split =
+    r.av2 !== null
+      ? `Av1 ${formatNum(r.av1)} · Av2 ${formatNum(r.av2)}`
+      : hasGrade(r)
+        ? `Av1 ${formatNum(r.av1)} / ${formatNum(r.av1Max)}`
+        : "Sem nota ainda";
+
+  if (r.av3 !== null) {
+    const scoreText = formatNum(r.av3);
+    return {
+      status: "recovery",
+      label: "Nota da Av3",
+      scoreText,
+      score: r.av3,
+      partial: false,
+      detail: r.av2 !== null ? `Av1 ${formatNum(r.av1)} · Av2 ${formatNum(r.av2)}` : `Av1 ${formatNum(r.av1)}`,
+    };
+  }
+
+  if (r.av2 !== null) {
+    const sum = r.av1 + r.av2;
+    const scoreText = formatNum(sum);
+    if (sum >= PASS_MARK) {
+      if (stillOpen) {
+        return {
+          status: "partial_passed",
+          label: "Já passou · Parcial",
+          scoreText,
+          score: sum,
+          partial: true,
+          detail: `${split} · ${openHint}`,
+        };
+      }
+      return { status: "approved", label: "Aprovado", scoreText, score: sum, partial: false, detail: split };
+    }
+    if (sum >= RECOVERY_MARK) {
+      return {
+        status: "recovery",
+        label: "Av3 (recuperação)",
+        scoreText,
+        score: sum,
+        partial: stillOpen,
+        detail: stillOpen ? `${split} · ${openHint}` : split,
+      };
+    }
+    if (stillOpen) {
+      return { status: "partial_wait", label: "Nota parcial", scoreText, score: sum, partial: true, detail: `${split} · ${openHint}` };
+    }
+    return { status: "failed", label: "Reprovado", scoreText, score: sum, partial: false, detail: split };
+  }
+
+  if (!hasGrade(r)) {
+    return {
+      status: "waiting",
+      label: r.c.awaiting ? "Aguardando" : "Sem nota ainda",
+      scoreText: "—",
+      score: null,
+      partial: false,
+      detail: r.c.awaiting ? `${r.c.awaiting} aguardando correção` : r.c.pending ? `${r.c.pending} a fazer` : "Sem notas lançadas",
+    };
+  }
+
+  const scoreText = formatNum(r.av1);
+  if (r.av1 >= PASS_MARK) {
+    return {
+      status: "partial_passed",
+      label: "Já passou · Parcial",
+      scoreText,
+      score: r.av1,
+      partial: true,
+      detail: r.c.awaiting ? `${split} · ${r.c.awaiting} aguardando` : `Av1 já garante os ${formatNum(PASS_MARK)}`,
+    };
+  }
+  const needed = Math.max(0, PASS_MARK - r.av1);
+  const extra = r.c1.awaiting || r.c1.pending ? openHint : `precisa de ${formatNum(needed)} na Av2`;
+  return {
+    status: "partial_wait",
+    label: "Nota parcial",
+    scoreText,
+    score: r.av1,
+    partial: true,
+    detail: `${split} · ${extra}`,
+  };
+}
+
+/** Disciplina totalmente resolvida e sem prazos futuros: o card oculta os
+ *  fechamentos passados para manter a grade limpa no Estilo C. */
+export function isCleanResolved(r: CourseSummary, now = Date.now()): boolean {
+  const o = courseOutcome(r);
+  if (o.status !== "approved" || o.partial) return false;
+  if (r.c.awaiting > 0 || r.c.pending > 0) return false;
+  return !r.deadlines.some((g) => g.deadline !== null && g.deadline >= now);
+}
+
+/** Ordem da lista de fechamento: o que pede atenção/correção primeiro, depois aprovadas. */
+export function byClosingPriority(
+  a: { status: OutcomeStatus; awaiting: number; name: string },
+  b: { status: OutcomeStatus; awaiting: number; name: string }
+): number {
+  const rank: Record<OutcomeStatus, number> = {
+    recovery: 0,
+    waiting: 1,
+    partial_wait: 2,
+    failed: 3,
+    partial_passed: 4,
+    approved: 5,
+  };
+  return rank[a.status] - rank[b.status] || b.awaiting - a.awaiting || a.name.localeCompare(b.name, "pt-BR");
 }

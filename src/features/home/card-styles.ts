@@ -1,22 +1,28 @@
-/* CSS do bloco dentro de cada card. Vai num <style> dentro do shadow DOM do
- * card (o CSS do manifest não atravessa shadow root). As cores são as
- * variáveis do tema (styles/theme.css), que são herdadas através do shadow
- * DOM. Grade de 4px; toda linha é "rótulo | valor" com as mesmas margens.
- * O bloco fica logo abaixo do título, separado por um divisor; --eaa-shift
- * (alignBlocks) desce os de título curto até a altura dos vizinhos.
- * inline-grid (e não grid): com o mouse em cima, o AVA sublinha e pinta de
- * celeste todo o conteúdo do card (.d2l-card-link-container-hover), e o
- * sublinhado do pai não se propaga para dentro de um inline atômico. */
+/* CSS do bloco dentro de cada card (Estilo C). Vai num <style> dentro do
+ * shadow DOM do card (o CSS do manifest não atravessa shadow root). As cores
+ * são as variáveis do tema (styles/theme.css). inline-grid evita propagação de
+ * sublinhado/cor no hover do card. */
 
 export const CARD_CSS = `
-.eaa-prog{margin-top:calc(12px + var(--eaa-shift,0px));padding-top:12px;border-top:1px solid var(--eaa-track);font:400 12px/16px Lato,'Lucida Sans Unicode',sans-serif;color:var(--eaa-text);display:inline-grid;width:100%;vertical-align:top;gap:8px}
+:host([data-eaa-hide-meta]) d2l-card-content-meta{display:none!important}
+.eaa-prog{margin-top:calc(10px + var(--eaa-shift,0px));padding-top:10px;border-top:1px solid var(--eaa-track);font:400 12px/16px Lato,'Lucida Sans Unicode',sans-serif;color:var(--eaa-text);display:inline-grid;width:100%;vertical-align:top;gap:8px}
 .eaa-prog *{box-sizing:border-box;margin:0;padding:0}
+.eaa-ed{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;min-width:0}
+.eaa-ed-left{min-width:0;display:grid;gap:2px}
+.eaa-ed-tag{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--eaa-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eaa-ed-sub{font-size:11.5px;color:var(--eaa-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eaa-ed-right{flex:none;text-align:right;line-height:1;display:grid;gap:2px}
+.eaa-ed-num{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--eaa-ink)}
+.eaa-ed-part{font-size:9.5px;font-weight:700;color:var(--eaa-muted)}
+.eaa-ed.approved .eaa-ed-tag,.eaa-ed.approved .eaa-ed-num{color:var(--eaa-graded-text)}
+.eaa-ed.partial_passed .eaa-ed-tag,.eaa-ed.partial_passed .eaa-ed-num{color:var(--eaa-graded-text)}
+.eaa-ed.partial_passed .eaa-ed-part{color:var(--eaa-awaiting-text)}
+.eaa-ed.partial_wait .eaa-ed-tag,.eaa-ed.partial_wait .eaa-ed-num,.eaa-ed.waiting .eaa-ed-tag,.eaa-ed.waiting .eaa-ed-num{color:var(--eaa-awaiting-text)}
+.eaa-ed.recovery .eaa-ed-tag,.eaa-ed.recovery .eaa-ed-num{color:var(--eaa-failed-text)}
+.eaa-ed.failed .eaa-ed-tag,.eaa-ed.failed .eaa-ed-num{color:var(--eaa-failed-text)}
 .eaa-pair{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-width:0}
 .eaa-pair>:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .eaa-pair>:last-child{flex:none;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
-.eaa-head{font-weight:700;color:var(--eaa-ink)}
-.eaa-head>:last-child{font-size:13px}
-.eaa-head>.none{font-size:12px;font-weight:400;color:var(--eaa-muted)}
 .eaa-deadline{display:grid;gap:4px}
 .eaa-deadline .eaa-name{font-weight:700;color:var(--eaa-ink)}
 .eaa-deadline.urgent .eaa-when{color:var(--eaa-missed);font-weight:700}
@@ -35,6 +41,9 @@ export const CARD_CSS = `
 .eaa-tag.awaiting{color:var(--eaa-awaiting-text)}
 .eaa-tag.started{color:var(--eaa-started-text)}
 .eaa-tag.missed{color:var(--eaa-missed)}
+.eaa-head{font-weight:700;color:var(--eaa-ink)}
+.eaa-head>:last-child{font-size:13px}
+.eaa-head>.none{font-size:12px;font-weight:400;color:var(--eaa-muted)}
 .eaa-standing{height:24px;line-height:24px;border-radius:4px;text-align:center;font-weight:700;background:var(--eaa-neutral-bg);color:var(--eaa-ink)}
 .eaa-standing.passed{background:var(--eaa-passed-bg);color:var(--eaa-graded-text)}
 .eaa-standing.recovery{background:var(--eaa-recovery-bg);color:var(--eaa-awaiting-text)}

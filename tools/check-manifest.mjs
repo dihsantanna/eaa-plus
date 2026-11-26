@@ -32,6 +32,9 @@ if (m.optional_permissions || m.optional_host_permissions) errors.push("permiss�
 if (JSON.stringify(m.background) !== JSON.stringify({ service_worker: "background.js" }))
   errors.push(`background deveria ser só { "service_worker": "background.js" }`);
 
+if (m.action && m.action.default_popup !== "popup.html")
+  errors.push(`action.default_popup deveria ser "popup.html": ${JSON.stringify(m.action)}`);
+
 /* Um bloco só, e só nas páginas /d2l/ do Brightspace da escola (página
    inicial + todas as páginas de disciplina). Nada além disso. */
 const AVA = "https://batistas.brightspace.com/d2l/*";
@@ -66,14 +69,15 @@ for (const f of sources) {
     errors.push(`${f}: código remoto/dinâmico não é permitido (eval, Function, import(), <script>)`);
   if (/XMLHttpRequest|WebSocket|sendBeacon|EventSource/.test(code)) errors.push(`${f}: só fetch é permitido para rede`);
 
-  /* APIs do Chrome: só o storage.session (memória, some ao fechar) e os
-     eventos do service worker que o liberam. Nada de storage.local/sync.
-     (chrome.storage.StorageArea é só o nome do tipo, para o TypeScript.) */
+  /* APIs do Chrome: storage.session (cache em memória), storage.local (só
+     preferência visual do popup), onChanged e os eventos do service worker. */
   const apis = (code.match(/\bchrome\.[\w.?]+/g) ?? [])
     .map((a) => a.replace(/\?/g, ""))
     .filter(
       (a) =>
-        !/^chrome\.storage(\.session(\.(get|set|remove|setAccessLevel))?|\.StorageArea)?$|^chrome\.runtime\.on(Installed|Startup)\.addListener$/.test(a)
+        !/^chrome\.storage(\.session(\.(get|set|remove|setAccessLevel))?|\.local(\.(get|set))?|\.onChanged(\.(addListener|removeListener))?|\.(StorageArea|StorageChange))?$|^chrome\.runtime\.(getManifest|on(Installed|Startup)\.addListener)$/.test(
+          a
+        )
     );
   if (apis.length) errors.push(`${f}: API do Chrome não combinada: ${[...new Set(apis)].join(", ")}`);
 

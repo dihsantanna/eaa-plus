@@ -79,7 +79,7 @@ function devManifest(m) {
 
 /* A pasta NÃO é apagada (se o Chrome recarregar no meio e não achar o
    manifest, ele descarta a extensão): só saem as sobras de versões antigas. */
-const KEEP = new Set(["manifest.json", "content.js", "content.css", "background.js", "icons", ...Object.keys(DEV_FILES)]);
+const KEEP = new Set(["manifest.json", "content.js", "content.css", "background.js", "popup.js", "popup.css", "popup.html", "icons", ...Object.keys(DEV_FILES)]);
 mkdirSync(OUT_DIR, { recursive: true });
 for (const name of readdirSync(OUT_DIR)) if (!KEEP.has(name)) rmSync(join(OUT_DIR, name), { recursive: true, force: true });
 for (const [name, code] of Object.entries(DEV_FILES)) writeFileSync(join(OUT_DIR, name), code);

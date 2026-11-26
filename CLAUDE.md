@@ -102,9 +102,11 @@ painel e/ou atrasaria a revisão do Google. `check-manifest.mjs` cobra várias.
   barra da disciplina).
 - `permissions` só `["storage"]` (2026-09-23, a pedido do usuário, para o
   cache do AVA; não gera aviso na instalação). Nenhuma `host_permissions`.
-  APIs do Chrome no código: só `chrome.storage.session` e os eventos
-  `runtime.onInstalled/onStartup` do `background.ts` — o verificador cobra.
-  Nada de `storage.local`/`sync` (gravaria notas no disco).
+  APIs do Chrome no código: `chrome.storage.session` (cache das leituras),
+  `chrome.storage.local` **exclusivamente** para a preferência visual de layout
+  do popup (decidido com o usuário em 2026-11-26; política atualizada),
+  `chrome.storage.onChanged` e `runtime.onInstalled/onStartup`/`getManifest` —
+  o verificador cobra. Nada de `storage.sync` nem gravar notas no disco.
 - Zero código remoto: nada de script externo, `eval`, CDN. Minificar é
   permitido pela loja (espaços, nomes, juntar arquivos); ofuscar não é.
 - `fetch` só para rotas do próprio `batistas.brightspace.com` (caminho
@@ -339,6 +341,14 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
 - **1.0.3** (2026-10-15): corrige o bloco do card sublinhado/azul com o mouse
   em cima (regressão da 1.0.1). Zip em `dist/eaa-plus-v1.0.3.zip`. Se a 1.0.2
   ainda estiver em revisão: Store listing → ⋮ → Cancel review e envie a 1.0.3.
+- **Bibliografia / link da biblioteca por disciplina** (pedido de uma colega,
+  avaliado em 2026-10-19): **deixado de fora** por decisão do aluno. Motivos:
+  foge do propósito único declarado (avaliações e prazos) e os dados são
+  ruins — só 3 de 9 disciplinas têm bibliografia no "Plano de Ensino" (HTML no
+  Conteúdo) e só 4 livros com link Pearson (`plataforma.bvirtual.com.br/Acervo/Publicacao/{n}`).
+  Biblioteca A (`biblioteca-a.read.garden`, SSO via LTI) não tem busca na URL,
+  só livro por ISBN (`/viewer/{ISBN}/1`) e não achou "música". Pearson pediu
+  login próprio. Repassado à coordenação.
 - Histórico para o aluno: `CHANGELOG.md`; a seção NOVIDADES da descrição
   (GUIA-PUBLICACAO.md) traz só a última versão.
 - Visibilidade recomendada: **não listado** (só instala quem tem o link).

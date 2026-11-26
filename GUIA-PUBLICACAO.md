@@ -1,5 +1,5 @@
 # EAA+ — Melhorias para alunos
-### Guia de publicação na Chrome Web Store · versão 1.0.3
+### Guia de publicação na Chrome Web Store · versão 1.2.0
 
 > **Atualização.** A 1.0.0 já está publicada (aprovada em outubro de 2026). A
 > 1.0.3 entra como **novo pacote do mesmo item**, não como item novo — veja a
@@ -14,7 +14,7 @@
 
 ## 1. O que está no pacote
 
-`dist/eaa-plus-v1.0.3.zip` — gerado por `npm run build` a partir da pasta `build/`, pronto para upload:
+`dist/eaa-plus-v1.2.0.zip` — gerado por `npm run build` a partir da pasta `build/`, pronto para upload:
 
 | Arquivo | Função |
 |---|---|
@@ -52,9 +52,9 @@ Teste local **não consome** slot do limite de extensões da conta.
 
 ## 3. Upload
 
-**Atualização (1.0.3):** Dashboard → clique no item **EAA+** → aba
+**Atualização (1.2.0):** Dashboard → clique no item **EAA+** → aba
 **Pacote** (*Package*) → **Enviar novo pacote** (*Upload new package*) → escolha
-`dist/eaa-plus-v1.0.3.zip`. Depois atualize a descrição (seção 4) e envie para
+`dist/eaa-plus-v1.2.0.zip`. Depois atualize a descrição (seção 4) e envie para
 revisão (seção 7). Permissões e `matches` não mudaram: as abas de
 Privacidade e Distribuição continuam como estão.
 
@@ -93,18 +93,15 @@ ajudar a si mesmo e aos colegas. Não é um produto oficial e não possui
 vínculo com a Escola de Adoração e Arte nem com a Faculdade Batista
 (FABAT).
 
-NOVIDADES DA VERSÃO 1.0.3
-   • No resumo acima dos cards, uma linha por disciplina com o que falta;
-     um clique abre as atividades, com o estado de cada uma e o link
-     direto para ela
-   • Nos cards, o progresso fica logo abaixo do nome da disciplina,
-     alinhado com os vizinhos; fechamento encerrado e todo corrigido
-     ocupa uma linha só
-   • "Sem nota ainda" no lugar de 0,0 antes da primeira correção
-   • Cores mais fáceis de distinguir e o nome de cada atividade ao
-     passar o mouse na barra
-   • Na barra da disciplina, os dias que faltam aparecem mesmo com a
-     janela estreita
+NOVIDADES DA VERSÃO 1.2.0
+   • Quando todos os prazos do semestre encerram, o resumo no topo agora
+     continua visível com o fechamento das disciplinas (notas finais e
+     parciais, quem já garantiu aprovação e o que ainda aguarda correção
+     do professor)
+   • Novo Layout Amplo (beta) opcional na página inicial: clique no ícone da
+     extensão para ativar a visualização ampliada (com cards em estilo
+     editorial e mais espaço para as disciplinas) ou voltar ao clássico a
+     qualquer momento
    Histórico completo de versões:
    https://github.com/dihsantanna/eaa-plus/blob/main/CHANGELOG.md
 
@@ -228,13 +225,17 @@ dados do usuário para fora do navegador.
 ### 5.2.1 Justificativa da permissão `storage`
 
 ```
-Usada só com chrome.storage.session (memória, nunca disco) como cache
-de curta duração das leituras do AVA: ao voltar à página inicial, a
-extensão reaproveita o que leu há menos de 10 minutos em vez de
-consultar de novo o servidor da instituição para cada disciplina. Os
-dados de uma disciplina são apagados quando o aluno entra nela, e tudo
-é apagado ao fechar o navegador. Não usa storage.local nem
-storage.sync e nada é enviado para fora do navegador.
+Usada principalmente com chrome.storage.session (memória, nunca disco) como
+cache de curta duração das leituras do AVA: ao voltar à página inicial, a
+extensão reaproveita o que leu há menos de 10 minutos em vez de consultar de
+novo o servidor da instituição para cada disciplina. Os dados de uma
+disciplina são apagados quando o aluno entra nela, e tudo é apagado ao
+fechar o navegador.
+
+Usa chrome.storage.local apenas para guardar uma única preferência visual do
+popup (se o aluno usa o layout amplo ou o layout clássico na página inicial).
+Nenhuma nota, nome ou dado pessoal vai para o disco, não usa storage.sync
+e nada é enviado para fora do navegador.
 ```
 
 ### 5.3 Uso de código remoto

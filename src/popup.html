@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EAA+</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <main class="eaa-pop">
+    <header class="eaa-pop-head">
+      <img src="icons/icon48.png" width="22" height="22" alt="" />
+      <div>
+        <h1>EAA+</h1>
+        <span id="eaa-pop-ver"></span>
+      </div>
+    </header>
+
+    <label class="eaa-pop-opt" for="wide-toggle">
+      <strong>Layout Amplo (beta)</strong>
+      <input id="wide-toggle" type="checkbox" role="switch" />
+      <span class="eaa-pop-switch" aria-hidden="true"></span>
+    </label>
+
+    <p id="eaa-pop-status" class="eaa-pop-status" role="status"></p>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -206,3 +206,19 @@ export interface Message {
   tone: Tone;
   text: string;
 }
+
+export type OutcomeStatus = "approved" | "partial_passed" | "partial_wait" | "waiting" | "recovery" | "failed";
+
+export interface CourseOutcome {
+  status: OutcomeStatus;
+  /** Rótulo curto de estado, ex.: "Aprovado", "Já passou · Parcial", "Nota parcial" */
+  label: string;
+  /** Nota atual formatada ("10,0", "7,5") ou "—" se ainda sem nota */
+  scoreText: string;
+  /** Valor numérico da nota atual (null se sem nota ainda) */
+  score: number | null;
+  /** true quando a nota ainda é parcial (faltam correções ou Av2) */
+  partial: boolean;
+  /** Detalhe curto, ex.: "Av1 5,0 · Av2 5,0" ou "Av1 4,7 · precisa de 1,3 na Av2" */
+  detail: string;
+}

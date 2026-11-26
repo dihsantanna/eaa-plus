@@ -21,7 +21,7 @@ const TARGET = "chrome120";
 
 function options({ outdir, minify, sourcemap }) {
   return {
-    entryPoints: { content: "src/content.ts", background: "src/background.ts" },
+    entryPoints: { content: "src/content.ts", background: "src/background.ts", popup: "src/popup.ts" },
     outdir,
     bundle: true,
     format: "iife",
@@ -38,6 +38,7 @@ function options({ outdir, minify, sourcemap }) {
 function writeStatic(outdir, transformManifest) {
   const manifest = JSON.parse(readFileSync("src/manifest.json", "utf8"));
   writeFileSync(`${outdir}/manifest.json`, JSON.stringify(transformManifest(manifest), null, 2));
+  cpSync("src/popup.html", `${outdir}/popup.html`);
   cpSync("icons", `${outdir}/icons`, { recursive: true });
 }
 

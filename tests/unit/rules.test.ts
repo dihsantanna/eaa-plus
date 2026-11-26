@@ -302,3 +302,82 @@ describe("textos e datas (Brasília)", () => {
     assert.equal(plural(2, "perdida", "perdidas"), "2 perdidas");
   });
 });
+
+describe("síntese editorial e fechamento (courseOutcome, isCleanResolved)", () => {
+  test("disciplina fechada e aprovada fica limpa (isCleanResolved = true)", () => {
+    const r = summary({
+      gi: [...AV_FORMULAS, numeric(101, "A", 5)],
+      values: [...av(4, 3), value(101, "A", 4, 5)],
+      quizzes: [quiz(8001, 101, YESTERDAY)],
+    });
+    const o = R.courseOutcome(r);
+    assert.equal(o.status, "approved");
+    assert.equal(o.label, "Aprovado");
+    assert.equal(o.scoreText, "7,0");
+    assert.equal(o.partial, false);
+    assert.equal(R.isCleanResolved(r, NOW), true);
+  });
+
+  test("nota parcial que já garante aprovação sinaliza partial_passed", () => {
+    /* Caso 1: Av1 + Av2 >= 6 com atividade da Av1 ainda aguardando correção */
+    const r = summary({
+      gi: [...AV_FORMULAS, numeric(101, "A1", 4), numeric(102, "A2", 1)],
+      values: [...av(4, 2.5), value(101, "A1", 4, 4)],
+      quizzes: [quiz(8001, 101, YESTERDAY), quiz(8002, 102, YESTERDAY)],
+      quizList: { 8001: { section: SEC1, used: 1, inProgress: false }, 8002: { section: SEC1, used: 1, inProgress: false } },
+    });
+    const o = R.courseOutcome(r);
+    assert.equal(o.status, "partial_passed");
+    assert.equal(o.label, "Já passou · Parcial");
+    assert.equal(o.scoreText, "6,5");
+    assert.equal(o.partial, true);
+    assert.equal(R.isCleanResolved(r, NOW), false);
+
+    /* Caso 2: só a Av1 já soma 6,0 (sem Av2 lançada) */
+    const rAv1 = summary({
+      gi: [...AV_FORMULAS, numeric(101, "A1", 6)],
+      values: [...av(6, 0), value(101, "A1", 6, 6)],
+      quizzes: [quiz(8001, 101, YESTERDAY)],
+    });
+    assert.equal(R.courseOutcome(rAv1).status, "partial_passed");
+  });
+
+  test("nota parcial abaixo de 6 aguardando Av2 mostra o que falta", () => {
+    const r = summary({
+      gi: [...AV_FORMULAS, numeric(101, "A", 5)],
+      values: [...av(4.7, 0), value(101, "A", 4.7, 5)],
+      quizzes: [quiz(8001, 101, YESTERDAY), quiz(8099, 1099, YESTERDAY, "Av2")],
+      quizList: { 8099: { section: "Avaliação 2 (Av2)", used: 1, inProgress: false } },
+    });
+    const o = R.courseOutcome(r);
+    assert.equal(o.status, "partial_wait");
+    assert.equal(o.label, "Nota parcial");
+    assert.equal(o.scoreText, "4,7");
+    assert.match(o.detail, /precisa de 1,3 na Av2/);
+  });
+
+  test("disciplina sem Av1/Av2 aguardando correção sem nota", () => {
+    const r = summary({
+      gi: [numeric(901, "Relatório", 10)],
+      folders: [folder(7901, 901, YESTERDAY)],
+      submissions: { submittedIds: { 7901: true }, sections: {} },
+    });
+    const o = R.courseOutcome(r);
+    assert.equal(o.status, "waiting");
+    assert.equal(o.scoreText, "—");
+    assert.match(o.detail, /1 aguardando/);
+  });
+
+  test("disciplina sem Av1/Av2 concluída e aprovada mostra Concluído", () => {
+    const r = summary({
+      gi: [numeric(901, "Relatório", 10)],
+      values: [value(901, "Relatório", 10, 10)],
+      folders: [folder(7901, 901, YESTERDAY)],
+    });
+    const o = R.courseOutcome(r);
+    assert.equal(o.status, "approved");
+    assert.equal(o.label, "Concluído");
+    assert.equal(o.scoreText, "10,0");
+    assert.equal(R.isCleanResolved(r, NOW), true);
+  });
+});

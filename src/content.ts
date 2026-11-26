@@ -10,11 +10,25 @@
 import "./styles/theme.css";
 import "./styles/summary-panel.css";
 import "./styles/course-bar.css";
+import "./styles/wide-layout.css";
 
 import { initCache } from "./ava/cache.ts";
+import { getWideLayout } from "./ava/prefs.ts";
 import { registerFeature } from "./core/registry.ts";
 import { courseBarFeature } from "./features/course-bar/index.ts";
 import { homeFeature } from "./features/home/index.ts";
+
+/* Na página inicial (/d2l/home), se o Layout Amplo (beta) estiver ligado,
+   suspende a exibição até aplicar o cabeçalho, a barra única e as abas
+   (teto de segurança de 2,5 s). */
+if (/^\/d2l\/home\/?$/.test(location.pathname)) {
+  void getWideLayout().then((wide) => {
+    if (!wide) return;
+    if (document.querySelector("d2l-my-courses-v2")?.shadowRoot) return;
+    document.documentElement.classList.add("eaa-booting");
+    setTimeout(() => document.documentElement.classList.remove("eaa-booting"), 2500);
+  });
+}
 
 initCache();
 registerFeature(homeFeature);
