@@ -202,10 +202,17 @@ export const CLOSED = [
   closedWaiting(50102, "Canto Coral e Prática de Conjunto Vocal e Instrumental", 1),
   ...Array.from({ length: 10 }, (_, i) => closedApproved(50103 + i, `Disciplina concluída ${i + 1}`)),
 ];
+/* notas com casas diferentes (1,25 e 5,0) e uma ainda sem correção */
+Object.assign(CLOSED[2], {
+  grades: [...FORMULAS, numeric(1, "Atividade Módulo I", 1.25), numeric(2, "Atividade AV2", 5), numeric(3, "Fórum", 1)],
+  values: [...av(5.0, 4.0), value(1, "Atividade Módulo I", 1.25, 1.25), value(2, "Atividade AV2", 5, 5)],
+  quizzes: [quiz(1, 1, -5), quiz(2, 2, -5), quiz(3, 3, -5)],
+  quizList: [[SEC1, [[1, 1], [2, 1], [3, 1]]]],
+});
 const CLOSED_PANELS = {
   closed9: CLOSED.slice(0, 9).map((d) => d.ou),
   closed12: CLOSED.map((d) => d.ou),
-  passed9: CLOSED.slice(2, 11).map((d) => d.ou),
+  passed9: CLOSED.slice(3, 12).map((d) => d.ou),
   one: [CLOSED[0].ou],
 };
 

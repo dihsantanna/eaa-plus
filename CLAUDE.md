@@ -33,7 +33,7 @@ pasta dela em `src/features/`.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 46 unitários (regras, <1s) + 71 E2E com a extensão carregada de verdade
+npm test                           # 46 unitários (regras, <1s) + 72 E2E com a extensão carregada de verdade
 npm run test:unit                  # só os unitários das regras (tests/unit/, TypeScript direto no Node)
 npm run typecheck                  # tsc estrito (sem gerar arquivos)
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)

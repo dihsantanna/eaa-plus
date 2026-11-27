@@ -237,9 +237,11 @@
 
 #eaa-summary-wide .eaa-r-acts ul {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  /* cor | nome | estado | pontos | quanto vale: as linhas usam as mesmas
+     colunas (subgrid), com a largura do maior texto da lista */
+  grid-template-columns: 16px minmax(0, 1fr) auto auto auto;
   grid-auto-rows: minmax(24px, auto);
-  gap: 2px;
+  gap: 2px 8px; /* entre linhas | entre colunas */
   max-height: 128px; /* 5 × 24 + 4 × 2 */
   overflow-y: auto;
   list-style: none;
@@ -252,9 +254,9 @@
 
 #eaa-summary-wide .eaa-r-acts li {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 8px;
   border: 0;
   font-size: 13px;
 }
@@ -290,6 +292,26 @@
 #eaa-summary-wide .eaa-r-gocourse:hover,
 #eaa-summary-wide .eaa-r-gocourse:focus-visible {
   text-decoration: underline;
+}
+
+/* pontos encostam na barra e "/ quanto vale" começa sempre no mesmo ponto */
+#eaa-summary-wide .eaa-r-got,
+#eaa-summary-wide .eaa-r-of {
+  white-space: nowrap;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--eaa-graded-text);
+}
+
+#eaa-summary-wide .eaa-r-got {
+  justify-self: end;
+  margin-left: 8px;
+  font-weight: 700;
+}
+
+#eaa-summary-wide .eaa-r-of {
+  margin-left: -4px; /* 8px entre colunas - 4 = o mesmo que o espaço depois da barra */
+  padding-right: 4px;
 }
 
 #eaa-summary-wide .eaa-r-istate {

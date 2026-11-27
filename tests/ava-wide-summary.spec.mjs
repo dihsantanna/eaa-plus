@@ -105,7 +105,35 @@ test.describe("painel do Layout Amplo", () => {
     await open(page, baseURL);
     await rowButton(page, 50001).click();
     /* 0,8 de 0,84; as outras ainda não têm nota */
-    await expect(panel(page).locator(".eaa-r-acts:visible .eaa-r-istate")).toHaveText(["corrigida · 0,8 / 0,84", "aguardando correção", "a fazer"]);
+    const open1 = panel(page).locator(".eaa-r-acts:visible");
+    await expect(open1.locator(".eaa-r-istate")).toHaveText(["corrigida", "aguardando correção", "a fazer"]);
+    await expect(open1.locator(".eaa-r-got")).toHaveText(["0,8", "", ""]);
+    await expect(open1.locator(".eaa-r-of")).toHaveText(["/ 0,84", "", ""]);
+  });
+
+  test("estados e notas em colunas: mesma posição em todas as linhas", async ({ page, baseURL }) => {
+    await open(page, baseURL, "closed9");
+    await rowButton(page, 50103).click();
+    const acts = panel(page).locator(".eaa-r-acts:visible");
+    await expect(acts.locator(".eaa-r-got")).toHaveText(["1,25", "5,0", ""]);
+    const edges = (cls, side) =>
+      acts.locator(cls).evaluateAll((els, s) => els.filter((e) => e.textContent).map((e) => Math.round(e.getBoundingClientRect()[s])), side);
+    const aligned = async (cls, side) => new Set(await edges(cls, side)).size;
+    expect(await aligned(".eaa-r-istate", "left"), "estados começam juntos").toBe(1);
+    expect(await aligned(".eaa-r-got", "right"), "pontos terminam juntos").toBe(1);
+    expect(await aligned(".eaa-r-of", "left"), "barras uma embaixo da outra").toBe(1);
+    /* a barra respira igual dos dois lados: o vão antes dela é como o espaço
+       depois ("1,25 / 1,25") */
+    const gaps = await acts.locator("li").evaluateAll((rows) =>
+      rows
+        .map((li) => [li.querySelector(".eaa-r-got"), li.querySelector(".eaa-r-of")])
+        .filter(([got]) => got.textContent)
+        .map(([got, of]) => of.getBoundingClientRect().left - got.getBoundingClientRect().right)
+    );
+    for (const gap of gaps) {
+      expect(gap, "vão antes da barra").toBeGreaterThanOrEqual(3);
+      expect(gap, "vão antes da barra").toBeLessThanOrEqual(5);
+    }
   });
 
   test("botões resistem ao CSS do AVA", async ({ page, baseURL }) => {

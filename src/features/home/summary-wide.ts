@@ -20,12 +20,18 @@ const rowClass = (i: number, n: number): string => {
   return cls ? ` class="${cls}"` : "";
 };
 
-/** "corrigida · 0,8 / 0,84". Na Av2 e na Av3 o AVA esconde a nota de cada
- *  atividade (só o total é liberado): fica só o estado. */
-const activityStatus = (it: Activity): string =>
-  it.state === "graded" && it.points !== null && it.max > 0
-    ? `${STATE_LABEL[it.state]} · ${formatPoints(it.points)} / ${formatPoints(it.max)}`
-    : STATE_LABEL[it.state!];
+/** Estado | pontos | "/ quanto vale", cada um na sua coluna, para tudo ficar
+ *  alinhado entre as linhas. Sem nota, as duas últimas ficam vazias. Na Av2 e
+ *  na Av3 o AVA pode esconder a nota de cada atividade (só o total é
+ *  liberado): fica só o estado. */
+function activityCells(it: Activity): string {
+  const graded = it.state === "graded" && it.points !== null && it.max > 0;
+  return (
+    `<span class="eaa-r-istate">${STATE_LABEL[it.state!]}</span>` +
+    `<span class="eaa-r-got">${graded ? formatPoints(it.points!) : ""}</span>` +
+    `<span class="eaa-r-of">${graded ? `/ ${formatPoints(it.max)}` : ""}</span>`
+  );
+}
 
 /** Linha de uma disciplina: nome | situação | seta, e as atividades dela.
  *  Com rolagem, a lista precisa receber o foco para rolar pelo teclado. */
@@ -33,7 +39,7 @@ const row = (c: { ou: string; name: string; items: PendingCourse["items"] }, cls
   `<li${cls} data-ou="${c.ou}">` +
   `<button type="button" class="eaa-r-course${buttonCls}" aria-expanded="false" aria-controls="eaa-r-acts-${c.ou}" title="${esc(c.name)}">` +
   `<span class="eaa-r-cname">${esc(shortName(c.name))}</span>${status}${CHEVRON}</button>` +
-  activityList(c.ou, c.name, c.items, c.items.length > ACTS_SHOWN ? ` tabindex="0"` : "", activityStatus) +
+  activityList(c.ou, c.name, c.items, c.items.length > ACTS_SHOWN ? ` tabindex="0"` : "", activityCells) +
   `</li>`;
 
 const courseRow = (d: PendingCourse, cls: string): string => {
