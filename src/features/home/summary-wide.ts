@@ -2,13 +2,14 @@
  * progresso e texto à esquerda, disciplinas em 2 colunas à direita, uma aberta
  * por vez. Estilo em styles/summary-wide.css; o clássico é summary-panel.ts. */
 
-import { daysUntil, escapeHtml as esc, formatDate, formatTime, plural, timeLeft } from "../../ava/format.ts";
+import { daysUntil, escapeHtml as esc, formatDate, formatPoints, formatTime, plural, timeLeft } from "../../ava/format.ts";
 import { ROWS_WIDE, columnSplit, rowsShown } from "../../ava/rules.ts";
 import { STATE_LABEL } from "../shared/render.ts";
 import { ring } from "./ring.ts";
 import type { HomeState } from "./state.ts";
 import { CHEVRON, activityList, closingPill, closingSummary, legend, shortName } from "./summary-data.ts";
 import type { ClosingCourse, Overall, PendingCourse } from "./summary-data.ts";
+import type { Activity } from "../../ava/types.ts";
 
 /** Atividades à vista na linha aberta; acima disso a lista rola. */
 const ACTS_SHOWN = 5;
@@ -19,13 +20,20 @@ const rowClass = (i: number, n: number): string => {
   return cls ? ` class="${cls}"` : "";
 };
 
+/** "corrigida · 0,8 / 0,84". Na Av2 e na Av3 o AVA esconde a nota de cada
+ *  atividade (só o total é liberado): fica só o estado. */
+const activityStatus = (it: Activity): string =>
+  it.state === "graded" && it.points !== null && it.max > 0
+    ? `${STATE_LABEL[it.state]} · ${formatPoints(it.points)} / ${formatPoints(it.max)}`
+    : STATE_LABEL[it.state!];
+
 /** Linha de uma disciplina: nome | situação | seta, e as atividades dela.
  *  Com rolagem, a lista precisa receber o foco para rolar pelo teclado. */
 const row = (c: { ou: string; name: string; items: PendingCourse["items"] }, cls: string, buttonCls: string, status: string): string =>
   `<li${cls} data-ou="${c.ou}">` +
   `<button type="button" class="eaa-r-course${buttonCls}" aria-expanded="false" aria-controls="eaa-r-acts-${c.ou}" title="${esc(c.name)}">` +
   `<span class="eaa-r-cname">${esc(shortName(c.name))}</span>${status}${CHEVRON}</button>` +
-  activityList(c.ou, c.name, c.items, c.items.length > ACTS_SHOWN ? ` tabindex="0"` : "") +
+  activityList(c.ou, c.name, c.items, c.items.length > ACTS_SHOWN ? ` tabindex="0"` : "", activityStatus) +
   `</li>`;
 
 const courseRow = (d: PendingCourse, cls: string): string => {

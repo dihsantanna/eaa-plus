@@ -94,14 +94,17 @@ export const CHEVRON =
   `<svg class="eaa-r-go" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ` +
   `stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
 
-/** `listAttrs` vai na <ul> (o painel do Amplo a torna focável quando rola). */
-export function activityList(ou: string, name: string, itemsList: Activity[], listAttrs = ""): string {
+const stateLabel = (it: Activity): string => STATE_LABEL[it.state!];
+
+/** `listAttrs` vai na <ul> (o painel do Amplo a torna focável quando rola) e
+ *  `stateText` é o texto à direita de cada atividade. */
+export function activityList(ou: string, name: string, itemsList: Activity[], listAttrs = "", stateText = stateLabel): string {
   const items = itemsList
     .map((it) => {
       const link = it.link
         ? `<a class="eaa-r-iname" href="${esc(it.link)}">${esc(it.name)}</a>`
         : `<span class="eaa-r-iname">${esc(it.name)}</span>`;
-      return `<li class="${it.state}"><i aria-hidden="true"></i>${link}<span class="eaa-r-istate">${STATE_LABEL[it.state!]}</span></li>`;
+      return `<li class="${it.state}"><i aria-hidden="true"></i>${link}<span class="eaa-r-istate">${stateText(it)}</span></li>`;
     })
     .join("");
   return (

@@ -324,6 +324,8 @@ test.describe("resumo do próximo prazo", () => {
 
   test("legenda com os cinco estados, de borda a borda e espaços iguais", async ({ page }) => {
     await page.open();
+    /* só mede depois de carregar: antes disso o painel é reescrito a cada segundo */
+    await expect(summary(page)).toHaveAttribute("aria-busy", "false", { timeout: 8000 });
     const legendList = summary(page).locator(".eaa-r-legend");
     const items = legendList.locator("li");
     await expect(items).toHaveText(["Corrigida", "Aguardando correção", "Iniciada, não enviada", "Prazo perdido", "A fazer"]);

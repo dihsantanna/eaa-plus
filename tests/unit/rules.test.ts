@@ -11,7 +11,7 @@
 
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { dayOf, formatNum, plural, timeLeft } from "../../src/ava/format.ts";
+import { dayOf, formatNum, formatPoints, plural, timeLeft } from "../../src/ava/format.ts";
 import * as R from "../../src/ava/rules.ts";
 import type { Activity, CourseSummary, DropboxFolder, GradeObject, GradeValue, Quiz, RawCourse } from "../../src/ava/types.ts";
 
@@ -387,5 +387,11 @@ describe("painel geral em duas colunas", () => {
     assert.deepEqual([1, 2, 9, 10, 14].map((n) => R.columnSplit(n)), [1, 1, 5, 5, 5]);
     /* com "Ver mais" aberto, as colunas dividem todas as linhas */
     assert.deepEqual([9, 14, 20].map((n) => R.columnSplit(n, true)), [5, 7, 10]);
+  });
+});
+
+describe("nota por atividade", () => {
+  test("até duas casas, para 0,8 de 0,84 não parecer nota cheia", () => {
+    assert.deepEqual([0.8, 0.84, 2.5, 10, 0, 1.256].map(formatPoints), ["0,8", "0,84", "2,5", "10,0", "0,0", "1,26"]);
   });
 });

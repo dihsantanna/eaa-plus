@@ -46,6 +46,11 @@ export function timeLeft(t: number, prefix = false, now = Date.now()): string {
 export const formatNum = (n: number): string =>
   (Math.round(n * 10) / 10).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
+/** Pontos de uma atividade, que valem frações como 0,84: até duas casas,
+ *  para 0,8 de 0,84 não aparecer como "0,8 de 0,8". */
+export const formatPoints = (n: number): string =>
+  n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+
 /** plural(2, "perdida", "perdidas") → "2 perdidas" */
 export const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 

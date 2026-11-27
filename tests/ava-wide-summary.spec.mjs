@@ -89,7 +89,7 @@ test.describe("painel do Layout Amplo", () => {
   test("a linha abre as atividades, e abrir outra fecha a anterior", async ({ page, baseURL }) => {
     await open(page, baseURL);
     await rowButton(page, 50001).click();
-    await expect(panel(page).locator(".eaa-r-acts:visible .eaa-r-istate")).toHaveText(["corrigida", "aguardando correção", "a fazer"]);
+    await expect(panel(page).locator(".eaa-r-acts:visible .eaa-r-istate")).toHaveText([/^corrigida/, "aguardando correção", "a fazer"]);
     await rowButton(page, 50008).click();
     await expect(rowButton(page, 50001)).toHaveAttribute("aria-expanded", "false");
     await expect(rowButton(page, 50008)).toHaveAttribute("aria-expanded", "true");
@@ -99,6 +99,13 @@ test.describe("painel do Layout Amplo", () => {
     await rowButton(page, 50008).focus();
     await page.keyboard.press("Enter");
     await expect(panel(page).locator(".eaa-r-acts:visible")).toHaveCount(0);
+  });
+
+  test("atividade corrigida mostra a nota dela e quanto vale", async ({ page, baseURL }) => {
+    await open(page, baseURL);
+    await rowButton(page, 50001).click();
+    /* 0,8 de 0,84; as outras ainda não têm nota */
+    await expect(panel(page).locator(".eaa-r-acts:visible .eaa-r-istate")).toHaveText(["corrigida · 0,8 / 0,84", "aguardando correção", "a fazer"]);
   });
 
   test("botões resistem ao CSS do AVA", async ({ page, baseURL }) => {
