@@ -353,6 +353,10 @@ Rotas vistas: `/d2l/home/{ou}`, `/d2l/le/lessons/{ou}/…` (Conteúdo),
   Biblioteca A (`biblioteca-a.read.garden`, SSO via LTI) não tem busca na URL,
   só livro por ISBN (`/viewer/{ISBN}/1`) e não achou "música". Pearson pediu
   login próprio. Repassado à coordenação.
+- **1.2.1** (2026-11-27): no Layout Amplo, painel geral compacto (anel + 2
+  colunas), nota por atividade corrigida, carregamento novo e correção do
+  layout antigo piscando na abertura. O clássico não mudou. Zip em
+  `dist/eaa-plus-v1.2.1.zip`, a enviar pelo aluno no painel.
 - Histórico para o aluno: `CHANGELOG.md`; a seção NOVIDADES da descrição
   (GUIA-PUBLICACAO.md) traz só a última versão.
 - Visibilidade recomendada: **não listado** (só instala quem tem o link).

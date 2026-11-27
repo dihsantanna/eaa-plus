@@ -1,20 +1,21 @@
 # EAA+ — Melhorias para alunos
-### Guia de publicação na Chrome Web Store · versão 1.2.0
+### Guia de publicação na Chrome Web Store · versão 1.2.1
 
-> **Atualização.** A 1.0.0 já está publicada (aprovada em outubro de 2026). A
-> 1.0.3 entra como **novo pacote do mesmo item**, não como item novo — veja a
-> seção 3. Se a 1.0.2 ainda estiver em revisão: **Store listing → ⋮ → Cancel
-> review** (o envio volta a rascunho) e envie a 1.0.3, que inclui tudo dela. Ela roda **só no AVA** (Brightspace) da EAA/FABAT.
+> **Atualização.** A extensão já está publicada. A 1.2.1 entra como **novo
+> pacote do mesmo item**, não como item novo — veja a seção 3. Se a versão
+> anterior ainda estiver em revisão: **Store listing → ⋮ → Cancel review** (o
+> envio volta a rascunho) e envie a 1.2.1, que inclui tudo dela. Ela roda **só
+> no AVA** (Brightspace) da EAA/FABAT.
 >
 > Cada pacote enviado precisa ter a versão **maior** que a publicada
 > (*"Each new version must have a larger version number than the previous
-> version"*). A 1.0.3 inclui tudo da 1.0.1 e da 1.0.2. O que mudou em cada versão está em `CHANGELOG.md`.
+> version"*). O que mudou em cada versão está em `CHANGELOG.md`.
 
 ---
 
 ## 1. O que está no pacote
 
-`dist/eaa-plus-v1.2.0.zip` — gerado por `npm run build` a partir da pasta `build/`, pronto para upload:
+`dist/eaa-plus-v1.2.1.zip` — gerado por `npm run build` a partir da pasta `build/`, pronto para upload:
 
 | Arquivo | Função |
 |---|---|
@@ -52,9 +53,9 @@ Teste local **não consome** slot do limite de extensões da conta.
 
 ## 3. Upload
 
-**Atualização (1.2.0):** Dashboard → clique no item **EAA+** → aba
+**Atualização (1.2.1):** Dashboard → clique no item **EAA+** → aba
 **Pacote** (*Package*) → **Enviar novo pacote** (*Upload new package*) → escolha
-`dist/eaa-plus-v1.2.0.zip`. Depois atualize a descrição (seção 4) e envie para
+`dist/eaa-plus-v1.2.1.zip`. Depois atualize a descrição (seção 4) e envie para
 revisão (seção 7). Permissões e `matches` não mudaram: as abas de
 Privacidade e Distribuição continuam como estão.
 
@@ -93,15 +94,14 @@ ajudar a si mesmo e aos colegas. Não é um produto oficial e não possui
 vínculo com a Escola de Adoração e Arte nem com a Faculdade Batista
 (FABAT).
 
-NOVIDADES DA VERSÃO 1.2.0
-   • Quando todos os prazos do semestre encerram, o resumo no topo agora
-     continua visível com o fechamento das disciplinas (notas finais e
-     parciais, quem já garantiu aprovação e o que ainda aguarda correção
-     do professor)
-   • Novo Layout Amplo (beta) opcional na página inicial: clique no ícone da
-     extensão para ativar a visualização ampliada (com cards em estilo
-     editorial e mais espaço para as disciplinas) ou voltar ao clássico a
-     qualquer momento
+NOVIDADES DA VERSÃO 1.2.1
+   • Layout Amplo (beta): o resumo no topo ficou mais baixo, com um anel de
+     progresso e as disciplinas em duas colunas, deixando mais espaço para
+     os cards
+   • Ao abrir uma disciplina no resumo, cada atividade corrigida mostra a
+     sua nota e quanto ela vale, quando o AVA libera essa nota
+   • Carregamento melhorado e correção do layout antigo que aparecia por um
+     instante antes do Layout Amplo
    Histórico completo de versões:
    https://github.com/dihsantanna/eaa-plus/blob/main/CHANGELOG.md
 

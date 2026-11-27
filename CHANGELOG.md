@@ -4,6 +4,21 @@ O que mudou em cada versão, do ponto de vista do aluno. A versão mais recente
 também vai, resumida, na descrição da loja (seção "Novidades" em
 `GUIA-PUBLICACAO.md`).
 
+## 1.2.1 — 27/11/2026
+
+Tudo abaixo vale para o **Layout Amplo (beta)**, exceto quando indicado.
+
+- **Painel de resumo mais baixo:** um anel mostra o progresso e as disciplinas
+  ficam em duas colunas, todas à vista (até 10). Sobra mais tela para os cards.
+- **Uma disciplina aberta por vez:** abrir outra fecha a anterior. Com mais de
+  5 atividades, a lista rola.
+- **Nota de cada atividade corrigida:** quanto você tirou e quanto ela vale,
+  alinhados em colunas. Aparece quando o AVA libera a nota da atividade.
+- **Carregamento:** cada disciplina ganha o nome no painel conforme o AVA
+  responde.
+- **Correção:** ao abrir a página inicial, o layout antigo aparecia antes de o
+  Layout Amplo ser aplicado.
+
 ## 1.2.0 — 26/11/2026
 
 - **Resumo de fim de semestre:** quando os prazos do semestre encerram, o painel
