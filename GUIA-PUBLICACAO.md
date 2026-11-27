@@ -82,6 +82,9 @@ Progresso das avaliações no AVA da EAA/FABAT: o que já foi corrigido, o que a
 
 **Descrição detalhada**
 
+**Cada parágrafo e cada tópico fica numa linha só.** A loja mantém as quebras
+de linha do texto colado: quebrar à mão aqui sai quebrado lá.
+
 A seção **NOVIDADES** traz só a última versão: troque o texto dela a cada
 atualização (o histórico completo fica em `CHANGELOG.md`). A loja não tem
 campo próprio para isso, e a orientação do Google é descrição concisa e
@@ -89,63 +92,39 @@ precisa, sem excesso de palavras-chave.
 
 ```
 PROJETO INDEPENDENTE, CRIADO POR UM ALUNO
-Esta extensão foi feita por um aluno da Escola de Adoração e Arte para
-ajudar a si mesmo e aos colegas. Não é um produto oficial e não possui
-vínculo com a Escola de Adoração e Arte nem com a Faculdade Batista
-(FABAT).
+Esta extensão foi feita por um aluno da Escola de Adoração e Arte para ajudar a si mesmo e aos colegas. Não é um produto oficial e não possui vínculo com a Escola de Adoração e Arte nem com a Faculdade Batista (FABAT).
 
 NOVIDADES DA VERSÃO 1.2.1
-   • Layout Amplo (beta): o resumo no topo ficou mais baixo, com um anel de
-     progresso e as disciplinas em duas colunas, deixando mais espaço para
-     os cards
-   • Ao abrir uma disciplina no resumo, cada atividade corrigida mostra a
-     sua nota e quanto ela vale, quando o AVA libera essa nota
-   • Carregamento melhorado e correção do layout antigo que aparecia por um
-     instante antes do Layout Amplo
-   Histórico completo de versões:
-   https://github.com/dihsantanna/eaa-plus/blob/main/CHANGELOG.md
+• Layout Amplo (beta): o resumo no topo ficou mais baixo, com um anel de progresso e as disciplinas em duas colunas, deixando mais espaço para os cards
+• Ao abrir uma disciplina no resumo, cada atividade corrigida mostra a sua nota e quanto ela vale, quando o AVA libera essa nota
+• Carregamento melhorado e correção do layout antigo que aparecia por um instante antes do Layout Amplo
+
+Histórico completo de versões:
+https://github.com/dihsantanna/eaa-plus/blob/main/CHANGELOG.md
 
 O QUE ELA FAZ
 
-Acompanhar as avaliações no AVA (Brightspace) exige entrar em cada
-disciplina e procurar em várias telas. A extensão reúne isso onde o
-aluno já está.
+Acompanhar as avaliações no AVA (Brightspace) exige entrar em cada disciplina e procurar em várias telas. A extensão reúne isso onde o aluno já está.
 
 1. Progresso nas disciplinas (página inicial do AVA)
-   • Em cada card de "Minhas Disciplinas", uma barra com a Av1: quanto
-     já foi corrigido, o que está aguardando correção e o que ficou
-     para trás
-   • Contagem de atividades corrigidas, aguardando, perdidas e a fazer
-   • O próximo prazo de cada disciplina, destacado quando é hoje ou
-     amanhã
-   • Quando todas as atividades estão resolvidas, quanto falta na Av2
-     para chegar a 6,0; depois da Av2, se aprovou ou vai para a Av3
-     (regra do Manual do Aluno EaD)
-   • Acima dos cards, o próximo fechamento de todas as disciplinas e
-     uma lista das que ainda têm algo pendente; cada uma abre e mostra
-     as atividades, com o link direto para cada uma
+• Em cada card de "Minhas Disciplinas", uma barra com a Av1: quanto já foi corrigido, o que está aguardando correção e o que ficou para trás
+• Contagem de atividades corrigidas, aguardando, perdidas e a fazer
+• O próximo prazo de cada disciplina, destacado quando é hoje ou amanhã
+• Quando todas as atividades estão resolvidas, quanto falta na Av2 para chegar a 6,0; depois da Av2, se aprovou ou vai para a Av3 (regra do Manual do Aluno EaD)
+• Acima dos cards, o próximo fechamento de todas as disciplinas e uma lista das que ainda têm algo pendente; cada uma abre e mostra as atividades, com o link direto para cada uma
 
 2. Barra da disciplina
-   • Em qualquer página de uma disciplina (conteúdo, atividades,
-     notas...), a mesma barra aparece na faixa de navegação dela
-   • Um clique abre a lista das atividades de cada fechamento, com o
-     estado de cada uma e o link direto para ela
+• Em qualquer página de uma disciplina (conteúdo, atividades, notas...), a mesma barra aparece na faixa de navegação dela
+• Um clique abre a lista das atividades de cada fechamento, com o estado de cada uma e o link direto para ela
 
 OBSERVAÇÃO
-Extensões do Chrome não funcionam no celular. Esta extensão só tem
-efeito no computador.
+Extensões do Chrome não funcionam no celular. Esta extensão só tem efeito no computador.
 
 PRIVACIDADE
-Nada sai do seu navegador. A extensão consulta as suas notas e entregas
-no próprio Brightspace, com a sua sessão, apenas para montar a barra de
-progresso. Para não repetir as consultas a cada página, guarda o que
-leu por até 10 minutos, só na memória do navegador (some ao fechá-lo).
-Não há servidor da extensão e não há coleta.
+Nada sai do seu navegador. A extensão consulta as suas notas e entregas no próprio Brightspace, com a sua sessão, apenas para montar a barra de progresso. Para não repetir as consultas a cada página, guarda o que leu por até 10 minutos, só na memória do navegador (some ao fechá-lo). Não há servidor da extensão e não há coleta.
 
 CONFIRA SEMPRE NO AVA
-A extensão só reorganiza o que o AVA informa e não é fonte oficial.
-Em caso de diferença, vale o que está no AVA: confira prazos, entregas
-e notas lá antes de tomar qualquer decisão.
+A extensão só reorganiza o que o AVA informa e não é fonte oficial. Em caso de diferença, vale o que está no AVA: confira prazos, entregas e notas lá antes de tomar qualquer decisão.
 ```
 
 **Categoria:** Educação
