@@ -1,0 +1,588 @@
+/* EAA+ · painel geral do Layout Amplo (features/home/summary-wide.ts). Id
+ * próprio: nada daqui alcança o painel clássico (summary-panel.css) nem o
+ * contrário. Fica no DOM normal da página, por isso é CSS do manifest. Cores
+ * em theme.css. */
+
+#eaa-summary-wide {
+  box-sizing: border-box;
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 10px 16px 8px;
+  border: 1px solid var(--eaa-border);
+  border-radius: 6px;
+  background: var(--eaa-white);
+  font: 400 14px/20px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color: var(--eaa-text);
+}
+
+#eaa-summary-wide * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Moldura: anel e texto à esquerda, lista à direita. As quebras seguem a
+   largura do próprio painel, não a da janela. */
+#eaa-summary-wide {
+  container-type: inline-size;
+}
+
+#eaa-summary-wide .eaa-r-main {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-areas: "side body" "side footer";
+  grid-template-rows: 1fr auto;
+  gap: 4px 16px;
+}
+
+#eaa-summary-wide .eaa-r-side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-right: 16px;
+  border-right: 1px solid var(--eaa-track);
+  text-align: center;
+}
+
+#eaa-summary-wide .eaa-r-stext {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+#eaa-summary-wide .eaa-r-title {
+  font-size: 13.5px;
+  line-height: 17px;
+  font-weight: 700;
+  color: var(--eaa-ink);
+}
+
+#eaa-summary-wide.closing .eaa-r-title { color: var(--eaa-graded-text); }
+#eaa-summary-wide.closing .comfort .eaa-r-title { color: var(--eaa-awaiting-text); }
+
+#eaa-summary-wide .eaa-r-when {
+  font-weight: 700;
+  color: var(--eaa-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+#eaa-summary-wide .eaa-r-when.urgent {
+  color: var(--eaa-missed);
+}
+
+#eaa-summary-wide .eaa-r-tag {
+  font-weight: 700;
+  color: var(--eaa-ink);
+}
+
+#eaa-summary-wide .eaa-r-tag.started { color: var(--eaa-started-text); }
+#eaa-summary-wide .eaa-r-tag.graded { color: var(--eaa-graded-text); }
+
+#eaa-summary-wide .eaa-r-status,
+#eaa-summary-wide .eaa-r-sub {
+  color: var(--eaa-muted);
+}
+
+/* Anel: um arco por atividade (ou disciplina). "A fazer" e "aguardando" têm
+   o arco na cor do contorno e um miolo mais fino por cima (3:1 no branco). */
+#eaa-summary-wide .eaa-r-ring {
+  flex: none;
+  width: 88px;
+  height: 88px;
+}
+
+#eaa-summary-wide .eaa-r-ring circle {
+  fill: none;
+  stroke-width: 11;
+}
+
+#eaa-summary-wide .eaa-r-ring .eaa-r-core { stroke-width: 8.5; pointer-events: none; }
+#eaa-summary-wide .eaa-r-ring .graded { stroke: var(--eaa-graded); }
+#eaa-summary-wide .eaa-r-ring .started { stroke: var(--eaa-started); }
+#eaa-summary-wide .eaa-r-ring .missed { stroke: var(--eaa-missed); }
+#eaa-summary-wide .eaa-r-ring .eaa-r-arc.awaiting { stroke: var(--eaa-awaiting-edge); }
+#eaa-summary-wide .eaa-r-ring .eaa-r-core.awaiting { stroke: var(--eaa-awaiting); }
+#eaa-summary-wide .eaa-r-ring .eaa-r-arc.todo { stroke: var(--eaa-todo-edge); }
+#eaa-summary-wide .eaa-r-ring .eaa-r-core.todo { stroke: var(--eaa-white); }
+#eaa-summary-wide .eaa-r-ring .loaded { stroke: var(--eaa-link); }
+#eaa-summary-wide .eaa-r-ring .waiting { stroke: var(--eaa-track); }
+
+#eaa-summary-wide .eaa-r-ring text {
+  text-anchor: middle;
+  fill: var(--eaa-ink);
+}
+
+#eaa-summary-wide .eaa-r-ring .eaa-r-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+#eaa-summary-wide .eaa-r-ring .eaa-r-unit {
+  font-size: 12px; /* o anel tem 88px: sai com ~10,5px */
+  fill: var(--eaa-muted);
+}
+
+#eaa-summary-wide .eaa-r-body {
+  grid-area: body;
+  min-height: 145px; /* 5 linhas: o carregamento e o resultado têm a mesma altura */
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* O que falta, por disciplina: uma linha cada, toda ela um botão que abre as
+   atividades. Colunas fixas (nome | o que falta | seta). */
+#eaa-summary-wide .eaa-r-courses {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  column-gap: 16px;
+}
+
+#eaa-summary-wide .eaa-r-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  list-style: none;
+}
+
+#eaa-summary-wide .eaa-r-col > li {
+  border-top: 1px solid var(--eaa-track);
+}
+
+#eaa-summary-wide .eaa-r-col > li:first-child {
+  border-top-color: transparent;
+}
+
+#eaa-summary-wide .eaa-r-course {
+  -webkit-appearance: none;
+  appearance: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 16px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 4px; /* o tema pode dar padding a todo <button> */
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  box-shadow: none;
+  font: 400 13px/20px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color: var(--eaa-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+#eaa-summary-wide button.eaa-r-course:hover,
+#eaa-summary-wide .eaa-r-course[aria-expanded="true"] {
+  background: var(--eaa-surface);
+}
+
+#eaa-summary-wide .eaa-r-course[aria-expanded="true"] .eaa-r-cname {
+  font-weight: 700;
+}
+
+#eaa-summary-wide .eaa-r-course:focus-visible {
+  outline: 2px solid var(--eaa-link);
+  outline-offset: -2px;
+}
+
+#eaa-summary-wide .eaa-r-cname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#eaa-summary-wide .eaa-r-cleft {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--eaa-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+#eaa-summary-wide .eaa-r-course.started .eaa-r-cleft {
+  color: var(--eaa-started-text);
+  font-weight: 700;
+}
+
+#eaa-summary-wide .eaa-r-go {
+  color: var(--eaa-muted);
+  transition: transform 0.15s ease;
+}
+
+#eaa-summary-wide .eaa-r-course[aria-expanded="true"] .eaa-r-go {
+  transform: rotate(180deg);
+}
+
+/* Atividades da disciplina, com a linha aberta. Mesmo desenho do painel da
+   barra da disciplina (cor | nome com link | estado). Até 5 à vista; acima
+   disso a lista rola, e "Abrir a disciplina" fica fora da rolagem. */
+#eaa-summary-wide .eaa-r-acts {
+  display: grid;
+  gap: 4px;
+  padding: 4px 28px 8px 12px; /* direita = seta da linha + vão */
+}
+
+#eaa-summary-wide .eaa-r-acts[hidden] {
+  display: none;
+}
+
+#eaa-summary-wide .eaa-r-acts ul {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: minmax(24px, auto);
+  gap: 2px;
+  max-height: 128px; /* 5 × 24 + 4 × 2 */
+  overflow-y: auto;
+  list-style: none;
+}
+
+#eaa-summary-wide .eaa-r-acts ul:focus-visible {
+  outline: 2px solid var(--eaa-link);
+  outline-offset: -2px;
+}
+
+#eaa-summary-wide .eaa-r-acts li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  font-size: 13px;
+}
+
+#eaa-summary-wide .eaa-r-acts li i {
+  width: 16px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--eaa-track);
+}
+
+#eaa-summary-wide .eaa-r-acts li.graded i { background: var(--eaa-graded); }
+#eaa-summary-wide .eaa-r-acts li.awaiting i { background: var(--eaa-awaiting); box-shadow: inset 0 0 0 1px var(--eaa-awaiting-edge); }
+#eaa-summary-wide .eaa-r-acts li.todo i { box-shadow: inset 0 0 0 1px var(--eaa-todo-edge); }
+#eaa-summary-wide .eaa-r-acts li.started i { background: var(--eaa-started); }
+#eaa-summary-wide .eaa-r-acts li.missed i { background: var(--eaa-missed); }
+
+#eaa-summary-wide .eaa-r-iname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--eaa-ink);
+  text-decoration: none;
+}
+
+#eaa-summary-wide a.eaa-r-iname,
+#eaa-summary-wide .eaa-r-gocourse {
+  color: var(--eaa-link);
+}
+
+#eaa-summary-wide a.eaa-r-iname:hover,
+#eaa-summary-wide a.eaa-r-iname:focus-visible,
+#eaa-summary-wide .eaa-r-gocourse:hover,
+#eaa-summary-wide .eaa-r-gocourse:focus-visible {
+  text-decoration: underline;
+}
+
+#eaa-summary-wide .eaa-r-istate {
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--eaa-muted);
+}
+
+#eaa-summary-wide li.graded .eaa-r-istate { color: var(--eaa-graded-text); }
+#eaa-summary-wide li.awaiting .eaa-r-istate { color: var(--eaa-awaiting-text); }
+#eaa-summary-wide li.started .eaa-r-istate { color: var(--eaa-started-text); font-weight: 700; }
+#eaa-summary-wide li.missed .eaa-r-istate { color: var(--eaa-missed); font-weight: 700; }
+
+#eaa-summary-wide .eaa-r-gocourse {
+  justify-self: start;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* "Ver mais": fechado por padrão; a classe fica no #eaa-summary-wide. Com duas
+   colunas só se escondem as linhas "over" (depois da 10ª). */
+#eaa-summary-wide:not(.expanded) .eaa-r-over,
+#eaa-summary-wide:not(.expanded) .eaa-r-notes-body,
+#eaa-summary-wide:not(.expanded) .eaa-r-open,
+#eaa-summary-wide.expanded .eaa-r-closed,
+#eaa-summary-wide .eaa-r-more.narrow-only {
+  display: none;
+}
+
+#eaa-summary-wide .eaa-r-more {
+  -webkit-appearance: none;
+  appearance: none;
+  justify-self: start;
+  height: 24px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0 4px; /* o tema pode dar padding a todo <button> */
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  box-shadow: none;
+  font: 700 12px/24px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color: var(--eaa-link);
+  cursor: pointer;
+}
+
+#eaa-summary-wide .eaa-r-more:hover {
+  text-decoration: underline;
+}
+
+#eaa-summary-wide .eaa-r-more:focus-visible {
+  outline: 2px solid var(--eaa-link);
+  outline-offset: 2px;
+}
+
+/* Carregamento: mesma moldura do resultado. O anel enche conforme as
+   disciplinas respondem. */
+/* linhas: esqueleto pulsando até a disciplina responder */
+#eaa-summary-wide .eaa-r-load .eaa-r-course {
+  cursor: default;
+}
+
+#eaa-summary-wide .eaa-r-load:not(.done) .eaa-r-course {
+  grid-template-columns: minmax(0, 1fr) auto 16px;
+}
+
+#eaa-summary-wide .eaa-r-bone {
+  display: block;
+  max-width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--eaa-track);
+  animation: eaa-r-pulse 1.4s ease-in-out infinite;
+}
+
+#eaa-summary-wide .eaa-r-bone.pill {
+  width: 96px;
+  height: 18px;
+  border-radius: 999px;
+}
+
+#eaa-summary-wide .eaa-r-load.done .eaa-r-course {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+#eaa-summary-wide .eaa-r-check {
+  padding-right: 4px;
+  font-weight: 700;
+  color: var(--eaa-graded-text);
+}
+
+#eaa-summary-wide .eaa-r-ring .waiting {
+  animation: eaa-r-pulse 1.4s ease-in-out infinite;
+}
+
+/* carregando não há cores a explicar nem o que atualizar; o lugar fica
+   guardado para o painel não mudar de altura */
+#eaa-summary-wide[aria-busy="true"] .eaa-r-legend,
+#eaa-summary-wide[aria-busy="true"] .eaa-r-refresh {
+  visibility: hidden;
+}
+
+@keyframes eaa-r-pulse {
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #eaa-summary-wide .eaa-r-go {
+    transition: none;
+  }
+
+  #eaa-summary-wide .eaa-r-bone,
+  #eaa-summary-wide .eaa-r-ring .waiting {
+    animation: none;
+  }
+}
+
+/* Rodapé: idade dos dados | legenda | Atualizar. */
+#eaa-summary-wide .eaa-r-footer {
+  grid-area: footer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding-top: 4px;
+  border-top: 1px solid var(--eaa-track);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--eaa-muted);
+}
+
+#eaa-summary-wide .eaa-r-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  list-style: none;
+}
+
+/* no fim do semestre as cores só precisam de legenda com uma linha aberta */
+#eaa-summary-wide.closing:not(:has(.eaa-r-course[aria-expanded="true"])) .eaa-r-legend {
+  display: none;
+}
+
+#eaa-summary-wide .eaa-r-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+#eaa-summary-wide .eaa-r-legend i {
+  flex: none;
+  width: 16px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--eaa-track);
+}
+
+#eaa-summary-wide .eaa-r-legend .graded { background: var(--eaa-graded); }
+#eaa-summary-wide .eaa-r-legend .awaiting { background: var(--eaa-awaiting); box-shadow: inset 0 0 0 1px var(--eaa-awaiting-edge); }
+#eaa-summary-wide .eaa-r-legend .todo { box-shadow: inset 0 0 0 1px var(--eaa-todo-edge); }
+#eaa-summary-wide .eaa-r-legend .started { background: var(--eaa-started); }
+#eaa-summary-wide .eaa-r-legend .missed { background: var(--eaa-missed); }
+
+#eaa-summary-wide .eaa-r-refresh {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0; /* o tema pode dar padding a todo <button> */
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  box-shadow: none;
+  font: 700 12px/16px Lato, "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  color: var(--eaa-link);
+  cursor: pointer;
+}
+
+#eaa-summary-wide .eaa-r-refresh:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+#eaa-summary-wide .eaa-r-refresh:focus-visible {
+  outline: 2px solid var(--eaa-link);
+  outline-offset: 2px;
+}
+
+#eaa-summary-wide .eaa-r-refresh:disabled {
+  color: var(--eaa-muted);
+  cursor: default;
+}
+
+/* Fichas de situação no fim do semestre */
+#eaa-summary-wide .eaa-r-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  justify-self: end;
+}
+
+#eaa-summary-wide .eaa-r-pill.approved {
+  background: var(--eaa-passed-bg);
+  color: var(--eaa-graded-text);
+}
+
+#eaa-summary-wide .eaa-r-pill.partial_passed {
+  background: var(--eaa-passed-bg);
+  color: var(--eaa-graded-text);
+  border: 1px dashed #6ebc84;
+}
+
+#eaa-summary-wide .eaa-r-pill.partial_wait,
+#eaa-summary-wide .eaa-r-pill.waiting {
+  background: var(--eaa-recovery-bg);
+  color: var(--eaa-awaiting-text);
+}
+
+#eaa-summary-wide .eaa-r-pill.recovery,
+#eaa-summary-wide .eaa-r-pill.failed {
+  background: var(--eaa-failed-bg);
+  color: var(--eaa-failed-text);
+}
+
+/* com pouca largura quem corta é a ficha: o nome nunca some */
+#eaa-summary-wide .eaa-r-course.closing {
+  grid-template-columns: minmax(96px, 1fr) minmax(0, max-content) 16px;
+}
+
+#eaa-summary-wide .eaa-r-course.closing .eaa-r-pill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Painel estreito (layout clássico do AVA): uma coluna, com a regra de
+   poucas linhas à vista. */
+@container (max-width: 800px) {
+  /* a legenda ganha uma linha só dela, com ou sem a hora no rodapé */
+  #eaa-summary-wide .eaa-r-legend {
+    order: 1;
+    flex-basis: 100%;
+  }
+
+  #eaa-summary-wide .eaa-r-courses {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #eaa-summary-wide:not(.expanded) .eaa-r-extra {
+    display: none;
+  }
+
+  #eaa-summary-wide .eaa-r-more.narrow-only {
+    display: block;
+  }
+
+  #eaa-summary-wide .eaa-r-col:empty {
+    display: none;
+  }
+
+  #eaa-summary-wide .eaa-r-col + .eaa-r-col > li:first-child {
+    border-top-color: var(--eaa-track);
+  }
+}
+
+/* Muito estreito: o anel vai para cima, deitado ao lado do texto. */
+@container (max-width: 520px) {
+  #eaa-summary-wide .eaa-r-main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "side" "body" "footer";
+    grid-template-rows: auto;
+    gap: 8px;
+  }
+
+  #eaa-summary-wide .eaa-r-body {
+    min-height: 0;
+  }
+
+  #eaa-summary-wide .eaa-r-side {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0 0 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--eaa-track);
+    text-align: left;
+  }
+}

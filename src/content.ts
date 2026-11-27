@@ -9,6 +9,7 @@
 
 import "./styles/theme.css";
 import "./styles/summary-panel.css";
+import "./styles/summary-wide.css";
 import "./styles/course-bar.css";
 import "./styles/wide-layout.css";
 
@@ -20,13 +21,13 @@ import { homeFeature } from "./features/home/index.ts";
 
 /* Na página inicial (/d2l/home), se o Layout Amplo (beta) estiver ligado,
    suspende a exibição até aplicar o cabeçalho, a barra única e as abas
-   (teto de segurança de 2,5 s). */
+   (teto de segurança de 8 s: os cards do AVA demoram a chegar). */
 if (/^\/d2l\/home\/?$/.test(location.pathname)) {
   void getWideLayout().then((wide) => {
     if (!wide) return;
     if (document.querySelector("d2l-my-courses-v2")?.shadowRoot) return;
     document.documentElement.classList.add("eaa-booting");
-    setTimeout(() => document.documentElement.classList.remove("eaa-booting"), 2500);
+    setTimeout(() => document.documentElement.classList.remove("eaa-booting"), 8000);
   });
 }
 

@@ -11,6 +11,8 @@ const GRID_CSS =
   `@media (min-width:1200px){.course-card-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}` +
   `d2l-my-courses-enrollment-card{--course-image-height:72px!important}`;
 const TABS_HIDE_CSS = `.d2l-tabs-layout{display:none!important}`;
+/* o AVA põe 24px acima dos cards, para as abas; escondidas, vira só vão */
+const PANEL_GAP_CSS = `d2l-tab-panel{margin-top:0!important}`;
 
 function setShadowStyle(host: Element | null, css: string | null): void {
   const root = host?.shadowRoot;
@@ -187,6 +189,12 @@ function tagSideWidgets(enabled: boolean): void {
 
 const TABS_BAR_ID = "eaa-tabs";
 
+/** O componente em cujo shadow root o d2l-tabs e os painéis dele moram. */
+const tabsHost = (tabs: Element | undefined): Element | null => {
+  const root = tabs?.getRootNode();
+  return root instanceof ShadowRoot ? root.host : null;
+};
+
 /** Espelha as abas de d2l-tabs (Todos, Espaço Acadêmico, 2026.2) na mesma
  *  linha do título "Minhas Disciplinas", mantendo o d2l-tabs original intacto
  *  e apenas ocultando a faixa visual dele dentro do shadowRoot. */
@@ -197,6 +205,7 @@ function syncCourseTabs(coursesEl: Element, coursesRoot: ShadowRoot, enabled: bo
   if (!enabled || !widgetHeader || !d2lTabs) {
     document.getElementById(TABS_BAR_ID)?.remove();
     setShadowStyle(d2lTabs ?? null, null);
+    setShadowStyle(tabsHost(d2lTabs), null);
     return;
   }
 
@@ -204,6 +213,7 @@ function syncCourseTabs(coursesEl: Element, coursesRoot: ShadowRoot, enabled: bo
   if (!realTabs.length) return;
 
   setShadowStyle(d2lTabs, TABS_HIDE_CSS);
+  setShadowStyle(tabsHost(d2lTabs), PANEL_GAP_CSS);
 
   let bar = document.getElementById(TABS_BAR_ID);
   if (!bar || !widgetHeader.contains(bar)) {

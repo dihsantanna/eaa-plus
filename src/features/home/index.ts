@@ -38,10 +38,9 @@ export const homeFeature: Feature = {
       }
       applyWideLayout(wideLayout, shown);
       alignBlocks(shown);
-      updateSummaryPanel(visible, state, refreshAll, isAcademicSpaceTab());
-      if (document.documentElement.classList.contains("eaa-booting")) {
-        document.documentElement.classList.remove("eaa-booting");
-      }
+      updateSummaryPanel(visible, state, refreshAll, isAcademicSpaceTab(), wideLayout);
+      /* a tela de carregamento do Amplo só sai com os cards já arrumados */
+      if (!wideLayout || visible.length) document.documentElement.classList.remove("eaa-booting");
     }
 
     function refreshAll(): void {
@@ -50,9 +49,12 @@ export const homeFeature: Feature = {
       scan();
     }
 
+    /* nada é desenhado antes de saber o layout: senão o clássico aparece por
+       um instante para quem usa o Amplo */
     void getWideLayout().then((w) => {
       wideLayout = w;
       scan();
+      setInterval(scan, SCAN_MS);
     });
     onWideLayoutChange((w) => {
       wideLayout = w;
@@ -60,8 +62,6 @@ export const homeFeature: Feature = {
       dispatchEvent(new Event("resize"));
     });
 
-    scan();
-    setInterval(scan, SCAN_MS);
     addEventListener("resize", () => alignBlocks(shown));
     return true;
   },

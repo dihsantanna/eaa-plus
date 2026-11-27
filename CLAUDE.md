@@ -33,7 +33,7 @@ pasta dela em `src/features/`.
 ```bash
 npm install                        # uma vez
 npx playwright install chromium    # uma vez (navegador dos testes)
-npm test                           # 35 unitários (regras, <1s) + 54 E2E com a extensão carregada de verdade
+npm test                           # 45 unitários (regras, <1s) + 70 E2E com a extensão carregada de verdade
 npm run test:unit                  # só os unitários das regras (tests/unit/, TypeScript direto no Node)
 npm run typecheck                  # tsc estrito (sem gerar arquivos)
 npm run dev                        # recarga automática no Chrome (carregar .dev-build/ext uma vez)
@@ -66,16 +66,20 @@ src/ava/network.ts             fetch (ÚNICO arquivo com rede) + leitura das pá
 src/ava/cache.ts               chrome.storage.session (cache entre páginas)
 src/ava/course-data.ts         courseData/preview/courseName/restart: junta rede + cache + regras
 src/features/home/             página inicial: index.ts (varredura), course-card.ts (feature 1),
-                               summary-panel.ts (feature 2), state.ts, card-styles.ts (CSS no shadow)
+                               summary-panel.ts (feature 2, painel clássico), summary-wide.ts
+                               (painel do Layout Amplo, com ring.ts), summary-data.ts
+                               (comum aos dois), state.ts, card-styles.ts (CSS no shadow)
 src/features/course-bar/       feature 3: index.ts, render.ts, layout.ts (posição na faixa azul)
 src/features/shared/render.ts  legenda, rótulos dos estados, barra de segmentos
-src/styles/                    theme.css (TODAS as cores, --eaa-*), summary-panel.css, course-bar.css
-tests/unit/rules.test.ts       unitários das regras (node:test, hora fixa)
+src/styles/                    theme.css (TODAS as cores, --eaa-*), summary-panel.css, summary-wide.css,
+                               course-bar.css
+tests/unit/                    unitários das regras e do anel (node:test, hora fixa)
 tests/generate-fixtures.mjs    monta a extensão MINIFICADA em .test-build/ + gera as réplicas
 tests/ava-fixtures.mjs         réplica do AVA (shadow DOM) + respostas da API inventadas
 tests/server.mjs               servidor das réplicas; /d2l/api/* vem de api.json
 tests/browser.mjs              Chromium com a extensão, compartilhado pelas suítes
-tests/ava.spec.mjs             E2E da página inicial
+tests/ava.spec.mjs             E2E da página inicial (layout clássico)
+tests/ava-wide-summary.spec.mjs  E2E do painel geral no Layout Amplo
 tests/ava-course.spec.mjs      E2E da barra nas páginas de disciplina
 tests/ava-cache.spec.mjs       E2E do cache entre páginas (fixture `background` = service worker)
 tools/bundle.mjs               esbuild: monta a extensão (usado por build, dev e testes)

@@ -177,6 +177,38 @@ export const COURSES = [
   },
 ];
 
+/* Fim do semestre (/d2l/home?scenario=...): nenhum prazo futuro. As duas
+   primeiras esperam correção (a 1ª com 6 atividades); o resto está aprovado. */
+const closedWaiting = (ou, name, count) => {
+  const ids = Array.from({ length: count }, (_, i) => ou * 10 + i);
+  return {
+    ou,
+    name,
+    grades: [...FORMULAS, ...ids.map((id, i) => numeric(id, `Atividade ${i + 1}`, 1))],
+    values: av(4.0, 0),
+    quizzes: ids.map((id) => quiz(id, id, -5)),
+    quizList: [[SEC1, ids.map((id) => [id, 1])]],
+  };
+};
+const closedApproved = (ou, name) => ({
+  ou,
+  name,
+  grades: [...FORMULAS, numeric(ou * 10, "Atividade única", 5)],
+  values: [...av(5.0, 4.0), value(ou * 10, "Atividade única", 5, 5)],
+  quizzes: [quiz(ou * 10, ou * 10, -5)],
+});
+export const CLOSED = [
+  closedWaiting(50101, "Leitura e Escrita de Partitura I", 6),
+  closedWaiting(50102, "Canto Coral e Prática de Conjunto Vocal e Instrumental", 1),
+  ...Array.from({ length: 10 }, (_, i) => closedApproved(50103 + i, `Disciplina concluída ${i + 1}`)),
+];
+const CLOSED_PANELS = {
+  closed9: CLOSED.slice(0, 9).map((d) => d.ou),
+  closed12: CLOSED.map((d) => d.ou),
+  passed9: CLOSED.slice(2, 11).map((d) => d.ou),
+  one: [CLOSED[0].ou],
+};
+
 /* Só aparece na aba "Todos": não pode ser consultada antes de ficar visível. */
 export const ONLY_IN_ALL = {
   ou: 50099,
@@ -309,7 +341,7 @@ function assignmentsPage(d) {
 function routes() {
   const api = {};
   const ok = (body) => ({ status: 200, body });
-  for (const d of [...COURSES, ONLY_IN_ALL]) {
+  for (const d of [...COURSES, ...CLOSED, ONLY_IN_ALL]) {
     const b = `${LE}${d.ou}/`;
     if (d.failStatus) {
       api[b + "grades/"] = { status: d.failStatus, body: { title: "erro" } };
@@ -337,7 +369,7 @@ function routes() {
   /* nomes de todas as disciplinas numa leitura só */
   api["/d2l/api/lp/1.63/enrollments/myenrollments/?orgUnitTypeId=3"] = ok({
     PagingInfo: { Bookmark: "", HasMoreItems: false },
-    Items: [...COURSES, ONLY_IN_ALL].map((d) => ({ OrgUnit: { Id: d.ou, Name: d.name }, Access: {}, PinDate: null })),
+    Items: [...COURSES, ...CLOSED, ONLY_IN_ALL].map((d) => ({ OrgUnit: { Id: d.ou, Name: d.name }, Access: {}, PinDate: null })),
   });
   return api;
 }
@@ -355,7 +387,7 @@ a{position:absolute;inset:-1px;z-index:1;display:block}
 :host([href]) .d2l-card-link-container-hover{color:#006fbf;text-decoration:underline}`;
 
 function page() {
-  const names = Object.fromEntries([...COURSES, ONLY_IN_ALL].map((d) => [d.ou, d.name]));
+  const names = Object.fromEntries([...COURSES, ...CLOSED, ONLY_IN_ALL].map((d) => [d.ou, d.name]));
   const semester = COURSES.map((d) => d.ou);
   const all = [...semester, ONLY_IN_ALL.ou];
 
@@ -375,6 +407,8 @@ ${HOSTILE_CSS}
 <script>
 const NAMES = ${JSON.stringify(names)};
 const PANELS = { semester: ${JSON.stringify(semester)}, all: ${JSON.stringify(all)} };
+const scenario = ${JSON.stringify(CLOSED_PANELS)}[new URLSearchParams(location.search).get("scenario")];
+if (scenario) PANELS.semester = scenario;
 
 customElements.define("d2l-card", class extends HTMLElement {
   connectedCallback() {
@@ -449,7 +483,11 @@ customElements.define("d2l-my-courses-container-v2", class extends HTMLElement {
       });
     };
     shadow.querySelectorAll("#tabs button").forEach((b) => b.addEventListener("click", () => open(b.dataset.panel)));
-    open("semester");
+    /* ?slow=ms: como no AVA real, o componente entra e os cards só chegam
+       segundos depois */
+    const slow = Number(new URLSearchParams(location.search).get("slow"));
+    if (slow) setTimeout(() => open("semester"), slow);
+    else open("semester");
   }
 });
 

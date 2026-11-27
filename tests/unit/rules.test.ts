@@ -381,3 +381,11 @@ describe("síntese editorial e fechamento (courseOutcome, isCleanResolved)", () 
     assert.equal(R.isCleanResolved(r, NOW), true);
   });
 });
+
+describe("painel geral em duas colunas", () => {
+  test("divide as linhas em duas colunas", () => {
+    assert.deepEqual([1, 2, 9, 10, 14].map((n) => R.columnSplit(n)), [1, 1, 5, 5, 5]);
+    /* com "Ver mais" aberto, as colunas dividem todas as linhas */
+    assert.deepEqual([9, 14, 20].map((n) => R.columnSplit(n, true)), [5, 7, 10]);
+  });
+});

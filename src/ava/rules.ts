@@ -381,6 +381,14 @@ export const SUMMARY_ROWS = 4;
  *  todas ("Ver mais 1 disciplina" ocuparia a mesma linha que ela). */
 export const rowsShown = (n: number): number => (n <= SUMMARY_ROWS + 1 ? n : SUMMARY_ROWS);
 
+/** Painel do Layout Amplo: com largura para duas colunas, quantas linhas ficam
+ *  à vista antes do "Ver mais" (na estreita vale rowsShown). */
+export const ROWS_WIDE = 10;
+
+/** Quantas linhas vão para a primeira coluna (o resto vai para a segunda):
+ *  metade das que estão à vista. */
+export const columnSplit = (n: number, expanded = false): number => Math.ceil((expanded ? n : Math.min(n, ROWS_WIDE)) / 2);
+
 /** Ordem do resumo: primeiro quem tem atividade iniciada e não enviada
  *  (perde-se o que já foi feito), depois quem tem mais a fazer, depois o nome. */
 export function byUrgency(

@@ -212,6 +212,25 @@ flowchart TD
   Até 4 à vista (`rowsShown()`), o resto em "Ver mais" —
   que não é lembrado: o AVA recarrega a página a cada clique e guardar a
   escolha pediria `storage.local` (disco, muda a política).
+- **Painel do Layout Amplo (`summary-wide.ts`):** com o Amplo ligado no
+  popup, o painel geral troca de desenho para sobrar tela para os cards; o
+  clássico, descrito acima, não muda. Um anel (`ring.ts`, SVG sem biblioteca)
+  tem um arco por atividade do prazo ou, no fim do semestre, por disciplina, e
+  as disciplinas ficam em 2 colunas (até 10 à vista, `ROWS_WIDE`). Uma aberta
+  por vez, com até 5 atividades à vista e o resto na rolagem, que se mantém
+  quando o painel é reescrito: ele só cresce enquanto o aluno consulta, e
+  pouco. A quebra segue a largura do próprio painel (container query): uma
+  coluna até 800px e o anel em cima até 520px. No anel em cima, a altura do
+  carregamento é só aproximada: não se sabe antes quantas linhas virão.
+  O rodapé fica sob a lista, ao lado do anel, e o Amplo zera os 24px que o
+  AVA põe acima dos cards para as abas. Carregando, há uma linha por
+  disciplina no lugar do resultado: esqueleto até o AVA responder, depois o
+  nome.
+- **Abertura no Amplo:** nada é desenhado antes de ler a preferência, e a tela
+  de carregamento (`eaa-booting`) só sai com cards visíveis já arrumados (teto
+  de 8s). Antes ela saía na primeira varredura e o layout do AVA aparecia.
+  Dados e textos comuns aos dois desenhos ficam em `summary-data.ts`; cada um
+  tem id e CSS próprios, para um não afetar o outro.
 - **Prazo resolvido em uma linha** (`isSettled()`: encerrado e todo
   corrigido): não pede mais nada do aluno, então dá o espaço ao que está
   aberto. Encerrado com perdida ou aguardando continua inteiro.
